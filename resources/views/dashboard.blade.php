@@ -1,31 +1,4 @@
 <x-app-layout>
-    <!-- Content Header (AdminLTE Page Header & Breadcrumb) -->
-    <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-                <h1 class="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-                    <i class="fas fa-tachometer-alt text-blue-600 dark:text-blue-400 me-2.5"></i>
-                    Panel de Control Médico
-                </h1>
-                <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Bienvenido al sistema integral de gestión de Centro de Salud</p>
-            </div>
-            <nav class="flex text-xs text-gray-500 dark:text-slate-400 font-medium" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 sm:space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="{{ route('dashboard') }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800">
-                            <i class="fas fa-home me-1"></i> Inicio
-                        </a>
-                    </li>
-                    <li aria-current="page">
-                        <div class="flex items-center">
-                            <i class="fas fa-chevron-right text-gray-400 dark:text-slate-600 text-[10px] mx-1"></i>
-                            <span class="text-gray-700 dark:text-slate-300">Dashboard</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-    </x-slot>
 
     <!-- AdminLTE Small Boxes / Metric Stat Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

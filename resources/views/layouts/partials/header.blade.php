@@ -17,10 +17,6 @@
                 <a href="{{ route('dashboard') }}" class="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">
                     <i class="fas fa-home me-1"></i> Inicio
                 </a>
-                <span class="text-gray-300 dark:text-slate-700">|</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800">
-                    <i class="fas fa-hospital-alt me-1"></i> Centro de Salud
-                </span>
             </div>
         </div>
 

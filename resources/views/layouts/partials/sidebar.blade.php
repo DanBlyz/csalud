@@ -54,132 +54,46 @@
             <span class="ms-2">Dashboard</span>
         </a>
 
-        <!-- Section: ATENCIÓN MÉDICA -->
-        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Atención Médica
-        </div>
-
-        <!-- Citas Médicas (Dropdown) -->
-        <div x-data="{ open: false }">
-            <button 
-                @click="open = !open" 
-                type="button" 
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-                <div class="flex items-center">
-                    <i class="fas fa-calendar-check w-5 text-sm text-teal-400"></i>
-                    <span class="ms-2">Citas Médicas</span>
-                </div>
-                <i class="fas fa-chevron-right text-[10px] transition-transform duration-200" :class="{ 'rotate-90': open }"></i>
-            </button>
-            <div x-show="open" x-collapse class="space-y-1 ps-8 pe-1 pt-1" style="display: none;">
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-teal-400"></i> Agendar Cita
-                </a>
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-teal-400"></i> Listado de Citas
-                </a>
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-teal-400"></i> Calendario
-                </a>
-            </div>
-        </div>
-
-        <!-- Pacientes (Dropdown) -->
-        <div x-data="{ open: false }">
-            <button 
-                @click="open = !open" 
-                type="button" 
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-                <div class="flex items-center">
-                    <i class="fas fa-user-injured w-5 text-sm text-sky-400"></i>
-                    <span class="ms-2">Pacientes</span>
-                </div>
-                <i class="fas fa-chevron-right text-[10px] transition-transform duration-200" :class="{ 'rotate-90': open }"></i>
-            </button>
-            <div x-show="open" x-collapse class="space-y-1 ps-8 pe-1 pt-1" style="display: none;">
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-sky-400"></i> Directorio Pacientes
-                </a>
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-sky-400"></i> Registrar Paciente
-                </a>
-            </div>
-        </div>
-
-        <!-- Triaje / Signos Vitales -->
-        <a href="#" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-            <i class="fas fa-stethoscope w-5 text-sm text-amber-400"></i>
-            <span class="ms-2">Triaje & Signos</span>
-        </a>
-
-        <!-- Historias Clínicas -->
-        <a href="#" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-            <i class="fas fa-notes-medical w-5 text-sm text-rose-400"></i>
-            <span class="ms-2">Historias Clínicas</span>
-        </a>
-
-        <!-- Section: GESTIÓN CLÍNICA -->
-        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Gestión Clínica
-        </div>
-
-        <!-- Médicos & Especialidades -->
-        <div x-data="{ open: false }">
-            <button 
-                @click="open = !open" 
-                type="button" 
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-                <div class="flex items-center">
-                    <i class="fas fa-user-md w-5 text-sm text-indigo-400"></i>
-                    <span class="ms-2">Médicos & Esp.</span>
-                </div>
-                <i class="fas fa-chevron-right text-[10px] transition-transform duration-200" :class="{ 'rotate-90': open }"></i>
-            </button>
-            <div x-show="open" x-collapse class="space-y-1 ps-8 pe-1 pt-1" style="display: none;">
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-indigo-400"></i> Directorio Médico
-                </a>
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-indigo-400"></i> Especialidades
-                </a>
-                <a href="#" class="block px-2.5 py-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors">
-                    <i class="far fa-circle text-[8px] me-2 text-indigo-400"></i> Turnos y Horarios
-                </a>
-            </div>
-        </div>
-
-        <!-- Farmacia & Recetas -->
-        <a href="#" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-            <i class="fas fa-pills w-5 text-sm text-emerald-400"></i>
-            <span class="ms-2">Farmacia / Medicinas</span>
-            <span class="ms-auto text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">Stock</span>
-        </a>
-
         <!-- Section: SISTEMA -->
         <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Administración
         </div>
 
-        <!-- Reportes -->
-        <a href="#" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-            <i class="fas fa-chart-line w-5 text-sm text-yellow-400"></i>
-            <span class="ms-2">Reportes & Estadísticas</span>
+        <!-- Sedes / Sucursales -->
+        <a href="{{ route('administracion.sucursales') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.sucursales') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-hospital w-5 text-sm {{ request()->routeIs('administracion.sucursales') ? 'text-white' : 'text-blue-400' }}"></i>
+            <span class="ms-2">Sedes y Sucursales</span>
         </a>
 
-        <!-- Usuarios & Roles -->
-        <a href="#" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-            <i class="fas fa-users-cog w-5 text-sm text-purple-400"></i>
-            <span class="ms-2">Usuarios y Roles</span>
+        <!-- Roles y Permisos -->
+        <a href="{{ route('administracion.roles') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.roles') ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-user-tag w-5 text-sm {{ request()->routeIs('administracion.roles') ? 'text-white' : 'text-purple-400' }}"></i>
+            <span class="ms-2">Roles de Acceso</span>
         </a>
 
-        <!-- Configuración -->
-        <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2.5 rounded-md font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+        <!-- Usuarios y Personal -->
+        <a href="{{ route('administracion.usuarios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.usuarios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-users-cog w-5 text-sm {{ request()->routeIs('administracion.usuarios') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Personal y Usuarios</span>
+        </a>
+
+        <!-- Especialidades -->
+        <a href="{{ route('administracion.especialidades') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.especialidades') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-stethoscope w-5 text-sm {{ request()->routeIs('administracion.especialidades') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Especialidades</span>
+        </a>
+
+        <!-- Servicios -->
+        <a href="{{ route('administracion.servicios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.servicios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-clinic-medical w-5 text-sm {{ request()->routeIs('administracion.servicios') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Servicios</span>
+        </a>
+
+        <!-- Configuración de Perfil -->
+        {{-- <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('profile.edit') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
             <i class="fas fa-cog w-5 text-sm text-slate-400"></i>
-            <span class="ms-2">Configuración</span>
-        </a>
+            <span class="ms-2">Mi Perfil</span>
+        </a> --}}
     </nav>
 
     <!-- Sidebar Footer / Status -->

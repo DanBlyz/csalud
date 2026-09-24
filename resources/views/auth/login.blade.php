@@ -36,7 +36,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-4">
+            <form method="POST" action="{{ route('login') }}" x-data="{ submitting: false }" @submit="submitting = true" class="space-y-4">
                 @csrf
 
                 <!-- Correo Electrónico -->
@@ -115,10 +115,14 @@
                 <div class="pt-2">
                     <button 
                         type="submit" 
-                        class="w-full flex items-center justify-center py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 cursor-pointer"
+                        :disabled="submitting"
+                        class="w-full flex items-center justify-center py-2.5 px-4 text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span>Ingresar al Sistema</span>
-                        <i class="fas fa-sign-in-alt ms-2 text-sm"></i>
+                        <span x-show="!submitting">Ingresar al Sistema</span>
+                        <i x-show="!submitting" class="fas fa-sign-in-alt ms-2 text-sm"></i>
+                        <span x-show="submitting" style="display: none;" class="flex items-center">
+                            <i class="fas fa-spinner fa-spin me-2 text-sm"></i> Ingresando...
+                        </span>
                     </button>
                 </div>
             </form>
