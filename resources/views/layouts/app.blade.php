@@ -25,6 +25,7 @@
 
         <!-- Tailwind CSS (Compilado sin Vite) -->
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        <script src="{{ asset('js/sweetalert2/sweetalert2.all.min.js') }}"></script>
 
         @livewireStyles
     </head>
@@ -110,5 +111,125 @@
         </div>
 
         @livewireScripts
+
+        <!-- SweetAlert2 Global Event Listeners & Dark Mode Adapter -->
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const getSwalTheme = () => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    return {
+                        background: isDark ? '#0f172a' : '#ffffff',
+                        color: isDark ? '#f8fafc' : '#1e293b',
+                        confirmButtonColor: '#0284c7', // Primary Sky Blue
+                        cancelButtonColor: '#64748b',  // Slate Gray
+                    };
+                };
+
+                // Normal / Toast Alerts
+                window.addEventListener('swal', (event) => {
+                    const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;
+                    if (!data) return;
+                    const theme = getSwalTheme();
+                    const isToast = data.toast !== undefined ? data.toast : true;
+
+                    if (isToast) {
+                        Swal.fire({
+                            toast: true,
+                            position: data.position || 'top-end',
+                            showConfirmButton: false,
+                            timer: data.timer || 3500,
+                            timerProgressBar: true,
+                            icon: data.icon || 'success',
+                            title: data.title || '',
+                            text: data.text || '',
+                            background: theme.background,
+                            color: theme.color,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer);
+                                toast.addEventListener('mouseleave', Swal.resumeTimer);
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: data.icon || 'info',
+                            title: data.title || '',
+                            text: data.text || '',
+                            confirmButtonColor: theme.confirmButtonColor,
+                            cancelButtonColor: theme.cancelButtonColor,
+                            background: theme.background,
+                            color: theme.color,
+                        });
+                    }
+                });
+
+                // Confirmation Dialogs (Destructive actions)
+                window.addEventListener('swal:confirm', (event) => {
+                    const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;
+                    if (!data) return;
+                    const theme = getSwalTheme();
+
+                    Swal.fire({
+                        title: data.title || '¿Está seguro?',
+                        text: data.text || 'Esta acción no se puede deshacer.',
+                        icon: data.icon || 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: data.confirmButtonColor || '#e11d48', // Rose Red
+                        cancelButtonColor: theme.cancelButtonColor,
+                        confirmButtonText: data.confirmButtonText || 'Sí, continuar',
+                        cancelButtonText: data.cancelButtonText || 'Cancelar',
+                        background: theme.background,
+                        color: theme.color,
+                        reverseButtons: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if (data.componentId && window.Livewire) {
+                                const component = window.Livewire.find(data.componentId);
+                                if (component && typeof component.call === 'function') {
+                                    component.call(data.method, ...(data.params || []));
+                                    return;
+                                }
+                            }
+                            if (window.Livewire) {
+                                window.Livewire.dispatch(data.event, data.params || {});
+                            }
+                        }
+                    });
+                });
+
+                // Auto-trigger on Blade session flashes
+                @if (session('success') || session('status'))
+                    window.dispatchEvent(new CustomEvent('swal', {
+                        detail: [{
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: "{{ session('success') ?? session('status') }}",
+                            toast: true
+                        }]
+                    }));
+                @endif
+
+                @if (session('error'))
+                    window.dispatchEvent(new CustomEvent('swal', {
+                        detail: [{
+                            icon: 'error',
+                            title: 'Error',
+                            text: "{{ session('error') }}",
+                            toast: false
+                        }]
+                    }));
+                @endif
+
+                @if (session('warning'))
+                    window.dispatchEvent(new CustomEvent('swal', {
+                        detail: [{
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: "{{ session('warning') }}",
+                            toast: true
+                        }]
+                    }));
+                @endif
+            });
+        </script>
     </body>
 </html>
