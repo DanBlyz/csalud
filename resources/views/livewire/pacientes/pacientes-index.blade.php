@@ -93,7 +93,6 @@
                             <option value="">Todos</option>
                             <option value="Masculino">Masculino</option>
                             <option value="Femenino">Femenino</option>
-                            <option value="Otro">Otro</option>
                         </select>
                     </div>
                 </div>
@@ -345,7 +344,6 @@
                                 <select id="genero" wire:model="genero" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
                                     <option value="Masculino">Masculino</option>
                                     <option value="Femenino">Femenino</option>
-                                    <option value="Otro">Otro</option>
                                 </select>
                             </div>
                         </div>

@@ -146,18 +146,12 @@
             </table>
         </div>
 
-        <!-- Footer -->
-        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div class="text-slate-500 dark:text-slate-400">
-                Mostrando del <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $especialidades->firstItem() ?? 0 }}</span> al 
-                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $especialidades->lastItem() ?? 0 }}</span> de 
-                <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $especialidades->total() }}</span> registros
-            </div>
-
-            <div>
+        <!-- Paginación -->
+        @if ($especialidades->hasPages())
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
                 {{ $especialidades->links() }}
             </div>
-        </div>
+        @endif
     </div>
 
     <!-- Modal Formulario -->

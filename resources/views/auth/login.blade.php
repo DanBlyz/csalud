@@ -126,17 +126,6 @@
                     </button>
                 </div>
             </form>
-
-            <!-- Credenciales de prueba informativas -->
-            <div class="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-850 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 p-4 rounded-b-2xl text-[11px] text-gray-600 dark:text-slate-400 flex items-start space-x-2.5">
-                <i class="fas fa-info-circle text-blue-500 text-sm mt-0.5 shrink-0"></i>
-                <div class="leading-relaxed">
-                    <span class="font-semibold text-gray-800 dark:text-slate-200">Credenciales de acceso:</span>
-                    <div class="mt-0.5 text-gray-500 dark:text-slate-400 font-mono text-[11px]">
-                        admin@csalud.com | admin1234
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </x-guest-layout>
