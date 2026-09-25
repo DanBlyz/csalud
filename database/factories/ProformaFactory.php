@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Paciente;
 use App\Models\Proforma;
 use App\Models\Sucursal;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +19,6 @@ class ProformaFactory extends Factory
         return [
             'sucursal_id' => Sucursal::factory(),
             'paciente_id' => Paciente::factory(),
-            'medico_id' => User::factory(),
             'tipo_atencion' => fake()->randomElement(['Ambulatoria', 'Internacion']),
             'fecha_ingreso' => fake()->dateTimeBetween('-1 month', 'now'),
             'fecha_salida' => null,

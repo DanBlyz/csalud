@@ -109,9 +109,10 @@ class User extends Authenticatable
         return $this->permisos()->where('permisos.id', $permisoId)->exists();
     }
 
-    public function proformasComoMedico(): HasMany
+    public function proformasAtendidas(): BelongsToMany
     {
-        return $this->hasMany(Proforma::class, 'medico_id');
+        return $this->belongsToMany(Proforma::class, 'proforma_medicos', 'medico_id', 'proforma_id')
+            ->withTimestamps();
     }
 
     public function recetas(): HasMany

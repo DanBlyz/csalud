@@ -18,15 +18,20 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Sucursal Central Inicial
-        $sucursalId = DB::table('sucursales')->insertGetId([
-            'nombre' => 'Sede Central',
-            'direccion' => 'Av. de la Salud #123, Zona Central',
-            'telefono' => '4-4123456',
-            'ciudad' => 'Central',
-            'estado' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $sucursal = DB::table('sucursales')->where('nombre', 'Sede Central')->first();
+        if (! $sucursal) {
+            $sucursalId = DB::table('sucursales')->insertGetId([
+                'nombre' => 'Sede Central',
+                'direccion' => 'Av. de la Salud #123, Zona Central',
+                'telefono' => '4-4123456',
+                'ciudad' => 'Central',
+                'estado' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $sucursalId = $sucursal->id;
+        }
 
         // 2. Roles Principales
         $roles = [
@@ -40,24 +45,34 @@ class DatabaseSeeder extends Seeder
 
         $roleIds = [];
         foreach ($roles as $nombre => $descripcion) {
-            $roleIds[$nombre] = DB::table('roles')->insertGetId([
-                'nombre' => $nombre,
-                'descripcion' => $descripcion,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $rol = DB::table('roles')->where('nombre', $nombre)->first();
+            if (! $rol) {
+                $roleIds[$nombre] = DB::table('roles')->insertGetId([
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $roleIds[$nombre] = $rol->id;
+            }
         }
 
         // 3. Especialidades Médicas
         $especialidades = ['Medicina General', 'Pediatría', 'Ginecología', 'Traumatología', 'Cardiología'];
         $especialidadIds = [];
         foreach ($especialidades as $esp) {
-            $especialidadIds[$esp] = DB::table('especialidades')->insertGetId([
-                'nombre' => $esp,
-                'descripcion' => 'Especialidad médica de '.$esp,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $especialidad = DB::table('especialidades')->where('nombre', $esp)->first();
+            if (! $especialidad) {
+                $especialidadIds[$esp] = DB::table('especialidades')->insertGetId([
+                    'nombre' => $esp,
+                    'descripcion' => 'Especialidad médica de '.$esp,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $especialidadIds[$esp] = $especialidad->id;
+            }
         }
 
         // 4. Permisos del Sistema (IDs fijos para control de Middleware)
@@ -155,6 +170,26 @@ class DatabaseSeeder extends Seeder
         DB::table('proveedores')->insertOrIgnore([
             ['razon_social' => 'Droguería Inti S.A.', 'nit_ruc' => '1020304050', 'contacto_nombre' => 'Lic. Fernando Rojas', 'celular' => '71122334', 'created_at' => now(), 'updated_at' => now()],
             ['razon_social' => 'Distribuidora Médica Boliviana', 'nit_ruc' => '2030405060', 'contacto_nombre' => 'Dra. Patricia Lima', 'celular' => '72233445', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // 8. Servicios Iniciales
+        DB::table('servicios')->insertOrIgnore([
+            ['categoria_id' => 1, 'nombre' => 'Consulta Médica General', 'precio_tentativo' => 70.00, 'descripcion' => 'Evaluación clínica inicial por médico general', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['categoria_id' => 1, 'nombre' => 'Consulta Especializada', 'precio_tentativo' => 120.00, 'descripcion' => 'Atención por médico especialista', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['categoria_id' => 2, 'nombre' => 'Sutura Simple (1-3 puntos)', 'precio_tentativo' => 85.00, 'descripcion' => 'Afrontamiento de herida superficial con anestesia local', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['categoria_id' => 2, 'nombre' => 'Curación y Vendaje', 'precio_tentativo' => 45.00, 'descripcion' => 'Limpieza antiséptica y colocación de gasas', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['categoria_id' => 3, 'nombre' => 'Colocación de Vía / Suero EV', 'precio_tentativo' => 35.00, 'descripcion' => 'Canalización endovenosa y perfusión', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['categoria_id' => 3, 'nombre' => 'Inyección Intramuscular', 'precio_tentativo' => 20.00, 'descripcion' => 'Administración de medicamento por enfermería', 'estado' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // 9. Medicamentos e Insumos Iniciales
+        DB::table('productos')->insertOrIgnore([
+            ['marca_id' => 1, 'nombre' => 'Paracetamol 500mg (Comprimidos)', 'unidad_medida' => 'Caja x 20', 'ultimo_precio_venta' => 15.00, 'descripcion' => 'Analgésico y antipirético', 'stock_minimo' => 10, 'created_at' => now(), 'updated_at' => now()],
+            ['marca_id' => 2, 'nombre' => 'Ibuprofeno 400mg (Tabletas)', 'unidad_medida' => 'Caja x 10', 'ultimo_precio_venta' => 18.50, 'descripcion' => 'Antiinflamatorio no esteroideo', 'stock_minimo' => 10, 'created_at' => now(), 'updated_at' => now()],
+            ['marca_id' => 3, 'nombre' => 'Amoxicilina 500mg (Cápsulas)', 'unidad_medida' => 'Caja x 24', 'ultimo_precio_venta' => 32.00, 'descripcion' => 'Antibiótico betalactámico', 'stock_minimo' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['marca_id' => 4, 'nombre' => 'Jeringa Desechable 5ml c/ Aguja', 'unidad_medida' => 'Unidad', 'ultimo_precio_venta' => 3.50, 'descripcion' => 'Insumo descartable estéril', 'stock_minimo' => 50, 'created_at' => now(), 'updated_at' => now()],
+            ['marca_id' => 4, 'nombre' => 'Gasas Estériles 10x10 (Sobre)', 'unidad_medida' => 'Sobre x 5', 'ultimo_precio_venta' => 5.00, 'descripcion' => 'Material de curación estéril', 'stock_minimo' => 40, 'created_at' => now(), 'updated_at' => now()],
+            ['marca_id' => 1, 'nombre' => 'Solución Fisiológica 0.9% 500ml', 'unidad_medida' => 'Frasco', 'ultimo_precio_venta' => 16.00, 'descripcion' => 'Solución isotónica para perfusión', 'stock_minimo' => 25, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }

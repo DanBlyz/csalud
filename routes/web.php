@@ -6,6 +6,10 @@ use App\Livewire\Administracion\RolesIndex;
 use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
+use App\Livewire\Pacientes\PacientesIndex;
+use App\Livewire\Proformas\ProformaCrear;
+use App\Livewire\Proformas\ProformaDetalle;
+use App\Livewire\Proformas\ProformasIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -42,6 +46,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/servicios', ServiciosIndex::class)
             ->middleware('permiso:4')
             ->name('servicios');
+    });
+
+    // Módulo Pacientes
+    Route::get('/pacientes', PacientesIndex::class)
+        ->middleware('permiso:5')
+        ->name('pacientes.index');
+
+    // Módulo Proformas Clínicas
+    Route::prefix('proformas')->as('proformas.')->group(function () {
+        Route::get('/', ProformasIndex::class)
+            ->middleware('permiso:7')
+            ->name('index');
+
+        Route::get('/nueva', ProformaCrear::class)
+            ->middleware('permiso:6')
+            ->name('crear');
+
+        Route::get('/{proforma}', ProformaDetalle::class)
+            ->middleware('permiso:7')
+            ->name('show');
     });
 });
 

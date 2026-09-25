@@ -54,6 +54,38 @@
             <span class="ms-2">Dashboard</span>
         </a>
 
+        <!-- Section: ATENCIÓN CLÍNICA -->
+        <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Atención Clínica
+        </div>
+
+        <!-- Pacientes -->
+        <a 
+            href="{{ route('pacientes.index') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-user-injured w-5 text-sm {{ request()->routeIs('pacientes.*') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Directorio Pacientes</span>
+        </a>
+
+        <!-- Proformas / Admisión -->
+        <a 
+            href="{{ route('proformas.index') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-file-invoice-dollar w-5 text-sm {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'text-white' : 'text-blue-400' }}"></i>
+            <span class="ms-2">Proformas Clínicas</span>
+        </a>
+
+        <!-- Nueva Proforma (Admisión) -->
+        <a 
+            href="{{ route('proformas.crear') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.crear') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-plus-circle w-5 text-sm {{ request()->routeIs('proformas.crear') ? 'text-white' : 'text-indigo-400' }}"></i>
+            <span class="ms-2">Nueva Admisión</span>
+        </a>
+
         <!-- Section: SISTEMA -->
         <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Administración

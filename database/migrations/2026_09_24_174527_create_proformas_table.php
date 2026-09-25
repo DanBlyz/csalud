@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
             $table->foreignId('paciente_id')->constrained('pacientes')->cascadeOnDelete();
-            $table->foreignId('medico_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('tipo_atencion')->default('Ambulatoria'); // Ambulatoria, Internacion
             $table->dateTime('fecha_ingreso');
             $table->dateTime('fecha_salida')->nullable();

@@ -6,6 +6,7 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,7 +20,6 @@ class Proforma extends Model
     protected $fillable = [
         'sucursal_id',
         'paciente_id',
-        'medico_id',
         'tipo_atencion',
         'fecha_ingreso',
         'fecha_salida',
@@ -52,9 +52,10 @@ class Proforma extends Model
         return $this->belongsTo(Paciente::class, 'paciente_id');
     }
 
-    public function medico(): BelongsTo
+    public function medicos(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'medico_id');
+        return $this->belongsToMany(User::class, 'proforma_medicos', 'proforma_id', 'medico_id')
+            ->withTimestamps();
     }
 
     public function servicios(): HasMany
@@ -115,14 +116,45 @@ class Proforma extends Model
     }
 
     /**
-     * Recalcula el costo total sumando servicios y consumos extras.
+     * Total de salidas/despachos de farmacia efectivamente entregados para esta proforma.
+     */
+    public function totalDespachosFarmacia(): float
+    {
+        return (float) $this->movimientosInventario()
+            ->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
+            ->join('productos', 'movimientos_inventario.producto_id', '=', 'productos.id')
+            ->leftJoin('lotes', 'movimientos_inventario.lote_id', '=', 'lotes.id')
+            ->selectRaw('SUM(movimientos_inventario.cantidad * COALESCE(lotes.precio_venta, productos.ultimo_precio_venta, 0)) as total')
+            ->value('total');
+    }
+
+    /**
+     * Total referencial de medicamentos prescritos en la receta activa (indicación médica teórica).
+     * No se cobra de antemano al paciente; el cobro se liquida según los despachos reales de Farmacia.
+     */
+    public function totalPrescripcionReferencial(): float
+    {
+        if (! $this->recetaActiva) {
+            return 0.00;
+        }
+
+        return (float) $this->recetaActiva->detalles()
+            ->join('productos', 'receta_detalles.producto_id', '=', 'productos.id')
+            ->selectRaw('SUM(receta_detalles.cantidad * COALESCE(productos.ultimo_precio_venta, 0)) as total')
+            ->value('total');
+    }
+
+    /**
+     * Recalcula el costo total sumando servicios clínicos, consumos extras de piso y despachos reales de farmacia.
+     * La prescripción médica se mantiene como guía clínica referencial hasta su despacho efectivo.
      */
     public function recalcularTotal(): void
     {
         $totalServicios = (float) $this->servicios()->sum('costo_final');
         $totalConsumos = (float) $this->consumosExtras()->selectRaw('SUM(cantidad * COALESCE(precio_unitario, 0)) as total')->value('total');
+        $totalFarmacia = $this->totalDespachosFarmacia();
 
-        $this->costo_total = $totalServicios + $totalConsumos;
+        $this->costo_total = $totalServicios + $totalConsumos + $totalFarmacia;
         $this->saveQuietly();
     }
 }

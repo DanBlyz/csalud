@@ -53,4 +53,14 @@ class Paciente extends Model
             get: fn (): string => trim("{$this->nombres} {$this->apellido_paterno} {$this->apellido_materno}")
         );
     }
+
+    /**
+     * Edad calculada del paciente en años.
+     */
+    protected function edad(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?int => $this->fecha_nacimiento ? $this->fecha_nacimiento->age : null
+        );
+    }
 }
