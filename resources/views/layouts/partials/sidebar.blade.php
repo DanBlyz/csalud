@@ -86,6 +86,47 @@
             <span class="ms-2">Nueva Admisión</span>
         </a>
 
+        <!-- Section: FARMACIA E INVENTARIO -->
+        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Farmacia e Inventario
+        </div>
+
+        <!-- Despacho de Recetas -->
+        <a 
+            href="{{ route('farmacia.despachos') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.despachos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-hand-holding-medical w-5 text-sm {{ request()->routeIs('farmacia.despachos') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Despacho de Recetas</span>
+        </a>
+
+        <!-- Catálogo de Medicamentos e Insumos -->
+        <a 
+            href="{{ route('farmacia.productos') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.productos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-pills w-5 text-sm {{ request()->routeIs('farmacia.productos') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Catálogo de Fármacos</span>
+        </a>
+
+        <!-- Control de Lotes y Abastecimiento -->
+        <a 
+            href="{{ route('farmacia.lotes') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.lotes') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-boxes w-5 text-sm {{ request()->routeIs('farmacia.lotes') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Lotes y Stock</span>
+        </a>
+
+        <!-- Kardex y Movimientos -->
+        <a 
+            href="{{ route('farmacia.movimientos') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.movimientos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-clipboard-list w-5 text-sm {{ request()->routeIs('farmacia.movimientos') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Kardex de Movimientos</span>
+        </a>
+
         <!-- Section: SISTEMA -->
         <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Administración

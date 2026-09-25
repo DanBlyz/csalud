@@ -73,4 +73,74 @@ class Lote extends Model
     {
         return $this->hasMany(MovimientoInventario::class, 'lote_id');
     }
+
+    /**
+     * Días enteros restantes para el vencimiento (positivo: faltan días, 0: hoy, negativo: ya venció).
+     */
+    public function diasParaVencer(): ?int
+    {
+        if (! $this->fecha_vencimiento) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->fecha_vencimiento->startOfDay(), false);
+    }
+
+    /**
+     * Comprueba si el lote ya expiró.
+     */
+    public function isVencido(): bool
+    {
+        $dias = $this->diasParaVencer();
+
+        return $dias !== null && $dias < 0;
+    }
+
+    /**
+     * Comprueba si el lote vence próximamente dentro del umbral en días (por defecto 60).
+     */
+    public function isPorVencer(int $umbral = 60): bool
+    {
+        $dias = $this->diasParaVencer();
+
+        return $dias !== null && $dias >= 0 && $dias <= $umbral;
+    }
+
+    /**
+     * Comprueba si el lote está vigente y fuera del periodo de alerta.
+     */
+    public function isVigente(int $umbral = 60): bool
+    {
+        $dias = $this->diasParaVencer();
+
+        return $dias === null || $dias > $umbral;
+    }
+
+    /**
+     * Texto legible formateado para la interfaz sobre el tiempo restante o transcurrido.
+     */
+    public function textoVencimiento(): string
+    {
+        $dias = $this->diasParaVencer();
+
+        if ($dias === null) {
+            return 'No perecedero';
+        }
+
+        if ($dias < 0) {
+            $abs = abs($dias);
+
+            return $abs === 1 ? 'Venció ayer' : "Venció hace {$abs} días";
+        }
+
+        if ($dias === 0) {
+            return 'Vence hoy';
+        }
+
+        if ($dias === 1) {
+            return 'Vence mañana (1 día)';
+        }
+
+        return "Vence en {$dias} días";
+    }
 }

@@ -47,7 +47,7 @@ class Producto extends Model
     }
 
     /**
-     * Lotes con stock disponible ordenados por fecha de vencimiento (FEFO).
+     * Lotes con stock disponible ordenados por fecha de vencimiento.
      */
     public function lotesDisponibles(): HasMany
     {

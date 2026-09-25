@@ -6,6 +6,10 @@ use App\Livewire\Administracion\RolesIndex;
 use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
+use App\Livewire\Farmacia\DespachosIndex;
+use App\Livewire\Farmacia\LotesIndex;
+use App\Livewire\Farmacia\MovimientosIndex;
+use App\Livewire\Farmacia\ProductosIndex;
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
 use App\Livewire\Proformas\ProformaDetalle;
@@ -66,6 +70,25 @@ Route::middleware('auth')->group(function () {
         Route::get('/{proforma}', ProformaDetalle::class)
             ->middleware('permiso:7')
             ->name('show');
+    });
+
+    // Módulo Farmacia e Inventario
+    Route::prefix('farmacia')->as('farmacia.')->group(function () {
+        Route::get('/productos', ProductosIndex::class)
+            ->middleware('permiso:9')
+            ->name('productos');
+
+        Route::get('/lotes', LotesIndex::class)
+            ->middleware('permiso:9')
+            ->name('lotes');
+
+        Route::get('/despachos', DespachosIndex::class)
+            ->middleware('permiso:9')
+            ->name('despachos');
+
+        Route::get('/movimientos', MovimientosIndex::class)
+            ->middleware('permiso:9')
+            ->name('movimientos');
     });
 });
 
