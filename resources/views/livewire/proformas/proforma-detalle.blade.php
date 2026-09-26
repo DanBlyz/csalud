@@ -297,6 +297,19 @@
                     {{ $proforma->consumosExtras->count() }}
                 </span>
             </button>
+
+            <!-- 6. Despachos de Farmacia -->
+            <button 
+                wire:click="cambiarTab('despachos')" 
+                type="button" 
+                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'despachos' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+            >
+                <i class="fas fa-dolly-flatbed text-xs"></i>
+                <span>Despachos de Farmacia</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                    {{ $movimientosDespacho->count() }}
+                </span>
+            </button>
         </div>
 
         <!-- CONTENIDO DEL TAB SELECCIONADO -->
@@ -927,6 +940,170 @@
                     </div>
                 </div>
             @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 6: DESPACHOS Y ENTREGAS DE FARMACIA -->
+            <!-- =================================================================== -->
+            @if ($tab === 'despachos')
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-dolly-flatbed text-emerald-600 dark:text-emerald-400"></i>
+                                Historial de Despachos y Entregas de Farmacia
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Control de medicamentos e insumos dispensados físicamente con descuento en tiempo real del stock de inventario.</p>
+                        </div>
+                        <button 
+                            wire:click="abrirModalDespacho" 
+                            wire:loading.attr="disabled"
+                            type="button" 
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                        >
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Realizar Despacho</span>
+                        </button>
+                    </div>
+
+                    <!-- Resumen rápido de despachos -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Total Entregas Realizadas</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-base font-mono font-bold text-slate-800 dark:text-slate-100">
+                                    {{ $movimientosDespacho->count() }} ítems
+                                </span>
+                                <i class="fas fa-dolly text-emerald-500/80"></i>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Valor Total Dispensado</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-base font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                    Bs. {{ number_format($subtotalFarmacia, 2) }}
+                                </span>
+                                <i class="fas fa-receipt text-emerald-500/80"></i>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Estado de Prescripción</span>
+                            <div class="flex items-center justify-between">
+                                @if ($proforma->recetaActiva)
+                                    <span class="text-xs font-bold text-teal-600 dark:text-teal-400">
+                                        Receta #{{ $proforma->recetaActiva->id }} ({{ $proforma->recetaActiva->detalles->count() }} fármacos)
+                                    </span>
+                                @else
+                                    <span class="text-xs text-slate-400 italic">Sin receta activa</span>
+                                @endif
+                                <i class="fas fa-prescription text-teal-500/80"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Despachos -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                <tr>
+                                    <th class="py-3 px-4 w-12 text-center">#</th>
+                                    <th class="py-3 px-4">Fecha y Hora</th>
+                                    <th class="py-3 px-4 text-center">Tipo de Salida</th>
+                                    <th class="py-3 px-4">Medicamento / Insumo</th>
+                                    <th class="py-3 px-4">Lote & Vencimiento</th>
+                                    <th class="py-3 px-4 text-center">Cantidad</th>
+                                    <th class="py-3 px-4 text-right">Subtotal Estimado</th>
+                                    <th class="py-3 px-4 text-center">Receta</th>
+                                    <th class="py-3 px-4">Dispensado Por</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                @forelse ($movimientosDespacho as $idx => $mov)
+                                    @php
+                                        $precioUnit = (float) ($mov->lote?->precio_venta ?? $mov->producto?->ultimo_precio_venta ?? 0);
+                                        $subtotalMov = $mov->cantidad * $precioUnit;
+                                    @endphp
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
+                                        <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                                            {{ $mov->created_at?->format('d/m/Y H:i') }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            @if ($mov->tipo_movimiento === 'Salida Receta')
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-900/50">
+                                                    <i class="fas fa-prescription text-[9px]"></i> Receta Médica
+                                                </span>
+                                            @elseif ($mov->tipo_movimiento === 'Consumo Extra')
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50">
+                                                    <i class="fas fa-box-open text-[9px]"></i> Insumo Extra
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+                                                    <i class="fas fa-pills text-[9px]"></i> {{ $mov->tipo_movimiento }}
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="font-bold text-slate-900 dark:text-white text-xs">
+                                                {{ $mov->producto->nombre ?? 'Producto no encontrado' }}
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 mt-0.5">
+                                                {{ $mov->producto->unidad_medida ?? 'Unidad' }}
+                                                @if ($mov->producto?->marca)
+                                                    • {{ $mov->producto->marca->nombre }}
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="font-mono font-bold text-slate-700 dark:text-slate-300 text-xs">
+                                                {{ $mov->lote?->codigo_lote ?? 'S/L' }}
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 font-mono">
+                                                Vto: {{ $mov->lote?->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                            {{ $mov->cantidad }}
+                                        </td>
+                                        <td class="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
+                                            <div class="font-bold">Bs. {{ number_format($subtotalMov, 2) }}</div>
+                                            <div class="text-[10px] text-slate-400">@ Bs. {{ number_format($precioUnit, 2) }}</div>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            @if ($mov->receta_id)
+                                                <span class="font-mono text-xs font-bold text-teal-600 dark:text-teal-400">
+                                                    #{{ $mov->receta_id }}
+                                                </span>
+                                            @else
+                                                <span class="text-slate-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
+                                            {{ $mov->usuario?->nombre_completo ?? $mov->user?->nombre_completo ?? 'Personal de Farmacia' }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="9" class="py-12 px-4 text-center text-slate-400">
+                                            <i class="fas fa-dolly-flatbed text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                            <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado despachos de farmacia ni consumos para esta proforma.</p>
+                                            <p class="text-xs text-slate-400 mt-0.5">Puede dispensar los medicamentos de la receta activa o cargar insumos extras directamente.</p>
+                                            <button 
+                                                wire:click="abrirModalDespacho" 
+                                                type="button" 
+                                                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer shadow-md shadow-emerald-500/20"
+                                            >
+                                                <i class="fas fa-plus-circle"></i> Realizar Primer Despacho
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -1057,19 +1234,81 @@
                     <form wire:submit="agregarServicio" class="p-6 space-y-4">
                         <!-- Selector y Datos del Servicio -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
-                            <div>
-                                <label for="nuevo_servicio_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Procedimiento / Servicio del Catálogo
-                                </label>
-                                <select id="nuevo_servicio_id" wire:model.live="nuevo_servicio_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 p-2.5 shadow-2xs">
-                                    <option value="">-- Seleccionar Procedimiento --</option>
-                                    @foreach ($serviciosDisponibles as $serv)
-                                        <option value="{{ $serv->id }}">
-                                            {{ $serv->nombre }} ({{ $serv->categoria->nombre ?? 'General' }}) - Sugerido: Bs. {{ number_format($serv->precio_tentativo, 2) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <!-- Buscador reactivo de Servicio o Ficha de Selección -->
+                            @if ($nuevo_servicio_id && $servicioSeleccionado)
+                                <div class="p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-indigo-900 dark:text-indigo-200">
+                                                {{ $servicioSeleccionado->nombre }}
+                                            </div>
+                                            <div class="text-[11px] text-indigo-600 dark:text-indigo-400">
+                                                Categoría: {{ $servicioSeleccionado->categoria->nombre ?? 'General' }} • Ref: Bs. {{ number_format($servicioSeleccionado->precio_tentativo, 2) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        wire:click="limpiarServicioSeleccionado" 
+                                        class="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                    >
+                                        <i class="fas fa-times me-1"></i> Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Buscar Procedimiento / Servicio
+                                    </label>
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.250ms="buscarServicio" 
+                                            placeholder="Escriba para buscar por nombre o categoría..." 
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                                        >
+                                        @if ($buscarServicio)
+                                            <button type="button" wire:click="$set('buscarServicio', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    <!-- Lista reactiva de coincidencias -->
+                                    <div class="max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg divide-y divide-slate-100 dark:divide-slate-700/60">
+                                        @forelse ($serviciosFiltrados as $serv)
+                                            <button 
+                                                type="button" 
+                                                wire:click="seleccionarServicio({{ $serv->id }})" 
+                                                class="w-full text-left p-2.5 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-colors flex items-center justify-between group cursor-pointer"
+                                            >
+                                                <div>
+                                                    <div class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                                        {{ $serv->nombre }}
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-400">
+                                                        {{ $serv->categoria->nombre ?? 'General' }}
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                                        Bs. {{ number_format($serv->precio_tentativo, 2) }}
+                                                    </span>
+                                                    <span class="block text-[10px] text-slate-400">sugerido</span>
+                                                </div>
+                                            </button>
+                                        @empty
+                                            <div class="p-3 text-center text-xs text-slate-400">
+                                                <i class="fas fa-search me-1"></i> No se encontraron procedimientos coincidentes.
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
@@ -1507,15 +1746,61 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                            <div class="sm:col-span-2">
-                                                <select wire:model="receta_medicamentos.{{ $index }}.producto_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2">
-                                                    <option value="">-- Seleccionar Medicamento --</option>
-                                                    @foreach ($productosDisponibles as $prod)
-                                                        <option value="{{ $prod->id }}">{{ $prod->nombre }} ({{ $prod->unidad_medida }})</option>
-                                                    @endforeach
-                                                </select>
-                                                @error("receta_medicamentos.{$index}.producto_id") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
-                                            </div>
+                                            @if (! empty($item['producto_id']))
+                                                <div class="sm:col-span-2">
+                                                    <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
+                                                        <div class="flex items-center gap-2 truncate">
+                                                            <i class="fas fa-pills text-teal-600 text-xs shrink-0"></i>
+                                                            <span class="text-xs font-bold text-teal-900 dark:text-teal-200 truncate">
+                                                                {{ $item['producto_nombre'] ?? 'Medicamento' }}
+                                                            </span>
+                                                            <span class="text-[11px] text-teal-600 dark:text-teal-400 font-medium shrink-0">
+                                                                ({{ $item['unidad_medida'] ?? 'Unidad' }})
+                                                            </span>
+                                                        </div>
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="limpiarMedicamentoReceta({{ $index }})" 
+                                                            class="text-rose-500 hover:text-rose-700 text-[11px] font-bold cursor-pointer shrink-0 ms-2"
+                                                        >
+                                                            <i class="fas fa-times me-0.5"></i> Cambiar
+                                                        </button>
+                                                    </div>
+                                                    @error("receta_medicamentos.{$index}.producto_id") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
+                                                </div>
+                                            @else
+                                                <div class="sm:col-span-2 relative">
+                                                    <div class="relative">
+                                                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                                        <input 
+                                                            type="text" 
+                                                            wire:model.live.debounce.250ms="receta_medicamentos.{{ $index }}.busqueda" 
+                                                            placeholder="Escriba para buscar medicamento..." 
+                                                            class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500"
+                                                        >
+                                                    </div>
+
+                                                    @if (! empty($sugerenciasMedicamentosReceta[$index]) && count($sugerenciasMedicamentosReceta[$index]) > 0)
+                                                        <div class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl divide-y divide-slate-100 dark:divide-slate-700/60 z-20">
+                                                            @foreach ($sugerenciasMedicamentosReceta[$index] as $sug)
+                                                                <button 
+                                                                    type="button" 
+                                                                    wire:click="seleccionarMedicamentoReceta({{ $index }}, {{ $sug->id }})" 
+                                                                    class="w-full text-left p-2 hover:bg-teal-50/70 dark:hover:bg-teal-950/40 text-xs flex items-center justify-between cursor-pointer"
+                                                                >
+                                                                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ $sug->nombre }}</span>
+                                                                    <span class="text-[10px] text-slate-400">{{ $sug->unidad_medida }}</span>
+                                                                </button>
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif(! empty($item['busqueda']) && strlen(trim($item['busqueda'])) >= 2)
+                                                        <div class="absolute left-0 right-0 mt-1 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-400 z-20">
+                                                            Sin resultados para "{{ $item['busqueda'] }}"
+                                                        </div>
+                                                    @endif
+                                                    @error("receta_medicamentos.{$index}.producto_id") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
+                                                </div>
+                                            @endif
 
                                             <div>
                                                 <input type="number" min="1" wire:model="receta_medicamentos.{{ $index }}.cantidad" placeholder="Cant." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 text-center">
@@ -1574,20 +1859,81 @@
 
                     <form wire:submit="registrarConsumoExtra" class="p-6 space-y-4">
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
-                            <div>
-                                <label for="consumo_producto_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Insumo / Material Descartable
-                                </label>
-                                <select id="consumo_producto_id" wire:model.live="consumo_producto_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 p-2.5 shadow-2xs @error('consumo_producto_id') border-rose-500 @enderror">
-                                    <option value="">-- Seleccione Insumo --</option>
-                                    @foreach ($productosDisponibles as $prod)
-                                        <option value="{{ $prod->id }}">
-                                            {{ $prod->nombre }} ({{ $prod->unidad_medida }}) - Bs. {{ number_format($prod->ultimo_precio_venta, 2) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('consumo_producto_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
-                            </div>
+                            <!-- Buscador reactivo de Insumo / Material o Ficha de Selección -->
+                            @if ($consumo_producto_id && $productoConsumoSeleccionado)
+                                <div class="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-amber-900 dark:text-amber-200">
+                                                {{ $productoConsumoSeleccionado->nombre }}
+                                            </div>
+                                            <div class="text-[11px] text-amber-600 dark:text-amber-400">
+                                                Unidad: {{ $productoConsumoSeleccionado->unidad_medida ?? 'Unidad' }} • Precio Sugerido: Bs. {{ number_format($productoConsumoSeleccionado->ultimo_precio_venta, 2) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        wire:click="limpiarInsumoConsumo" 
+                                        class="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                    >
+                                        <i class="fas fa-times me-1"></i> Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                        Buscar Insumo / Material Descartable
+                                    </label>
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.250ms="buscarInsumoConsumo" 
+                                            placeholder="Escriba para buscar por nombre o descripción..." 
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                                        >
+                                        @if ($buscarInsumoConsumo)
+                                            <button type="button" wire:click="$set('buscarInsumoConsumo', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    <!-- Resultados reactivos de insumos -->
+                                    <div class="max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg divide-y divide-slate-100 dark:divide-slate-700/60">
+                                        @forelse ($productosParaConsumo as $pCons)
+                                            <button 
+                                                type="button" 
+                                                wire:click="seleccionarInsumoConsumo({{ $pCons->id }})" 
+                                                class="w-full text-left p-2.5 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition-colors flex items-center justify-between group cursor-pointer"
+                                            >
+                                                <div>
+                                                    <div class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                                                        {{ $pCons->nombre }}
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-400">
+                                                        {{ $pCons->unidad_medida }} • {{ $pCons->marca?->nombre ?? 'Genérico' }}
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+                                                        Bs. {{ number_format($pCons->ultimo_precio_venta, 2) }}
+                                                    </span>
+                                                    <span class="block text-[10px] text-slate-400">precio venta</span>
+                                                </div>
+                                            </button>
+                                        @empty
+                                            <div class="p-3 text-center text-xs text-slate-400">
+                                                <i class="fas fa-search me-1"></i> No se encontraron insumos hospitalarios.
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
@@ -1682,6 +2028,339 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ======================================================================= -->
+    <!-- MODAL 7: DISPENSACIÓN Y DESPACHO DE FARMACIA DIRECTO EN PROFORMA -->
+    <!-- ======================================================================= -->
+    @if ($modalDespachoProformaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl max-h-[90vh] flex flex-col">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-dolly-flatbed text-emerald-600 dark:text-emerald-400"></i>
+                                Dispensación y Despacho de Farmacia
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Paciente: <strong class="text-slate-700 dark:text-slate-200">{{ $proforma->paciente->nombre_completo }}</strong> • Proforma #{{ $proforma->id }}
+                            </p>
+                        </div>
+                        <button wire:click="cerrarModalDespacho" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body con scroll -->
+                    <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                        <!-- SECCIÓN 1: FÁRMACOS DE LA RECETA ACTIVA -->
+                        <div>
+                            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-200 dark:border-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center text-xs">1</span>
+                                    <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                                        Medicamentos Prescritos
+                                        @if ($proforma->recetaActiva)
+                                            <span class="text-teal-600 dark:text-teal-400 font-mono font-normal text-xs">(Receta #{{ $proforma->recetaActiva->id }})</span>
+                                        @endif
+                                    </h4>
+                                </div>
+                                @if ($proforma->recetaActiva)
+                                    <span class="text-[11px] text-slate-400">
+                                        Prescrita por: Dr(a). {{ $proforma->recetaActiva->doctor?->nombre_completo ?? 'Médico Tratante' }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if (! $proforma->recetaActiva)
+                                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-center">
+                                    <i class="fas fa-info-circle text-base text-slate-400 mb-1 block"></i>
+                                    Esta proforma no cuenta actualmente con una receta médica activa. Puede dispensar insumos y medicamentos extras en la siguiente sección.
+                                </div>
+                            @elseif (empty($despachosItems))
+                                <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-center font-medium">
+                                    <i class="fas fa-check-circle text-base text-emerald-600 mb-1 block"></i>
+                                    Todos los fármacos prescritos en esta receta ya han sido despachados en su totalidad.
+                                </div>
+                            @else
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <table class="w-full text-left">
+                                        <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                            <tr>
+                                                <th class="py-2.5 px-3">Medicamento</th>
+                                                <th class="py-2.5 px-3 text-center">Prescrito</th>
+                                                <th class="py-2.5 px-3 text-center">Entregado</th>
+                                                <th class="py-2.5 px-3 text-center">Saldo</th>
+                                                <th class="py-2.5 px-3">Lote a Descargar</th>
+                                                <th class="py-2.5 px-3 text-center w-28">A Despachar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                            @foreach ($despachosItems as $detId => $item)
+                                                <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                                                    <td class="py-2.5 px-3">
+                                                        <div class="font-bold text-slate-800 dark:text-slate-200">{{ $item['producto_nombre'] }}</div>
+                                                        <div class="text-[11px] text-slate-400 mt-0.5">{{ $item['indicaciones'] }}</div>
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center font-mono font-medium">{{ $item['cantidad_prescrita'] }}</td>
+                                                    <td class="py-2.5 px-3 text-center font-mono text-slate-400">{{ $item['despachadas_previas'] }}</td>
+                                                    <td class="py-2.5 px-3 text-center font-mono font-bold text-teal-600 dark:text-teal-400">
+                                                        {{ $item['saldo_pendiente'] }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3">
+                                                        @php
+                                                            $lotesDisp = $lotesDisponiblesPorItem[$detId] ?? collect();
+                                                        @endphp
+                                                        @if ($lotesDisp->isEmpty())
+                                                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-900/50">
+                                                                <i class="fas fa-times-circle"></i> Sin stock disponible
+                                                            </span>
+                                                        @else
+                                                            <select 
+                                                                wire:model.live="despachosItems.{{ $detId }}.lote_id"
+                                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-1.5 focus:ring-2 focus:ring-teal-500"
+                                                            >
+                                                                @foreach ($lotesDisp as $lt)
+                                                                    <option value="{{ $lt->id }}">
+                                                                        Lote: {{ $lt->codigo_lote }} (Stock: {{ $lt->cantidad_actual }} {{ $item['unidad_medida'] }}) - Vto: {{ $lt->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center">
+                                                        <input 
+                                                            type="number" 
+                                                            min="0" 
+                                                            max="{{ $item['saldo_pendiente'] }}"
+                                                            wire:model.live="despachosItems.{{ $detId }}.cantidad_despachar"
+                                                            class="w-20 text-xs font-mono font-bold text-center rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-1.5 focus:ring-2 focus:ring-teal-500"
+                                                            {{ empty($lotesDisp) || $lotesDisp->isEmpty() || $item['saldo_pendiente'] <= 0 ? 'disabled' : '' }}
+                                                        >
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- SECCIÓN 2: INSUMOS Y MEDICAMENTOS ADICIONALES / EXTRAS -->
+                        <div>
+                            <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-200 dark:border-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 font-bold flex items-center justify-center text-xs">2</span>
+                                    <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                                        Insumos y Medicamentos Adicionales / Extras
+                                    </h4>
+                                </div>
+                                <span class="text-[11px] text-slate-400">
+                                    Salida directa de piso o botiquín de farmacia
+                                </span>
+                            </div>
+
+                            <!-- Selector reactivo de insumo extra -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                                @if ($despacho_extra_producto_id && $productoDespachoExtraSeleccionado)
+                                    <!-- Insumo seleccionado -->
+                                    <div class="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            <div>
+                                                <span class="font-bold text-slate-800 dark:text-slate-100 text-xs">
+                                                    {{ $productoDespachoExtraSeleccionado->nombre }}
+                                                </span>
+                                                <span class="text-[11px] text-amber-700 dark:text-amber-300 block">
+                                                    {{ $productoDespachoExtraSeleccionado->unidad_medida }} • {{ $productoDespachoExtraSeleccionado->marca?->nombre ?? 'Genérico' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            wire:click="limpiarDespachoExtraProducto"
+                                            class="px-2 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                        >
+                                            <i class="fas fa-times me-0.5"></i> Cambiar
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        <!-- Selector de Lote del Extra -->
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                                Lote con Stock Disponible <span class="text-rose-500">*</span>
+                                            </label>
+                                            <select 
+                                                wire:model.live="despacho_extra_lote_id" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-amber-500"
+                                            >
+                                                @forelse ($lotesParaDespachoExtra as $ltExtra)
+                                                    <option value="{{ $ltExtra->id }}">
+                                                        Lote: {{ $ltExtra->codigo_lote }} (Disp: {{ $ltExtra->cantidad_actual }}) - Vto: {{ $ltExtra->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }} - Bs. {{ number_format($ltExtra->precio_venta ?? $productoDespachoExtraSeleccionado->ultimo_precio_venta ?? 0, 2) }}
+                                                    </option>
+                                                @empty
+                                                    <option value="">Sin lotes con stock en esta sucursal</option>
+                                                @endforelse
+                                            </select>
+                                        </div>
+
+                                        <!-- Cantidad Extra -->
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                                Cantidad <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                min="1" 
+                                                wire:model.live="despacho_extra_cantidad" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 text-center font-bold focus:ring-2 focus:ring-amber-500"
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                            Observaciones de Uso
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            wire:model="despacho_extra_observaciones" 
+                                            placeholder="Ej. Curación adicional de herida quirúrgica..." 
+                                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-amber-500"
+                                        >
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button 
+                                            type="button" 
+                                            wire:click="agregarDespachoExtraItem"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Añadir a Lista de Despacho</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <!-- Buscador reactivo de insumos con stock -->
+                                    <div class="space-y-1.5">
+                                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Buscar Insumo o Medicamento Extra (con stock en sucursal)
+                                        </label>
+                                        <div class="relative">
+                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                            <input 
+                                                type="text" 
+                                                wire:model.live.debounce.250ms="buscarDespachoExtraProducto" 
+                                                placeholder="Escriba para buscar medicamento o insumo con existencias..." 
+                                                class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                                            >
+                                            @if ($buscarDespachoExtraProducto)
+                                                <button type="button" wire:click="$set('buscarDespachoExtraProducto', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        <div class="max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md divide-y divide-slate-100 dark:divide-slate-700/60">
+                                            @forelse ($productosParaDespachoExtras as $pExt)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="seleccionarDespachoExtraProducto({{ $pExt->id }})" 
+                                                    class="w-full text-left p-2.5 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition-colors flex items-center justify-between group cursor-pointer"
+                                                >
+                                                    <div>
+                                                        <span class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 block">
+                                                            {{ $pExt->nombre }}
+                                                        </span>
+                                                        <span class="text-[11px] text-slate-400">
+                                                            {{ $pExt->unidad_medida }} • {{ $pExt->marca?->nombre ?? 'Genérico' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                            {{ $pExt->lotes->sum('cantidad_actual') }} en stock
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            @empty
+                                                <div class="p-3 text-center text-xs text-slate-400">
+                                                    No se encontraron productos con existencias disponibles en esta sucursal.
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Lista de Extras en Cola para Despacho -->
+                            @if (! empty($despachosExtrasItems))
+                                <div class="mt-3 space-y-1.5">
+                                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                                        Insumos extras a incluir en este despacho ({{ count($despachosExtrasItems) }}):
+                                    </span>
+                                    <div class="max-h-36 overflow-y-auto space-y-1 rounded-xl border border-slate-200 dark:border-slate-800 p-2 bg-slate-50/50 dark:bg-slate-850/50">
+                                        @foreach ($despachosExtrasItems as $idx => $ex)
+                                            <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                                                <div>
+                                                    <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                                        <span class="text-amber-600 font-mono">{{ $ex['cantidad'] }}x</span>
+                                                        <span>{{ $ex['producto_nombre'] }}</span>
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-400">
+                                                        Lote: {{ $ex['lote_codigo'] }} • Vto: {{ $ex['lote_vencimiento'] }}
+                                                        @if ($ex['observaciones'])
+                                                            • <em>{{ $ex['observaciones'] }}</em>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="font-mono font-bold text-amber-600">Bs. {{ number_format($ex['subtotal'], 2) }}</span>
+                                                    <button type="button" wire:click="eliminarDespachoExtraItem({{ $idx }})" class="text-slate-400 hover:text-rose-600 p-1">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                        <button 
+                            type="button" 
+                            wire:click="cerrarModalDespacho" 
+                            class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button 
+                            type="button" 
+                            wire:click="procesarDespacho" 
+                            wire:loading.attr="disabled"
+                            wire:target="procesarDespacho"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            <span wire:loading.remove wire:target="procesarDespacho">
+                                <i class="fas fa-check-circle me-1"></i> Confirmar y Despachar
+                            </span>
+                            <span wire:loading wire:target="procesarDespacho">
+                                <i class="fas fa-spinner fa-spin me-1"></i> Descontando Kardex...
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

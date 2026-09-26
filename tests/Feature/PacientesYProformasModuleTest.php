@@ -14,6 +14,7 @@ use App\Models\ProformaCalendario;
 use App\Models\ProformaServicio;
 use App\Models\ProformaSolicitud;
 use App\Models\Receta;
+use App\Models\RecetaDetalle;
 use App\Models\Rol;
 use App\Models\Servicio;
 use App\Models\Sucursal;
@@ -509,4 +510,175 @@ test('puede subir y actualizar el archivo digital de una solicitud en proforma d
     expect($solicitudFinal->archivo)->not->toBe($archivoViejo);
     Storage::disk('public')->assertExists($solicitudFinal->archivo);
     Storage::disk('public')->assertMissing($archivoViejo); // El archivo viejo fue limpiado
+});
+
+test('puede buscar y seleccionar reactivamente en modales de servicios, recetas y consumos de proforma detalle', function () {
+    $paciente = Paciente::create([
+        'nombres' => 'Elena',
+        'apellido_paterno' => 'Torres',
+        'cedula' => '99887766',
+        'fecha_nacimiento' => '1995-04-12',
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'tipo_atencion' => 'Ambulatoria',
+        'fecha_ingreso' => now(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $categoria = Categoria::firstOrCreate(['nombre' => 'Cirugía Menor'], ['estado' => true]);
+    $servicio = Servicio::firstOrCreate(
+        ['nombre' => 'Sutura Simple'],
+        ['categoria_id' => $categoria->id, 'precio_tentativo' => 120.00, 'estado' => true]
+    );
+
+    $productoMed = Producto::firstOrCreate(
+        ['nombre' => 'Amoxicilina 500mg'],
+        ['ultimo_precio_venta' => 20.00, 'stock_minimo' => 5, 'unidad_medida' => 'Cápsula']
+    );
+
+    $productoInsumo = Producto::firstOrCreate(
+        ['nombre' => 'Gasa Estéril 10x10'],
+        ['ultimo_precio_venta' => 4.50, 'stock_minimo' => 20, 'unidad_medida' => 'Paquete']
+    );
+
+    // 1. Selector reactivo de Servicios
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalServicio')
+        ->set('buscarServicio', 'Sutura')
+        ->call('seleccionarServicio', $servicio->id)
+        ->assertSet('nuevo_servicio_id', $servicio->id)
+        ->assertSet('nuevo_servicio_costo', '120.00')
+        ->call('limpiarServicioSeleccionado')
+        ->assertSet('nuevo_servicio_id', null)
+        ->assertSet('nuevo_servicio_costo', '0.00');
+
+    // 2. Selector reactivo de Recetas (por fila)
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalReceta')
+        ->call('seleccionarMedicamentoReceta', 0, $productoMed->id)
+        ->assertSet('receta_medicamentos.0.producto_id', $productoMed->id)
+        ->assertSet('receta_medicamentos.0.producto_nombre', $productoMed->nombre)
+        ->call('limpiarMedicamentoReceta', 0)
+        ->assertSet('receta_medicamentos.0.producto_id', '');
+
+    // 3. Selector reactivo de Consumos Extras
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalConsumo')
+        ->set('buscarInsumoConsumo', 'Gasa')
+        ->call('seleccionarInsumoConsumo', $productoInsumo->id)
+        ->assertSet('consumo_producto_id', $productoInsumo->id)
+        ->assertSet('consumo_precio_unitario', '4.50')
+        ->call('limpiarInsumoConsumo')
+        ->assertSet('consumo_producto_id', null)
+        ->assertSet('consumo_precio_unitario', '0.00');
+});
+
+test('puede visualizar pestaña de despachos y realizar despacho de farmacia directo desde proforma detalle', function () {
+    $paciente = Paciente::create([
+        'nombres' => 'Carlos',
+        'apellido_paterno' => 'Montes',
+        'cedula' => '55443322',
+        'fecha_nacimiento' => '1988-11-20',
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'tipo_atencion' => 'Internacion',
+        'fecha_ingreso' => now(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $med = Producto::firstOrCreate(
+        ['nombre' => 'Ketorolaco 30mg Ampolla'],
+        ['ultimo_precio_venta' => 25.00, 'stock_minimo' => 5, 'unidad_medida' => 'Ampolla']
+    );
+
+    $insumo = Producto::firstOrCreate(
+        ['nombre' => 'Jeringa 5ml con aguja'],
+        ['ultimo_precio_venta' => 3.00, 'stock_minimo' => 50, 'unidad_medida' => 'Pieza']
+    );
+
+    $loteMed = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $med->id,
+        'codigo_lote' => 'LOTE-KETO-001',
+        'cantidad_ingresada' => 20,
+        'cantidad_actual' => 20,
+        'precio_compra' => 10.00,
+        'precio_venta' => 25.00,
+        'fecha_vencimiento' => now()->addMonths(6),
+    ]);
+
+    $loteInsumo = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $insumo->id,
+        'codigo_lote' => 'LOTE-JER-002',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'precio_compra' => 1.50,
+        'precio_venta' => 3.00,
+        'fecha_vencimiento' => now()->addMonths(12),
+    ]);
+
+    // Crear receta activa
+    $receta = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->admin->id,
+        'activo' => true,
+        'observaciones' => 'Tratamiento del dolor postquirúrgico',
+    ]);
+
+    $detalleReceta = RecetaDetalle::create([
+        'receta_id' => $receta->id,
+        'producto_id' => $med->id,
+        'cantidad' => 2,
+        'indicaciones' => '1 ampolla cada 12 horas IV',
+        'despachado' => false,
+    ]);
+
+    // Probar componente ProformaDetalle con Tab y Modal de Despacho
+    $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'despachos')
+        ->assertSet('tab', 'despachos')
+        ->assertSee('Historial de Despachos y Entregas de Farmacia')
+        ->call('abrirModalDespacho')
+        ->assertSet('modalDespachoProformaOpen', true)
+        // Verificar que cargó la receta activa en los ítems
+        ->assertSet("despachosItems.{$detalleReceta->id}.cantidad_prescrita", 2)
+        ->assertSet("despachosItems.{$detalleReceta->id}.lote_id", $loteMed->id)
+        ->set("despachosItems.{$detalleReceta->id}.cantidad_despachar", 2)
+        // Adicionar insumo extra (Jeringa)
+        ->call('seleccionarDespachoExtraProducto', $insumo->id)
+        ->set('despacho_extra_lote_id', $loteInsumo->id)
+        ->set('despacho_extra_cantidad', 2)
+        ->set('despacho_extra_observaciones', 'Jeringa para aplicación de ketorolaco')
+        ->call('agregarDespachoExtraItem')
+        ->assertCount('despachosExtrasItems', 1)
+        // Ejecutar despacho
+        ->call('procesarDespacho')
+        ->assertDispatched('swal')
+        ->assertSet('modalDespachoProformaOpen', false);
+
+    // Verificar stocks descontados
+    expect($loteMed->fresh()->cantidad_actual)->toBe(18);
+    expect($loteInsumo->fresh()->cantidad_actual)->toBe(48);
+
+    // Verificar MovimientoInventario registrado
+    $movs = MovimientoInventario::where('proforma_id', $proforma->id)->get();
+    expect($movs)->toHaveCount(2);
+
+    // Verificar detalle de receta marcado como despachado
+    expect($detalleReceta->fresh()->despachado)->toBeTrue();
+
+    // Verificar recalculo del costo consolidado de la proforma
+    // 2 x 25.00 (ketorolaco) + 2 x 3.00 (jeringa) = 56.00
+    expect($proforma->fresh()->costo_total)->toBe('56.00');
 });
