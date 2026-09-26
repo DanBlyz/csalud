@@ -123,8 +123,7 @@ class Proforma extends Model
         return (float) $this->movimientosInventario()
             ->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
             ->join('productos', 'movimientos_inventario.producto_id', '=', 'productos.id')
-            ->leftJoin('lotes', 'movimientos_inventario.lote_id', '=', 'lotes.id')
-            ->selectRaw('SUM(movimientos_inventario.cantidad * COALESCE(lotes.precio_venta, productos.ultimo_precio_venta, 0)) as total')
+            ->selectRaw('SUM(movimientos_inventario.cantidad * COALESCE(productos.ultimo_precio_venta, 0)) as total')
             ->value('total');
     }
 

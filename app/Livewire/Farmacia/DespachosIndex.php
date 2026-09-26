@@ -162,7 +162,7 @@ class DespachosIndex extends Component
         }
 
         if (! $yaExiste) {
-            $precio = (float) ($lote->precio_venta ?? $lote->producto->ultimo_precio_venta ?? 0);
+            $precio = (float) ($lote->producto->ultimo_precio_venta ?? 0);
             $this->extrasItems[] = [
                 'producto_id' => $lote->producto_id,
                 'producto_nombre' => $lote->producto->nombre,

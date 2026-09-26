@@ -208,18 +208,45 @@
                         </div>
                     </div>
 
-                    <button 
-                        type="button" 
-                        @click="$dispatch('swal', {
-                            icon: 'info',
-                            title: 'Módulo de Caja y Pagos',
-                            text: 'El total de la proforma es Bs. {{ number_format($proforma->costo_total, 2) }}. Será liquidado y cobrado en el Módulo de Caja (próximo paso).'
-                        })"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
-                    >
-                        <i class="fas fa-cash-register text-sm"></i>
-                        <span>Enviar a Caja / Cobrar</span>
-                    </button>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if($proforma->estado === 'Pagada' || $proforma->saldoPendiente() <= 0)
+                            <a 
+                                href="{{ route('proformas.pdf.recibo', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                title="Imprimir Recibo Oficial de Caja"
+                            >
+                                <i class="fas fa-receipt text-xs"></i>
+                                <span>Recibo Caja</span>
+                            </a>
+                            <a 
+                                href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                title="Imprimir Detalle Clínico PDF"
+                            >
+                                <i class="fas fa-file-pdf text-xs"></i>
+                                <span>Detalle PDF</span>
+                            </a>
+                        @else
+                            <a 
+                                href="{{ route('caja.index', ['search' => $proforma->id]) }}" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
+                            >
+                                <i class="fas fa-cash-register text-sm"></i>
+                                <span>Liquidar en Caja</span>
+                            </a>
+                            <a 
+                                href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
+                                title="Imprimir Detalle Clínico PDF"
+                            >
+                                <i class="fas fa-file-pdf text-xs text-rose-400"></i>
+                                <span>PDF</span>
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -1021,7 +1048,7 @@
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                                 @forelse ($movimientosDespacho as $idx => $mov)
                                     @php
-                                        $precioUnit = (float) ($mov->lote?->precio_venta ?? $mov->producto?->ultimo_precio_venta ?? 0);
+                                        $precioUnit = (float) ($mov->producto?->ultimo_precio_venta ?? 0);
                                         $subtotalMov = $mov->cantidad * $precioUnit;
                                     @endphp
                                     <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
@@ -2205,7 +2232,7 @@
                                             >
                                                 @forelse ($lotesParaDespachoExtra as $ltExtra)
                                                     <option value="{{ $ltExtra->id }}">
-                                                        Lote: {{ $ltExtra->codigo_lote }} (Disp: {{ $ltExtra->cantidad_actual }}) - Vto: {{ $ltExtra->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }} - Bs. {{ number_format($ltExtra->precio_venta ?? $productoDespachoExtraSeleccionado->ultimo_precio_venta ?? 0, 2) }}
+                                                        Lote: {{ $ltExtra->codigo_lote }} (Disp: {{ $ltExtra->cantidad_actual }}) - Vto: {{ $ltExtra->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }} - Bs. {{ number_format($productoDespachoExtraSeleccionado->ultimo_precio_venta ?? 0, 2) }}
                                                     </option>
                                                 @empty
                                                     <option value="">Sin lotes con stock en esta sucursal</option>

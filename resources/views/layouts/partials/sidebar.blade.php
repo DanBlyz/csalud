@@ -127,6 +127,20 @@
             <span class="ms-2">Kardex de Movimientos</span>
         </a>
 
+        <!-- Section: CAJA Y FACTURACIÓN -->
+        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Cobros y Recibos
+        </div>
+
+        <!-- Caja y Pagos -->
+        <a 
+            href="{{ route('caja.index') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('caja.*') ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-cash-register w-5 text-sm {{ request()->routeIs('caja.*') ? 'text-white' : 'text-emerald-400' }}"></i>
+            <span class="ms-2">Cobros y Liquidaciones</span>
+        </a>
+
         <!-- Section: SISTEMA -->
         <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Administración

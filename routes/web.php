@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProformaPdfController;
 use App\Livewire\Administracion\EspecialidadesIndex;
 use App\Livewire\Administracion\RolesIndex;
 use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
+use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Farmacia\DespachosIndex;
 use App\Livewire\Farmacia\LotesIndex;
 use App\Livewire\Farmacia\MovimientosIndex;
@@ -89,6 +91,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/movimientos', MovimientosIndex::class)
             ->middleware('permiso:9')
             ->name('movimientos');
+    });
+
+    // Módulo Caja y Pagos
+    Route::prefix('caja')->as('caja.')->group(function () {
+        Route::get('/', CajaIndex::class)
+            ->middleware('permiso:10')
+            ->name('index');
+    });
+
+    // Rutas de Documentos e Impresión PDF
+    Route::prefix('proformas/{proforma}/pdf')->as('proformas.pdf.')->group(function () {
+        Route::get('/detalle', [ProformaPdfController::class, 'detalle'])->name('detalle');
+        Route::get('/recibo', [ProformaPdfController::class, 'recibo'])->name('recibo');
     });
 });
 
