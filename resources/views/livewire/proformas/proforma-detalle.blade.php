@@ -1846,7 +1846,7 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-md">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-xl">
                     <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fas fa-boxes-stacked text-amber-600"></i>
