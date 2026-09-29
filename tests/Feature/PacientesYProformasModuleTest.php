@@ -230,7 +230,18 @@ test('puede gestionar detalle de la proforma (fase 2) con servicios, solicitudes
     expect($receta2->activo)->toBeTrue();
     expect($receta1->fresh()->activo)->toBeFalse(); // Desactivada automáticamente!
 
-    // 5. Cargar Consumo Extra (Insumo de piso)
+    // 5. Cargar Consumo Extra (Insumo de piso con stock en sucursal)
+    Lote::create([
+        'sucursal_id' => $proforma->sucursal_id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'LOTE-TEST-001',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 10.00,
+        'precio_venta' => 15.00,
+    ]);
+
     Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
         ->call('abrirModalConsumo')
         ->set('consumo_producto_id', $producto->id)
@@ -430,6 +441,28 @@ test('puede encolar y registrar multiples insumos en lote en proforma detalle', 
 
     $prod1 = Producto::firstOrCreate(['nombre' => 'Jeringa 10ml'], ['ultimo_precio_venta' => 2.50, 'stock_minimo' => 20]);
     $prod2 = Producto::firstOrCreate(['nombre' => 'Catéter Nro 20'], ['ultimo_precio_venta' => 8.00, 'stock_minimo' => 20]);
+
+    Lote::create([
+        'sucursal_id' => $proforma->sucursal_id,
+        'producto_id' => $prod1->id,
+        'codigo_lote' => 'LOTE-JER-001',
+        'cantidad_ingresada' => 100,
+        'cantidad_actual' => 100,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 1.50,
+        'precio_venta' => 2.50,
+    ]);
+
+    Lote::create([
+        'sucursal_id' => $proforma->sucursal_id,
+        'producto_id' => $prod2->id,
+        'codigo_lote' => 'LOTE-CAT-001',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 5.00,
+        'precio_venta' => 8.00,
+    ]);
 
     Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
         ->call('abrirModalConsumo')
@@ -681,4 +714,100 @@ test('puede visualizar pestaña de despachos y realizar despacho de farmacia dir
     // Verificar recalculo del costo consolidado de la proforma
     // 2 x 25.00 (ketorolaco) + 2 x 3.00 (jeringa) = 56.00
     expect($proforma->fresh()->costo_total)->toBe('56.00');
+});
+
+test('valida stock disponible antes de registrar consumo extra y descuenta inventario fefo con reintegro al eliminar', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombres' => 'Paciente Stock',
+        'apellido_paterno' => 'Test',
+        'cedula' => 'CI-STK-'.rand(1000, 9999),
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'tipo_atencion' => 'Internacion',
+        'fecha_ingreso' => now(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $insumo = Producto::create([
+        'nombre' => 'Gasa Quirúrgica Estéril',
+        'unidad_medida' => 'Sobre',
+        'ultimo_precio_venta' => 12.00,
+        'stock_minimo' => 5,
+    ]);
+
+    // 1. Sin lote: Intentar agregar 1 unidad debe fallar por stock insuficiente
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalConsumo')
+        ->set('consumo_producto_id', $insumo->id)
+        ->set('consumo_cantidad', 1)
+        ->set('consumo_precio_unitario', '12.00')
+        ->call('agregarConsumoACola')
+        ->assertDispatched('swal')
+        ->assertCount('cola_consumos', 0);
+
+    // 2. Crear lote con 5 unidades
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $insumo->id,
+        'codigo_lote' => 'LOTE-GASA-01',
+        'cantidad_ingresada' => 5,
+        'cantidad_actual' => 5,
+        'fecha_vencimiento' => now()->addMonths(6),
+        'precio_compra' => 6.00,
+        'precio_venta' => 12.00,
+    ]);
+
+    // Intentar agregar 10 unidades (más de las 5 disponibles) debe fallar
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalConsumo')
+        ->set('consumo_producto_id', $insumo->id)
+        ->set('consumo_cantidad', 10)
+        ->set('consumo_precio_unitario', '12.00')
+        ->call('agregarConsumoACola')
+        ->assertDispatched('swal')
+        ->assertCount('cola_consumos', 0);
+
+    // Agregar 3 unidades (disponibles) y registrar
+    $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalConsumo')
+        ->set('consumo_producto_id', $insumo->id)
+        ->set('consumo_cantidad', 3)
+        ->set('consumo_precio_unitario', '12.00')
+        ->call('agregarConsumoACola')
+        ->assertCount('cola_consumos', 1)
+        ->call('registrarConsumoExtra')
+        ->assertDispatched('swal');
+
+    // Verificar que el lote se redujo de 5 a 2
+    expect($lote->fresh()->cantidad_actual)->toBe(2);
+
+    // Verificar que se creó MovimientoInventario de Consumo Extra
+    $mov = MovimientoInventario::where('proforma_id', $proforma->id)
+        ->where('tipo_movimiento', 'Consumo Extra')
+        ->first();
+    expect($mov)->not->toBeNull();
+    expect($mov->cantidad)->toBe(3);
+
+    // Verificar que se creó el ConsumoExtra y recalculó costo (3 * 12 = 36.00)
+    $consumo = ConsumoExtra::where('proforma_id', $proforma->id)->first();
+    expect($consumo)->not->toBeNull();
+    expect($consumo->cantidad)->toBe(3);
+    expect((float) $proforma->fresh()->costo_total)->toBe(36.00);
+
+    // 3. Eliminar ConsumoExtra (simular acción de confirmación)
+    $component->call('eliminarConsumoExtra', $consumo->id)
+        ->assertDispatched('swal');
+
+    // Verificar que el stock fue reintegrado al lote (2 + 3 = 5)
+    expect($lote->fresh()->cantidad_actual)->toBe(5);
+
+    // Verificar que el costo se recalculó a 0.00
+    expect((float) $proforma->fresh()->costo_total)->toBe(0.00);
 });

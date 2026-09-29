@@ -182,15 +182,25 @@
                         reverseButtons: true,
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            const safeParams = Array.isArray(data.params)
+                                ? data.params
+                                : (data.params !== undefined && data.params !== null
+                                    ? (typeof data.params === 'object' ? data.params : [data.params])
+                                    : []);
+
                             if (data.componentId && window.Livewire) {
                                 const component = window.Livewire.find(data.componentId);
-                                if (component && typeof component.call === 'function') {
-                                    component.call(data.method, ...(data.params || []));
+                                if (component && typeof component.call === 'function' && data.method) {
+                                    component.call(data.method, ...(Array.isArray(safeParams) ? safeParams : [safeParams]));
                                     return;
                                 }
                             }
-                            if (window.Livewire) {
-                                window.Livewire.dispatch(data.event, data.params || {});
+                            if (window.Livewire && data.event) {
+                                if (Array.isArray(safeParams)) {
+                                    window.Livewire.dispatch(data.event, ...safeParams);
+                                } else {
+                                    window.Livewire.dispatch(data.event, safeParams);
+                                }
                             }
                         }
                     });

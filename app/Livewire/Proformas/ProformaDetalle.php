@@ -113,6 +113,8 @@ class ProformaDetalle extends Component
 
     public string $consumo_observaciones = '';
 
+    public int $consumo_stock_disponible = 0;
+
     public string $buscarInsumoConsumo = '';
 
     public array $cola_consumos = [];
@@ -728,6 +730,7 @@ class ProformaDetalle extends Component
         ]);
         $this->consumo_cantidad = 1;
         $this->consumo_precio_unitario = '0.00';
+        $this->consumo_stock_disponible = 0;
         $this->modalConsumoOpen = true;
     }
 
@@ -735,6 +738,7 @@ class ProformaDetalle extends Component
     {
         $this->modalConsumoOpen = false;
         $this->buscarInsumoConsumo = '';
+        $this->consumo_stock_disponible = 0;
     }
 
     public function seleccionarInsumoConsumo(int $productoId): void
@@ -743,6 +747,24 @@ class ProformaDetalle extends Component
         $producto = Producto::find($productoId);
         if ($producto) {
             $this->consumo_precio_unitario = number_format($producto->ultimo_precio_venta, 2, '.', '');
+            $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
+
+            $this->consumo_stock_disponible = (int) Lote::where('producto_id', $productoId)
+                ->where('sucursal_id', $sucursalId)
+                ->where('cantidad_actual', '>', 0)
+                ->where(function ($q) {
+                    $q->whereNull('fecha_vencimiento')
+                        ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                })
+                ->sum('cantidad_actual');
+
+            if ($this->consumo_stock_disponible <= 0) {
+                $this->dispatch('swal', [
+                    'icon' => 'warning',
+                    'title' => 'Sin existencias',
+                    'text' => "El insumo o medicamento {$producto->nombre} no cuenta con stock disponible en esta sucursal.",
+                ]);
+            }
         }
         $this->buscarInsumoConsumo = '';
     }
@@ -752,6 +774,7 @@ class ProformaDetalle extends Component
         $this->consumo_producto_id = null;
         $this->consumo_precio_unitario = '0.00';
         $this->consumo_cantidad = 1;
+        $this->consumo_stock_disponible = 0;
         $this->buscarInsumoConsumo = '';
     }
 
@@ -761,7 +784,18 @@ class ProformaDetalle extends Component
             $producto = Producto::find($value);
             if ($producto) {
                 $this->consumo_precio_unitario = number_format($producto->ultimo_precio_venta, 2, '.', '');
+                $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
+                $this->consumo_stock_disponible = (int) Lote::where('producto_id', $value)
+                    ->where('sucursal_id', $sucursalId)
+                    ->where('cantidad_actual', '>', 0)
+                    ->where(function ($q) {
+                        $q->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    })
+                    ->sum('cantidad_actual');
             }
+        } else {
+            $this->consumo_stock_disponible = 0;
         }
     }
 
@@ -778,10 +812,41 @@ class ProformaDetalle extends Component
         ]);
 
         $prod = Producto::find($this->consumo_producto_id);
+        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
+
+        $stockDisponible = (int) Lote::where('producto_id', $this->consumo_producto_id)
+            ->where('sucursal_id', $sucursalId)
+            ->where('cantidad_actual', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('fecha_vencimiento')
+                    ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+            })
+            ->sum('cantidad_actual');
+
+        // Validar acumulación en cola para el mismo producto
+        $yaEnCola = 0;
+        foreach ($this->cola_consumos as $itemCola) {
+            if ($itemCola['producto_id'] === $this->consumo_producto_id) {
+                $yaEnCola += (int) $itemCola['cantidad'];
+            }
+        }
+
+        $totalRequerido = $yaEnCola + (int) $this->consumo_cantidad;
+
+        if ($totalRequerido > $stockDisponible) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Stock insuficiente',
+                'text' => "No hay existencias suficientes de {$prod->nombre} en esta sucursal. Stock disponible: {$stockDisponible} unidades".($yaEnCola > 0 ? " (ya tiene {$yaEnCola} en lista)." : '.'),
+            ]);
+
+            return;
+        }
+
         $this->cola_consumos[] = [
             'producto_id' => $prod->id,
             'nombre' => $prod->nombre,
-            'cantidad' => $this->consumo_cantidad,
+            'cantidad' => (int) $this->consumo_cantidad,
             'precio_unitario' => (float) $this->consumo_precio_unitario,
             'observaciones' => $this->consumo_observaciones,
         ];
@@ -789,6 +854,7 @@ class ProformaDetalle extends Component
         $this->reset(['consumo_producto_id', 'consumo_observaciones', 'buscarInsumoConsumo']);
         $this->consumo_cantidad = 1;
         $this->consumo_precio_unitario = '0.00';
+        $this->consumo_stock_disponible = 0;
     }
 
     public function eliminarConsumoDeCola(int $index): void
@@ -813,26 +879,81 @@ class ProformaDetalle extends Component
             return;
         }
 
-        foreach ($this->cola_consumos as $c) {
-            ConsumoExtra::create([
-                'proforma_id' => $this->proforma->id,
-                'producto_id' => $c['producto_id'],
-                'cantidad' => $c['cantidad'],
-                'precio_unitario' => $c['precio_unitario'],
-                'user_id' => Auth::id(),
-                'observaciones' => $c['observaciones'],
+        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
+
+        try {
+            DB::transaction(function () use ($sucursalId) {
+                foreach ($this->cola_consumos as $c) {
+                    // Validar y descargar stock FEFO de los lotes disponibles
+                    $lotes = Lote::where('producto_id', $c['producto_id'])
+                        ->where('sucursal_id', $sucursalId)
+                        ->where('cantidad_actual', '>', 0)
+                        ->where(function ($q) {
+                            $q->whereNull('fecha_vencimiento')
+                                ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                        })
+                        ->orderBy('fecha_vencimiento', 'asc')
+                        ->lockForUpdate()
+                        ->get();
+
+                    $stockTotal = $lotes->sum('cantidad_actual');
+                    if ($stockTotal < $c['cantidad']) {
+                        throw new \Exception("Stock insuficiente para '{$c['nombre']}'. Disponible en inventario: {$stockTotal} unidades.");
+                    }
+
+                    $cantPendiente = (int) $c['cantidad'];
+                    foreach ($lotes as $lote) {
+                        if ($cantPendiente <= 0) {
+                            break;
+                        }
+
+                        $descontar = min($cantPendiente, $lote->cantidad_actual);
+                        $lote->decrement('cantidad_actual', $descontar);
+                        $cantPendiente -= $descontar;
+
+                        // Asiento en Kardex de salida por Consumo Extra
+                        MovimientoInventario::create([
+                            'sucursal_id' => $lote->sucursal_id,
+                            'producto_id' => $c['producto_id'],
+                            'lote_id' => $lote->id,
+                            'cantidad' => $descontar,
+                            'tipo_movimiento' => 'Consumo Extra',
+                            'receta_id' => $this->proforma->recetaActiva?->id,
+                            'proforma_id' => $this->proforma->id,
+                            'user_id' => Auth::id(),
+                        ]);
+                    }
+
+                    ConsumoExtra::create([
+                        'proforma_id' => $this->proforma->id,
+                        'producto_id' => $c['producto_id'],
+                        'cantidad' => $c['cantidad'],
+                        'precio_unitario' => $c['precio_unitario'],
+                        'user_id' => Auth::id(),
+                        'observaciones' => $c['observaciones'],
+                    ]);
+                }
+
+                $this->proforma->recalcularTotal();
+            });
+        } catch (\Exception $e) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Error de Inventario',
+                'text' => $e->getMessage(),
             ]);
+
+            return;
         }
 
         $cant = count($this->cola_consumos);
         $this->cola_consumos = [];
-        $this->proforma->recalcularTotal();
         $this->cerrarModalConsumo();
 
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Insumos Registrados',
-            'text' => "Se han cargado {$cant} insumo(s) hospitalarios a la proforma.",
+            'text' => "Se han cargado {$cant} insumo(s) hospitalarios y se descontaron del inventario de la sucursal.",
         ]);
     }
 
@@ -840,14 +961,49 @@ class ProformaDetalle extends Component
     public function eliminarConsumoExtra(int $id): void
     {
         $consumo = ConsumoExtra::where('proforma_id', $this->proforma->id)->findOrFail($id);
-        $consumo->delete();
 
-        $this->proforma->recalcularTotal();
+        DB::transaction(function () use ($consumo) {
+            // Reintegrar las existencias al lote de origen a través del Kardex
+            $movimientos = MovimientoInventario::where('proforma_id', $this->proforma->id)
+                ->where('producto_id', $consumo->producto_id)
+                ->where('tipo_movimiento', 'Consumo Extra')
+                ->latest('id')
+                ->get();
+
+            $cantidadAReintegrar = (int) $consumo->cantidad;
+            foreach ($movimientos as $mov) {
+                if ($cantidadAReintegrar <= 0) {
+                    break;
+                }
+
+                $reintegrar = min($cantidadAReintegrar, $mov->cantidad);
+                $lote = Lote::find($mov->lote_id);
+                if ($lote) {
+                    $lote->increment('cantidad_actual', $reintegrar);
+                }
+
+                // Asiento de reintegro por anulación en Kardex
+                MovimientoInventario::create([
+                    'sucursal_id' => $mov->sucursal_id,
+                    'producto_id' => $mov->producto_id,
+                    'lote_id' => $mov->lote_id,
+                    'cantidad' => $reintegrar,
+                    'tipo_movimiento' => 'Ajuste',
+                    'proforma_id' => $this->proforma->id,
+                    'user_id' => Auth::id(),
+                ]);
+
+                $cantidadAReintegrar -= $reintegrar;
+            }
+
+            $consumo->delete();
+            $this->proforma->recalcularTotal();
+        });
 
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Consumo Eliminado',
-            'text' => 'El insumo fue removido y el costo total de la proforma actualizado.',
+            'text' => 'El insumo fue removido de la proforma, las existencias fueron reintegradas al inventario y se recalculó el total.',
         ]);
     }
 
@@ -1229,10 +1385,26 @@ class ProformaDetalle extends Component
             }
         }
 
-        // 3. Catálogo reactivo para Consumos Extras
+        // 3. Catálogo reactivo para Consumos Extras (Filtro estricto por stock disponible en sucursal)
         $productosParaConsumo = collect();
         if ($this->modalConsumoOpen) {
-            $cQuery = Producto::query()->with('marca');
+            $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
+            $cQuery = Producto::whereHas('lotes', function ($q) use ($sucursalId) {
+                $q->where('sucursal_id', $sucursalId)
+                    ->where('cantidad_actual', '>', 0)
+                    ->where(function ($vq) {
+                        $vq->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    });
+            })->with(['marca', 'lotes' => function ($q) use ($sucursalId) {
+                $q->where('sucursal_id', $sucursalId)
+                    ->where('cantidad_actual', '>', 0)
+                    ->where(function ($vq) {
+                        $vq->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    });
+            }]);
+
             if (! empty($this->buscarInsumoConsumo)) {
                 $cTerm = '%'.trim($this->buscarInsumoConsumo).'%';
                 $cQuery->where(function ($q) use ($cTerm) {
@@ -1245,7 +1417,7 @@ class ProformaDetalle extends Component
                 $productosParaConsumo = $cQuery->orderBy('nombre')->take(8)->get();
             }
         }
-        $productoConsumoSeleccionado = $this->consumo_producto_id ? Producto::find($this->consumo_producto_id) : null;
+        $productoConsumoSeleccionado = $this->consumo_producto_id ? Producto::with('marca')->find($this->consumo_producto_id) : null;
 
         // 4. Parámetros para Modal de Despacho
         $lotesDisponiblesPorItem = [];

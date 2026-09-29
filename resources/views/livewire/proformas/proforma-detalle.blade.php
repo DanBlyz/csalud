@@ -410,8 +410,10 @@
                                                     icon: 'warning',
                                                     confirmButtonText: 'Sí, remover',
                                                     cancelButtonText: 'Cancelar',
-                                                    event: 'eliminarServicioProforma',
-                                                    params: {{ $ps->id }}
+                                                    componentId: '{{ $this->getId() }}',
+                                                    method: 'eliminarServicioProforma',
+                                                    params: [{{ $ps->id }}],
+                                                    event: 'eliminarServicioProforma'
                                                 })"
                                                 class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                                 title="Eliminar Servicio de la Proforma"
@@ -533,8 +535,10 @@
                                                         icon: 'warning',
                                                         confirmButtonText: 'Sí, remover',
                                                         cancelButtonText: 'Cancelar',
-                                                        event: 'eliminarSolicitudProforma',
-                                                        params: {{ $sol->id }}
+                                                        componentId: '{{ $this->getId() }}',
+                                                        method: 'eliminarSolicitudProforma',
+                                                        params: [{{ $sol->id }}],
+                                                        event: 'eliminarSolicitudProforma'
                                                     })"
                                                     class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                                     title="Eliminar Solicitud"
@@ -641,8 +645,10 @@
                                                     icon: 'warning',
                                                     confirmButtonText: 'Sí, remover',
                                                     cancelButtonText: 'Cancelar',
-                                                    event: 'eliminarEventoCalendario',
-                                                    params: {{ $cal->id }}
+                                                    componentId: '{{ $this->getId() }}',
+                                                    method: 'eliminarEventoCalendario',
+                                                    params: [{{ $cal->id }}],
+                                                    event: 'eliminarEventoCalendario'
                                                 })"
                                                 class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                                 title="Eliminar Actividad"
@@ -933,12 +939,14 @@
                                                 type="button" 
                                                 @click="$dispatch('swal:confirm', {
                                                     title: '¿Remover insumo extra?',
-                                                    text: 'Se descontará del costo total de la proforma.',
+                                                    text: 'Se descontará del costo total de la proforma y las existencias se reintegrarán al inventario.',
                                                     icon: 'warning',
                                                     confirmButtonText: 'Sí, remover',
                                                     cancelButtonText: 'Cancelar',
-                                                    event: 'eliminarConsumoExtra',
-                                                    params: {{ $ce->id }}
+                                                    componentId: '{{ $this->getId() }}',
+                                                    method: 'eliminarConsumoExtra',
+                                                    params: [{{ $ce->id }}],
+                                                    event: 'eliminarConsumoExtra'
                                                 })"
                                                 class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                                 title="Eliminar Insumo"
@@ -1897,8 +1905,11 @@
                                             <div class="text-xs font-bold text-amber-900 dark:text-amber-200">
                                                 {{ $productoConsumoSeleccionado->nombre }}
                                             </div>
-                                            <div class="text-[11px] text-amber-600 dark:text-amber-400">
-                                                Unidad: {{ $productoConsumoSeleccionado->unidad_medida ?? 'Unidad' }} • Precio Sugerido: Bs. {{ number_format($productoConsumoSeleccionado->ultimo_precio_venta, 2) }}
+                                            <div class="text-[11px] text-amber-700 dark:text-amber-400 flex flex-wrap items-center gap-2 mt-0.5">
+                                                <span>Unidad: {{ $productoConsumoSeleccionado->unidad_medida ?? 'Unidad' }} • Precio Sugerido: Bs. {{ number_format($productoConsumoSeleccionado->ultimo_precio_venta, 2) }}</span>
+                                                <span class="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 text-[10px]">
+                                                    <i class="fas fa-boxes"></i> Stock Disponible: {{ $consumo_stock_disponible }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1913,7 +1924,7 @@
                             @else
                                 <div class="space-y-1.5">
                                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                        Buscar Insumo / Material Descartable
+                                        Buscar Insumo / Material Descartable (Con Stock en Almacén)
                                     </label>
                                     <div class="relative">
                                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -1930,9 +1941,12 @@
                                         @endif
                                     </div>
 
-                                    <!-- Resultados reactivos de insumos -->
+                                    <!-- Resultados reactivos de insumos con stock -->
                                     <div class="max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg divide-y divide-slate-100 dark:divide-slate-700/60">
                                         @forelse ($productosParaConsumo as $pCons)
+                                            @php
+                                                $stkEnSuc = $pCons->lotes->sum('cantidad_actual');
+                                            @endphp
                                             <button 
                                                 type="button" 
                                                 wire:click="seleccionarInsumoConsumo({{ $pCons->id }})" 
@@ -1950,12 +1964,14 @@
                                                     <span class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
                                                         Bs. {{ number_format($pCons->ultimo_precio_venta, 2) }}
                                                     </span>
-                                                    <span class="block text-[10px] text-slate-400">precio venta</span>
+                                                    <span class="block text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                        <i class="fas fa-boxes text-[9px] me-0.5"></i> Stock: {{ $stkEnSuc }} {{ $pCons->unidad_medida ?? 'u.' }}
+                                                    </span>
                                                 </div>
                                             </button>
                                         @empty
                                             <div class="p-3 text-center text-xs text-slate-400">
-                                                <i class="fas fa-search me-1"></i> No se encontraron insumos hospitalarios.
+                                                <i class="fas fa-box-open me-1"></i> No se encontraron insumos hospitalarios con stock disponible en esta sucursal.
                                             </div>
                                         @endforelse
                                     </div>
@@ -1964,10 +1980,17 @@
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label for="consumo_cantidad" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                        Cantidad
-                                    </label>
-                                    <input type="number" min="1" id="consumo_cantidad" wire:model.live="consumo_cantidad" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 p-2 shadow-2xs @error('consumo_cantidad') border-rose-500 @enderror">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label for="consumo_cantidad" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Cantidad
+                                        </label>
+                                        @if ($consumo_producto_id)
+                                            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                                Máx: {{ $consumo_stock_disponible }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <input type="number" min="1" max="{{ $consumo_stock_disponible > 0 ? $consumo_stock_disponible : '' }}" id="consumo_cantidad" wire:model.live="consumo_cantidad" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 p-2 shadow-2xs @error('consumo_cantidad') border-rose-500 @enderror">
                                     @error('consumo_cantidad') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                                 </div>
 
