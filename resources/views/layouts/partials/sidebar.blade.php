@@ -118,6 +118,24 @@
             <span class="ms-2">Lotes y Stock</span>
         </a>
 
+        <!-- Marcas y Laboratorios -->
+        <a 
+            href="{{ route('farmacia.marcas') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.marcas') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-trademark w-5 text-sm {{ request()->routeIs('farmacia.marcas') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Marcas y Laboratorios</span>
+        </a>
+
+        <!-- Proveedores y Droguerías -->
+        <a 
+            href="{{ route('farmacia.proveedores') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.proveedores') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-truck w-5 text-sm {{ request()->routeIs('farmacia.proveedores') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Proveedores y Droguerías</span>
+        </a>
+
         <!-- Kardex y Movimientos -->
         <a 
             href="{{ route('farmacia.movimientos') }}" 

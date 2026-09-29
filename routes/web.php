@@ -10,8 +10,10 @@ use App\Livewire\Administracion\UsuariosIndex;
 use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Farmacia\DespachosIndex;
 use App\Livewire\Farmacia\LotesIndex;
+use App\Livewire\Farmacia\MarcasIndex;
 use App\Livewire\Farmacia\MovimientosIndex;
 use App\Livewire\Farmacia\ProductosIndex;
+use App\Livewire\Farmacia\ProveedoresIndex;
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
 use App\Livewire\Proformas\ProformaDetalle;
@@ -91,6 +93,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/movimientos', MovimientosIndex::class)
             ->middleware('permiso:9')
             ->name('movimientos');
+
+        Route::get('/marcas', MarcasIndex::class)
+            ->middleware('permiso:9')
+            ->name('marcas');
+
+        Route::get('/proveedores', ProveedoresIndex::class)
+            ->middleware('permiso:9')
+            ->name('proveedores');
     });
 
     // Módulo Caja y Pagos
