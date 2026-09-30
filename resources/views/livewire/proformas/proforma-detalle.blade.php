@@ -53,6 +53,15 @@
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $proforma->paciente->genero === 'Femenino' ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' }}">
                                 {{ $proforma->paciente->genero ?? 'N/E' }}
                             </span>
+                            @if ($proforma->paciente?->institucion)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40" title="Institución / Convenio Asegurador">
+                                    <i class="fas fa-building text-[10px]"></i> {{ $proforma->paciente->institucion->nombre }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                    Particular
+                                </span>
+                            @endif
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold {{ $proforma->estado === 'En Curso' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : ($proforma->estado === 'Pagada' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300') }}">
                                 <span class="w-1.5 h-1.5 rounded-full {{ $proforma->estado === 'En Curso' ? 'bg-amber-500 animate-pulse' : ($proforma->estado === 'Pagada' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
                                 {{ $proforma->estado }}

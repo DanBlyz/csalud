@@ -200,8 +200,8 @@
         <tr>
             <td class="info-label">Sucursal:</td>
             <td class="info-value">{{ $proforma->sucursal->nombre ?? 'Sede Central' }}</td>
-            <td class="info-label">Fecha de Cierre:</td>
-            <td class="info-value font-bold">{{ $proforma->fecha_salida ? $proforma->fecha_salida->format('d/m/Y H:i') : 'En curso' }}</td>
+            <td class="info-label">Convenio / Seguro:</td>
+            <td class="info-value font-bold">{{ $proforma->paciente->institucion->nombre ?? 'Particular' }}</td>
         </tr>
     </table>
 

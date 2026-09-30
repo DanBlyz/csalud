@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Proformas;
 
+use App\Models\Institucion;
 use App\Models\Paciente;
 use App\Models\Producto;
 use App\Models\Proforma;
@@ -112,6 +113,8 @@ class ProformaCrear extends Component
 
     public string $nuevo_contacto_telefono = '';
 
+    public ?int $nuevo_institucion_id = null;
+
     public string $nuevo_antecedentes_alergias = '';
 
     public function mount(?int $paciente_id = null): void
@@ -148,6 +151,7 @@ class ProformaCrear extends Component
         $term = '%'.trim($this->pacienteSearch).'%';
 
         return Paciente::query()
+            ->with('institucion')
             ->where(function ($q) use ($term) {
                 $q->where('nombres', 'like', $term)
                     ->orWhere('apellido_paterno', 'like', $term)
@@ -161,7 +165,7 @@ class ProformaCrear extends Component
 
     public function seleccionarPaciente(int $id): void
     {
-        $this->pacienteSeleccionado = Paciente::findOrFail($id);
+        $this->pacienteSeleccionado = Paciente::with('institucion')->findOrFail($id);
         $this->paciente_id = $this->pacienteSeleccionado->id;
         $this->pacienteSearch = '';
     }
@@ -181,6 +185,7 @@ class ProformaCrear extends Component
             'nuevo_apellido_paterno',
             'nuevo_apellido_materno',
             'nuevo_cedula',
+            'nuevo_institucion_id',
             'nuevo_fecha_nacimiento',
             'nuevo_celular',
             'nuevo_direccion',
@@ -210,6 +215,7 @@ class ProformaCrear extends Component
                 'max:30',
                 Rule::unique('pacientes', 'cedula')->whereNull('deleted_at'),
             ],
+            'nuevo_institucion_id' => ['nullable', 'integer', 'exists:instituciones,id'],
             'nuevo_fecha_nacimiento' => ['nullable', 'date', 'before_or_equal:today'],
             'nuevo_genero' => ['required', 'in:Masculino,Femenino,Otro'],
             'nuevo_celular' => ['nullable', 'string', 'max:20'],
@@ -220,6 +226,7 @@ class ProformaCrear extends Component
         ]);
 
         $paciente = Paciente::create([
+            'institucion_id' => $this->nuevo_institucion_id,
             'nombres' => $this->nuevo_nombres,
             'apellido_paterno' => $this->nuevo_apellido_paterno,
             'apellido_materno' => $this->nuevo_apellido_materno,
@@ -563,10 +570,12 @@ class ProformaCrear extends Component
         $medicosParaReceta = User::where('activo', true)
             ->whereHas('rol', fn ($r) => $r->whereIn('nombre', ['Médico', 'Admin']))
             ->get();
+        $instituciones = Institucion::where('estado', 'Activo')->orderBy('nombre')->get();
 
         return view('livewire.proformas.proforma-crear', [
             'tiposSolicitudes' => $tiposSolicitudes,
             'medicosParaReceta' => $medicosParaReceta,
+            'instituciones' => $instituciones,
         ]);
     }
 }

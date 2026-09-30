@@ -139,7 +139,7 @@ class ProformaDetalle extends Component
     public function mount(Proforma $proforma): void
     {
         $this->proforma = $proforma->load([
-            'paciente',
+            'paciente.institucion',
             'medicos.especialidad',
             'sucursal',
             'servicios.servicio.categoria',

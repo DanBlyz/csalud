@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('pacientes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('institucion_id')->nullable()->constrained('instituciones')->nullOnDelete();
             $table->string('nombres');
             $table->string('apellido_paterno');
             $table->string('apellido_materno')->nullable();

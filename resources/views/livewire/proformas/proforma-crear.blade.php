@@ -67,6 +67,15 @@
                                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold {{ $pacienteSeleccionado->genero === 'Femenino' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700' }}">
                                     {{ $pacienteSeleccionado->genero }}
                                 </span>
+                                @if ($pacienteSeleccionado->institucion)
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                                        <i class="fas fa-building text-[9px]"></i> {{ $pacienteSeleccionado->institucion->nombre }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                        Particular
+                                    </span>
+                                @endif
                             </div>
                             <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
                                 <span><span class="font-medium text-slate-700 dark:text-slate-300">Documento:</span> {{ $pacienteSeleccionado->cedula ?: 'Sin CI' }}</span>
@@ -127,8 +136,13 @@
                                     class="w-full px-4 py-3 text-left hover:bg-teal-50/70 dark:hover:bg-slate-800/80 transition-colors flex items-center justify-between cursor-pointer"
                                 >
                                     <div>
-                                        <div class="font-bold text-xs text-slate-900 dark:text-white">
-                                            {{ $res->nombre_completo }}
+                                        <div class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                                            <span>{{ $res->nombre_completo }}</span>
+                                            @if ($res->institucion)
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                    {{ $res->institucion->nombre }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                                             <span>CI: {{ $res->cedula ?: 'Sin CI' }}</span>
@@ -856,6 +870,20 @@
                                     <option value="Otro">Otro</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <!-- Institución / Convenio -->
+                        <div>
+                            <label for="nuevo_institucion_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                <i class="fas fa-building text-teal-600 dark:text-teal-400 me-1"></i> Institución / Seguro Convenio
+                            </label>
+                            <select id="nuevo_institucion_id" wire:model="nuevo_institucion_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs @error('nuevo_institucion_id') border-rose-500 @enderror">
+                                <option value="">-- Particular (Sin Convenio) --</option>
+                                @foreach ($instituciones as $inst)
+                                    <option value="{{ $inst->id }}">{{ $inst->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('nuevo_institucion_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

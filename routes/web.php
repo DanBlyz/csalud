@@ -14,6 +14,7 @@ use App\Livewire\Farmacia\MarcasIndex;
 use App\Livewire\Farmacia\MovimientosIndex;
 use App\Livewire\Farmacia\ProductosIndex;
 use App\Livewire\Farmacia\ProveedoresIndex;
+use App\Livewire\Pacientes\InstitucionesIndex;
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
 use App\Livewire\Proformas\ProformaDetalle;
@@ -56,10 +57,16 @@ Route::middleware('auth')->group(function () {
             ->name('servicios');
     });
 
-    // Módulo Pacientes
-    Route::get('/pacientes', PacientesIndex::class)
-        ->middleware('permiso:5')
-        ->name('pacientes.index');
+    // Módulo Pacientes e Instituciones
+    Route::prefix('pacientes')->as('pacientes.')->group(function () {
+        Route::get('/', PacientesIndex::class)
+            ->middleware('permiso:5')
+            ->name('index');
+
+        Route::get('/instituciones', InstitucionesIndex::class)
+            ->middleware('permiso:5')
+            ->name('instituciones');
+    });
 
     // Módulo Proformas Clínicas
     Route::prefix('proformas')->as('proformas.')->group(function () {

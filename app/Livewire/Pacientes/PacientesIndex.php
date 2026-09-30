@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pacientes;
 
+use App\Models\Institucion;
 use App\Models\Paciente;
 use App\Models\Proforma;
 use Illuminate\Contracts\View\View;
@@ -23,10 +24,14 @@ class PacientesIndex extends Component
 
     public string $filtroGenero = '';
 
+    public string $filtroInstitucion = '';
+
     // Modal Crear/Editar Paciente
     public bool $modalOpen = false;
 
     public ?int $pacienteId = null;
+
+    public ?int $institucion_id = null;
 
     public string $nombres = '';
 
@@ -70,9 +75,15 @@ class PacientesIndex extends Component
         $this->resetPage();
     }
 
+    public function updatingFiltroInstitucion(): void
+    {
+        $this->resetPage();
+    }
+
     protected function rules(): array
     {
         return [
+            'institucion_id' => ['nullable', 'integer', 'exists:instituciones,id'],
             'nombres' => ['required', 'string', 'min:2', 'max:100'],
             'apellido_paterno' => ['required', 'string', 'min:2', 'max:100'],
             'apellido_materno' => ['nullable', 'string', 'max:100'],
@@ -99,6 +110,7 @@ class PacientesIndex extends Component
         'cedula.unique' => 'Ya existe un paciente registrado con este documento de identidad.',
         'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         'genero.required' => 'Debe seleccionar un género.',
+        'institucion_id.exists' => 'La institución seleccionada no es válida.',
     ];
 
     public function abrirModalCrear(): void
@@ -106,6 +118,7 @@ class PacientesIndex extends Component
         $this->resetValidation();
         $this->reset([
             'pacienteId',
+            'institucion_id',
             'nombres',
             'apellido_paterno',
             'apellido_materno',
@@ -128,6 +141,7 @@ class PacientesIndex extends Component
         $paciente = Paciente::findOrFail($id);
 
         $this->pacienteId = $paciente->id;
+        $this->institucion_id = $paciente->institucion_id;
         $this->nombres = $paciente->nombres;
         $this->apellido_paterno = $paciente->apellido_paterno;
         $this->apellido_materno = $paciente->apellido_materno ?? '';
@@ -220,6 +234,7 @@ class PacientesIndex extends Component
     public function render(): View
     {
         $query = Paciente::query()
+            ->with(['institucion'])
             ->withCount(['proformas as proformas_activas_count' => function ($q) {
                 $q->where('estado', 'En Curso');
             }])
@@ -236,6 +251,13 @@ class PacientesIndex extends Component
             ->when($this->filtroGenero !== '', function ($q) {
                 $q->where('genero', $this->filtroGenero);
             })
+            ->when($this->filtroInstitucion !== '', function ($q) {
+                if ($this->filtroInstitucion === 'particular') {
+                    $q->whereNull('institucion_id');
+                } else {
+                    $q->where('institucion_id', $this->filtroInstitucion);
+                }
+            })
             ->latest('id');
 
         $pacientes = $query->paginate($this->perPage);
@@ -245,11 +267,14 @@ class PacientesIndex extends Component
         $pacientesConProformaActiva = Proforma::where('estado', 'En Curso')->distinct('paciente_id')->count('paciente_id');
         $pacientesNuevosMes = Paciente::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
 
+        $instituciones = Institucion::where('estado', 'Activo')->orderBy('nombre', 'asc')->get();
+
         return view('livewire.pacientes.pacientes-index', [
             'pacientes' => $pacientes,
             'totalPacientes' => $totalPacientes,
             'pacientesConProformaActiva' => $pacientesConProformaActiva,
             'pacientesNuevosMes' => $pacientesNuevosMes,
+            'instituciones' => $instituciones,
         ]);
     }
 }

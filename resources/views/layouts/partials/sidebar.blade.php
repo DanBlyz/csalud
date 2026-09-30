@@ -59,12 +59,21 @@
             Atención Clínica
         </div>
 
+        <!-- Instituciones y Convenios -->
+        <a 
+            href="{{ route('pacientes.instituciones') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.instituciones*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-hospital-alt w-5 text-sm {{ request()->routeIs('pacientes.instituciones*') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Instituciones / Seguros</span>
+        </a>
+
         <!-- Pacientes -->
         <a 
             href="{{ route('pacientes.index') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.index') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
         >
-            <i class="fas fa-user-injured w-5 text-sm {{ request()->routeIs('pacientes.*') ? 'text-white' : 'text-teal-400' }}"></i>
+            <i class="fas fa-user-injured w-5 text-sm {{ request()->routeIs('pacientes.index') ? 'text-white' : 'text-teal-400' }}"></i>
             <span class="ms-2">Pacientes</span>
         </a>
 

@@ -199,14 +199,14 @@
         <tr>
             <td class="info-label">Fecha Nac. / Edad:</td>
             <td class="info-value">{{ $proforma->paciente->fecha_nacimiento ? $proforma->paciente->fecha_nacimiento->format('d/m/Y') : 'N/D' }} ({{ $proforma->paciente->edad ?? '-' }} años)</td>
-            <td class="info-label">Teléfono / Celular:</td>
-            <td class="info-value">{{ $proforma->paciente->celular ?? 'N/D' }}</td>
+            <td class="info-label">Convenio / Seguro:</td>
+            <td class="info-value font-bold">{{ $proforma->paciente->institucion->nombre ?? 'Particular (Sin convenio)' }}</td>
         </tr>
         <tr>
             <td class="info-label">Tipo de Atención:</td>
             <td class="info-value font-bold">{{ $proforma->tipo_atencion }} @if($proforma->pieza) (Pieza/Cama: {{ $proforma->pieza }}) @endif</td>
-            <td class="info-label">Médico(s):</td>
-            <td class="info-value">{{ $proforma->medicos->pluck('name')->join(', ') ?: 'No asignado' }}</td>
+            <td class="info-label">Teléfono / Celular:</td>
+            <td class="info-value">{{ $proforma->paciente->celular ?? 'N/D' }}</td>
         </tr>
         <tr>
             <td class="info-label">Fecha Ingreso:</td>

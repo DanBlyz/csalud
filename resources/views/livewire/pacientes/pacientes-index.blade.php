@@ -95,6 +95,24 @@
                             <option value="Femenino">Femenino</option>
                         </select>
                     </div>
+
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro Institución / Convenio -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroInst" class="text-xs font-medium text-slate-600 dark:text-slate-400">Convenio:</label>
+                        <select 
+                            id="filtroInst" 
+                            wire:model.live="filtroInstitucion" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="">Todos</option>
+                            <option value="particular">Particular</option>
+                            @foreach ($instituciones as $inst)
+                                <option value="{{ $inst->id }}">{{ $inst->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Buscador Debounce -->
@@ -141,7 +159,7 @@
                                 <div class="font-bold text-slate-900 dark:text-white text-sm">
                                     {{ $paciente->nombre_completo }}
                                 </div>
-                                <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                                <div class="flex flex-wrap items-center gap-2 mt-0.5 text-[11px] text-slate-400">
                                     <span>
                                         <i class="fas fa-birthday-cake text-[10px] me-1 text-slate-400"></i>
                                         {{ $paciente->edad !== null ? "{$paciente->edad} años" : 'Edad no reg.' }}
@@ -150,6 +168,16 @@
                                     <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium {{ $paciente->genero === 'Femenino' ? 'bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300' : ($paciente->genero === 'Masculino' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-slate-100 text-slate-700') }}">
                                         {{ $paciente->genero ?? 'N/E' }}
                                     </span>
+                                    <span>•</span>
+                                    @if ($paciente->institucion)
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40" title="Institución / Convenio">
+                                            <i class="fas fa-building text-[9px]"></i> {{ $paciente->institucion->nombre }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                            Particular
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
@@ -348,6 +376,24 @@
                                     <option value="Femenino">Femenino</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <!-- Institución / Seguro Convenio -->
+                        <div>
+                            <label for="institucion_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                <i class="fas fa-building text-teal-600 dark:text-teal-400 me-1"></i> Institución / Seguro / Convenio
+                            </label>
+                            <select 
+                                id="institucion_id" 
+                                wire:model="institucion_id" 
+                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs @error('institucion_id') border-rose-500 @enderror"
+                            >
+                                <option value="">-- Particular (Sin Convenio) --</option>
+                                @foreach ($instituciones as $inst)
+                                    <option value="{{ $inst->id }}">{{ $inst->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('institucion_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <!-- Celular y Dirección -->

@@ -6,6 +6,7 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,6 +17,7 @@ class Paciente extends Model
     protected $table = 'pacientes';
 
     protected $fillable = [
+        'institucion_id',
         'nombres',
         'apellido_paterno',
         'apellido_materno',
@@ -37,6 +39,11 @@ class Paciente extends Model
         return [
             'fecha_nacimiento' => 'date',
         ];
+    }
+
+    public function institucion(): BelongsTo
+    {
+        return $this->belongsTo(Institucion::class, 'institucion_id');
     }
 
     public function proformas(): HasMany
