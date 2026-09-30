@@ -11,6 +11,7 @@ use App\Models\Paciente;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\ProformaCalendario;
+use App\Models\ProformaPagoMedico;
 use App\Models\ProformaServicio;
 use App\Models\ProformaSolicitud;
 use App\Models\Receta;
@@ -810,4 +811,94 @@ test('valida stock disponible antes de registrar consumo extra y descuenta inven
 
     // Verificar que el costo se recalculó a 0.00
     expect((float) $proforma->fresh()->costo_total)->toBe(0.00);
+});
+
+test('puede gestionar honorarios y pagos a medicos segun ponderacion de servicios en la proforma', function () {
+    $this->actingAs($this->admin);
+
+    $rolMedico = Rol::firstOrCreate(['nombre' => 'Médico'], ['descripcion' => 'Médico Tratante']);
+    $medico = User::factory()->create([
+        'rol_id' => $rolMedico->id,
+        'sucursal_id' => $this->sucursal->id,
+        'nombres' => 'Carlos',
+        'apellido_paterno' => 'Mendoza',
+        'activo' => true,
+    ]);
+
+    $paciente = Paciente::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombres' => 'Paciente Honorarios',
+        'apellido_paterno' => 'Cirugía',
+        'cedula' => 'CI-HON-'.rand(1000, 9999),
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'tipo_atencion' => 'Internacion',
+        'fecha_ingreso' => now(),
+        'estado' => 'Pagada',
+        'costo_total' => 2500.00,
+    ]);
+
+    $proforma->medicos()->attach($medico->id);
+
+    $categoria = Categoria::create(['nombre' => 'Cirugía']);
+    $servicio = Servicio::create([
+        'categoria_id' => $categoria->id,
+        'nombre' => 'Apendicectomía Laparoscópica',
+        'precio_tentativo' => 2500.00,
+        'estado' => true,
+    ]);
+
+    ProformaServicio::create([
+        'proforma_id' => $proforma->id,
+        'servicio_id' => $servicio->id,
+        'costo_final' => 2500.00,
+        'observaciones' => 'Intervención laparoscópica realizada sin complicaciones',
+        'user_id' => $this->admin->id,
+    ]);
+
+    // 1. Probar que el tab y la ponderación de servicios se visualizan
+    $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'pagos_medicos')
+        ->assertSet('tab', 'pagos_medicos')
+        ->assertSee('Liquidación y Honorarios de Médicos Tratantes')
+        ->assertSee('Apendicectomía Laparoscópica')
+        ->assertSee('Carlos Mendoza')
+        // 2. Abrir modal preseleccionando al médico
+        ->call('abrirModalPagoMedico', $medico->id)
+        ->assertSet('modalPagoMedicoOpen', true)
+        ->assertSet('pago_medico_id', $medico->id)
+        ->set('pago_medico_monto', '1250.00')
+        ->set('pago_medico_observaciones', '50% correspondiente a honorarios de cirujano principal')
+        ->set('pago_medico_fecha', now()->toDateString())
+        ->call('guardarPagoMedico')
+        ->assertDispatched('swal')
+        ->assertSet('modalPagoMedicoOpen', false);
+
+    // Verificar en BD
+    $pago = ProformaPagoMedico::where('proforma_id', $proforma->id)->where('medico_id', $medico->id)->first();
+    expect($pago)->not->toBeNull();
+    expect((float) $pago->monto)->toBe(1250.00);
+    expect($pago->observaciones)->toBe('50% correspondiente a honorarios de cirujano principal');
+    expect($proforma->fresh()->totalPagosMedicos())->toBe(1250.00);
+
+    // 3. Modificar el pago
+    $component->call('editarPagoMedico', $pago->id)
+        ->assertSet('modalPagoMedicoOpen', true)
+        ->assertSet('editando_pago_medico_id', $pago->id)
+        ->set('pago_medico_monto', '1400.00')
+        ->call('guardarPagoMedico')
+        ->assertDispatched('swal');
+
+    expect((float) $pago->fresh()->monto)->toBe(1400.00);
+    expect($proforma->fresh()->totalPagosMedicos())->toBe(1400.00);
+
+    // 4. Eliminar el pago
+    $component->call('eliminarPagoMedico', $pago->id)
+        ->assertDispatched('swal');
+
+    expect(ProformaPagoMedico::find($pago->id))->toBeNull();
+    expect($proforma->fresh()->totalPagosMedicos())->toBe(0.00);
 });

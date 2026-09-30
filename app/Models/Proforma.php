@@ -94,6 +94,19 @@ class Proforma extends Model
         return $this->hasMany(ProformaPago::class, 'proforma_id');
     }
 
+    public function pagosMedicos(): HasMany
+    {
+        return $this->hasMany(ProformaPagoMedico::class, 'proforma_id');
+    }
+
+    /**
+     * Total de honorarios pagados/asignados a médicos en la proforma.
+     */
+    public function totalPagosMedicos(): float
+    {
+        return (float) $this->pagosMedicos()->sum('monto');
+    }
+
     public function movimientosInventario(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'proforma_id');

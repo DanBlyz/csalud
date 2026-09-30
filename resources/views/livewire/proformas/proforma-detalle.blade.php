@@ -355,6 +355,19 @@
                     {{ $movimientosDespacho->count() }}
                 </span>
             </button>
+
+            <!-- 7. Honorarios Médicos -->
+            <button 
+                wire:click="cambiarTab('pagos_medicos')" 
+                type="button" 
+                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'pagos_medicos' ? 'border-violet-600 text-violet-600 dark:text-violet-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+            >
+                <i class="fas fa-hand-holding-medical text-xs"></i>
+                <span>Honorarios Médicos</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                    {{ $proforma->pagosMedicos->count() }}
+                </span>
+            </button>
         </div>
 
         <!-- CONTENIDO DEL TAB SELECCIONADO -->
@@ -1154,6 +1167,298 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 7: HONORARIOS Y PAGOS MÉDICOS -->
+            <!-- =================================================================== -->
+            @if ($tab === 'pagos_medicos')
+                <div>
+                    <!-- Header del Tab -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-hand-holding-medical text-violet-600 dark:text-violet-400"></i>
+                                Liquidación y Honorarios de Médicos Tratantes
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Pondere los servicios clínicos realizados y asigne los montos correspondientes a los médicos que participaron en este caso.</p>
+                        </div>
+                        <button 
+                            wire:click="abrirModalPagoMedico" 
+                            wire:loading.attr="disabled"
+                            type="button" 
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                        >
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Asignar Honorario</span>
+                        </button>
+                    </div>
+
+                    <!-- Banner de Estado de la Proforma -->
+                    @if ($proforma->estado === 'Pagada')
+                        <div class="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 flex items-start gap-3 text-xs">
+                            <i class="fas fa-check-circle text-base text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0"></i>
+                            <div>
+                                <span class="font-bold uppercase tracking-wider text-[11px]">¡Proforma Pagada / Cancelada!</span>
+                                <p class="mt-0.5 text-slate-700 dark:text-slate-300">
+                                    La cuenta del paciente ha sido saldada en caja. Proceda a la distribución y liquidación formal de honorarios para cada médico participante según la ponderación de servicios brindados.
+                                </p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-5 p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 flex items-start gap-3 text-xs">
+                            <i class="fas fa-info-circle text-base text-blue-600 dark:text-blue-400 mt-0.5 shrink-0"></i>
+                            <div>
+                                <span class="font-bold uppercase tracking-wider text-[11px]">Proforma en Estado: {{ $proforma->estado }}</span>
+                                <p class="mt-0.5 text-slate-700 dark:text-slate-300">
+                                    El personal puede registrar o pre-asignar los honorarios médicos como cálculo previo. La liquidación contable definitiva se consolida una vez que la proforma sea pagada en caja.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Tarjetas de Métricas de Honorarios (Colores Sólidos) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                        <!-- Card 1: Total Facturado -->
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                <span>Total Proforma</span>
+                                <i class="fas fa-file-invoice-dollar text-blue-500"></i>
+                            </div>
+                            <span class="text-lg font-bold font-mono text-slate-900 dark:text-white">
+                                Bs. {{ number_format($proforma->costo_total, 2) }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Saldo: Bs. {{ number_format($proforma->saldoPendiente(), 2) }}</span>
+                        </div>
+
+                        <!-- Card 2: Total Servicios Clínicos -->
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                <span>Servicios Clínicos</span>
+                                <i class="fas fa-briefcase-medical text-indigo-500"></i>
+                            </div>
+                            <span class="text-lg font-bold font-mono text-slate-900 dark:text-white">
+                                Bs. {{ number_format($subtotalServicios, 2) }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">{{ $proforma->servicios->count() }} procedimiento(s)</span>
+                        </div>
+
+                        <!-- Card 3: Total Honorarios Asignados -->
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                <span>Honorarios Asignados</span>
+                                <i class="fas fa-hand-holding-medical text-violet-500"></i>
+                            </div>
+                            <span class="text-lg font-bold font-mono text-violet-600 dark:text-violet-400">
+                                Bs. {{ number_format($proforma->totalPagosMedicos(), 2) }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">{{ $proforma->pagosMedicos->count() }} registro(s)</span>
+                        </div>
+
+                        <!-- Card 4: Margen Institucional -->
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                                <span>Margen Institucional</span>
+                                <i class="fas fa-hospital text-emerald-500"></i>
+                            </div>
+                            <span class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                                Bs. {{ number_format(max(0, $proforma->costo_total - $proforma->totalPagosMedicos()), 2) }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Remanente clínico</span>
+                        </div>
+                    </div>
+
+                    <!-- Panel de Médicos Asignados al Caso Clínico -->
+                    @if ($proforma->medicos->isNotEmpty())
+                        <div class="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <i class="fas fa-user-md text-blue-500"></i>
+                                    Médicos Tratantes Asignados a la Proforma
+                                </h4>
+                                <span class="text-[11px] text-slate-400">Haga clic en un médico para asignarle honorario directamente</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                @foreach ($proforma->medicos as $med)
+                                    @php
+                                        $pagosEsteMedico = $proforma->pagosMedicos->where('medico_id', $med->id);
+                                        $totalEsteMedico = (float) $pagosEsteMedico->sum('monto');
+                                    @endphp
+                                    <div class="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                                                Dr(a). {{ $med->nombre_completo }}
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 truncate">
+                                                {{ $med->especialidad->nombre ?? 'Medicina General' }}
+                                            </div>
+                                            <div class="mt-1 text-[11px] font-mono font-semibold {{ $totalEsteMedico > 0 ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400' }}">
+                                                Asignado: Bs. {{ number_format($totalEsteMedico, 2) }}
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            type="button" 
+                                            wire:click="abrirModalPagoMedico({{ $med->id }})" 
+                                            class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900 border border-violet-200 dark:border-violet-800 text-[11px] font-semibold transition"
+                                            title="Asignar honorario a este médico"
+                                        >
+                                            <i class="fas fa-plus text-[10px] me-1"></i> Asignar
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Base de Ponderación: Servicios Clínicos Realizados -->
+                    <div class="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fas fa-list-check text-indigo-500"></i>
+                                Servicios Clínicos Realizados (Base para Ponderar Honorarios)
+                            </h4>
+                            <span class="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-semibold">
+                                Total: Bs. {{ number_format($subtotalServicios, 2) }}
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th class="py-2 px-3 w-10 text-center">#</th>
+                                        <th class="py-2 px-3">Procedimiento / Servicio</th>
+                                        <th class="py-2 px-3">Categoría</th>
+                                        <th class="py-2 px-3">Observaciones de Ejecución</th>
+                                        <th class="py-2 px-3 text-right">Costo</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-slate-700 dark:text-slate-300 text-xs">
+                                    @forelse ($proforma->servicios as $sIdx => $ps)
+                                        <tr class="hover:bg-white/60 dark:hover:bg-slate-800/60">
+                                            <td class="py-2 px-3 text-center font-mono text-slate-400 text-[11px]">{{ $sIdx + 1 }}</td>
+                                            <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">
+                                                {{ $ps->servicio->nombre ?? 'Servicio no especificado' }}
+                                            </td>
+                                            <td class="py-2 px-3 text-[11px] text-slate-500 dark:text-slate-400">
+                                                {{ $ps->servicio->categoria->nombre ?? 'General' }}
+                                            </td>
+                                            <td class="py-2 px-3 text-[11px] text-slate-500 dark:text-slate-400 italic">
+                                                {{ $ps->observaciones ?: 'Sin observaciones' }}
+                                            </td>
+                                            <td class="py-2 px-3 text-right font-mono font-bold text-slate-800 dark:text-slate-200">
+                                                Bs. {{ number_format($ps->costo_final, 2) }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="py-4 px-3 text-center text-slate-400 italic">
+                                                No se han registrado procedimientos ni servicios clínicos en esta proforma.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Honorarios Médicos Registrados -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fas fa-file-invoice text-violet-500"></i>
+                                Historial de Honorarios Médicos Asignados
+                            </h4>
+                            <span class="text-xs font-mono font-bold text-violet-600 dark:text-violet-400">
+                                Total Honorarios: Bs. {{ number_format($proforma->totalPagosMedicos(), 2) }}
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Fecha Pago / Liquidación</th>
+                                        <th class="py-3 px-4">Médico Beneficiario</th>
+                                        <th class="py-3 px-4">Detalle / Ponderación / Observación</th>
+                                        <th class="py-3 px-4 text-right">Monto Honorario</th>
+                                        <th class="py-3 px-4">Registrado Por</th>
+                                        <th class="py-3 px-4 text-center w-24">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($proforma->pagosMedicos as $idx => $pm)
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                            <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
+                                            <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                                                {{ $pm->fecha_pago?->format('d/m/Y') ?? $pm->created_at?->format('d/m/Y') }}
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                                                    <i class="fas fa-user-md text-blue-500 text-[10px]"></i>
+                                                    Dr(a). {{ $pm->medico->nombre_completo ?? 'Médico no encontrado' }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 mt-0.5">
+                                                    {{ $pm->medico?->especialidad?->nombre ?? 'Medicina General' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="text-xs text-slate-800 dark:text-slate-200">
+                                                    {{ $pm->observaciones ?: 'Sin detalle u observación registrada' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-mono font-bold text-sm text-violet-600 dark:text-violet-400">
+                                                Bs. {{ number_format((float) $pm->monto, 2) }}
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-600 dark:text-slate-300 text-[11px]">
+                                                {{ $pm->user?->nombre_completo ?? 'Personal Administrativo' }}
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button 
+                                                        wire:click="editarPagoMedico({{ $pm->id }})" 
+                                                        type="button" 
+                                                        class="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer"
+                                                        title="Editar Honorario"
+                                                    >
+                                                        <i class="fas fa-edit text-xs"></i>
+                                                    </button>
+                                                    <button 
+                                                        wire:click="eliminarPagoMedico({{ $pm->id }})" 
+                                                        wire:confirm="¿Está seguro de eliminar este registro de honorario médico?"
+                                                        type="button" 
+                                                        class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
+                                                        title="Eliminar Honorario"
+                                                    >
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="py-12 px-4 text-center text-slate-400">
+                                                <i class="fas fa-hand-holding-medical text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado honorarios médicos para esta proforma.</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">Revise los servicios realizados arriba y pondere el monto a pagar para cada médico participante.</p>
+                                                <button 
+                                                    wire:click="abrirModalPagoMedico" 
+                                                    type="button" 
+                                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 cursor-pointer shadow-md shadow-violet-500/20"
+                                                >
+                                                    <i class="fas fa-plus-circle"></i> Asignar Primer Honorario
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -2429,6 +2734,184 @@
                             </span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: ASIGNAR / MODIFICAR HONORARIO MÉDICO -->
+    <!-- ======================================================================= -->
+    @if ($modalPagoMedicoOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <!-- Header -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-hand-holding-medical text-violet-600 dark:text-violet-400"></i>
+                            <span>{{ $editando_pago_medico_id ? 'Modificar Honorario Médico' : 'Asignar Honorario a Médico' }}</span>
+                        </h3>
+                        <button wire:click="cerrarModalPagoMedico" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <form wire:submit="guardarPagoMedico" class="p-6 space-y-4">
+                        <!-- Selección Rápida de Médicos Asignados -->
+                        @if ($proforma->medicos->isNotEmpty())
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                                    Médicos de la Proforma (Acceso Rápido)
+                                </label>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach ($proforma->medicos as $m)
+                                        <button 
+                                            type="button" 
+                                            wire:click="$set('pago_medico_id', {{ $m->id }})"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer {{ $pago_medico_id === $m->id ? 'bg-violet-600 text-white border-violet-600 shadow-xs' : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:border-violet-400' }}"
+                                        >
+                                            <i class="fas fa-user-md text-[11px]"></i>
+                                            <span>Dr(a). {{ $m->nombre_completo }}</span>
+                                            @if ($m->especialidad)
+                                                <span class="text-[10px] opacity-75">({{ $m->especialidad->nombre }})</span>
+                                            @endif
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <!-- Selector General de Médico -->
+                        <div>
+                            <label for="pago_medico_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Médico Destinatario <span class="text-rose-500">*</span>
+                            </label>
+                            <select 
+                                id="pago_medico_id" 
+                                wire:model="pago_medico_id" 
+                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                            >
+                                <option value="">-- Seleccione el médico --</option>
+                                @foreach ($medicos as $medOption)
+                                    <option value="{{ $medOption->id }}">
+                                        Dr(a). {{ $medOption->nombre_completo }} ({{ $medOption->especialidad->nombre ?? 'Medicina General' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('pago_medico_id')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Fila: Monto y Fecha -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="pago_medico_monto" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Monto de Honorario (Bs.) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs font-mono font-bold text-slate-400">
+                                        Bs.
+                                    </span>
+                                    <input 
+                                        type="number" 
+                                        id="pago_medico_monto" 
+                                        wire:model="pago_medico_monto" 
+                                        step="0.01" 
+                                        min="0.01"
+                                        placeholder="0.00"
+                                        class="w-full pl-9 pr-3 text-xs font-mono font-bold rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                                    >
+                                </div>
+                                @error('pago_medico_monto')
+                                    <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="pago_medico_fecha" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Fecha de Liquidación / Pago <span class="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="pago_medico_fecha" 
+                                    wire:model="pago_medico_fecha" 
+                                    class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                                >
+                                @error('pago_medico_fecha')
+                                    <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Observaciones / Ponderación -->
+                        <div>
+                            <label for="pago_medico_observaciones" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Detalle / Ponderación de Servicios Realizados
+                            </label>
+                            <textarea 
+                                id="pago_medico_observaciones" 
+                                wire:model="pago_medico_observaciones" 
+                                rows="3"
+                                placeholder="Indique el criterio o los procedimientos considerados (ej. 50% de la apendicectomía realizada, atención médica integral, honorarios de interconsulta, etc.)..."
+                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs resize-none"
+                            ></textarea>
+                            @error('pago_medico_observaciones')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Resumen de Servicios de la Proforma (Referencia en Modal) -->
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs">
+                            <span class="font-bold text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300 block mb-1.5 flex items-center justify-between">
+                                <span><i class="fas fa-clipboard-list text-indigo-500 me-1"></i> Procedimientos Clínicos en este Expediente</span>
+                                <span class="font-mono text-indigo-600 dark:text-indigo-400">Total: Bs. {{ number_format($subtotalServicios, 2) }}</span>
+                            </span>
+                            <div class="max-h-28 overflow-y-auto space-y-1 divide-y divide-slate-200 dark:divide-slate-700/60 text-[11px]">
+                                @forelse ($proforma->servicios as $s)
+                                    <div class="pt-1 first:pt-0 flex items-center justify-between">
+                                        <span class="text-slate-700 dark:text-slate-300 truncate me-2">
+                                            • {{ $s->servicio->nombre ?? 'Servicio' }}
+                                            @if ($s->observaciones)
+                                                <em class="text-slate-400">({{ $s->observaciones }})</em>
+                                            @endif
+                                        </span>
+                                        <span class="font-mono font-semibold text-slate-800 dark:text-slate-200 shrink-0">
+                                            Bs. {{ number_format($s->costo_final, 2) }}
+                                        </span>
+                                    </div>
+                                @empty
+                                    <div class="text-slate-400 italic">Sin servicios registrados en la proforma</div>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalPagoMedico" 
+                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarPagoMedico">
+                                    <i class="fas fa-check-circle me-1"></i> Guardar Honorario
+                                </span>
+                                <span wire:loading wire:target="guardarPagoMedico">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

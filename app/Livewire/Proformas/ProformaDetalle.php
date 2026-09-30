@@ -8,6 +8,7 @@ use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\ProformaCalendario;
+use App\Models\ProformaPagoMedico;
 use App\Models\ProformaServicio;
 use App\Models\ProformaSolicitud;
 use App\Models\Receta;
@@ -136,6 +137,19 @@ class ProformaDetalle extends Component
 
     public string $buscarDespachoExtraProducto = '';
 
+    // Modal Honorarios / Pagos Médicos
+    public bool $modalPagoMedicoOpen = false;
+
+    public ?int $pago_medico_id = null;
+
+    public string $pago_medico_monto = '';
+
+    public string $pago_medico_observaciones = '';
+
+    public string $pago_medico_fecha = '';
+
+    public ?int $editando_pago_medico_id = null;
+
     public function mount(Proforma $proforma): void
     {
         $this->proforma = $proforma->load([
@@ -150,6 +164,8 @@ class ProformaDetalle extends Component
             'consumosExtras.producto',
             'consumosExtras.user',
             'pagos',
+            'pagosMedicos.medico.especialidad',
+            'pagosMedicos.user',
             'movimientosInventario.producto.marca',
             'movimientosInventario.lote',
             'movimientosInventario.usuario',
@@ -1331,6 +1347,107 @@ class ProformaDetalle extends Component
         ]);
     }
 
+    // =========================================================================
+    // 7. HONORARIOS Y PAGOS MÉDICOS
+    // =========================================================================
+    public function abrirModalPagoMedico(?int $medicoId = null): void
+    {
+        $this->resetValidation();
+        $this->editando_pago_medico_id = null;
+        $this->pago_medico_id = $medicoId;
+        $this->pago_medico_monto = '';
+        $this->pago_medico_observaciones = '';
+        $this->pago_medico_fecha = now()->toDateString();
+        $this->modalPagoMedicoOpen = true;
+    }
+
+    public function cerrarModalPagoMedico(): void
+    {
+        $this->modalPagoMedicoOpen = false;
+        $this->resetValidation();
+        $this->reset([
+            'pago_medico_id',
+            'pago_medico_monto',
+            'pago_medico_observaciones',
+            'pago_medico_fecha',
+            'editando_pago_medico_id',
+        ]);
+    }
+
+    public function editarPagoMedico(int $pagoId): void
+    {
+        $this->resetValidation();
+        $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
+
+        $this->editando_pago_medico_id = $pago->id;
+        $this->pago_medico_id = $pago->medico_id;
+        $this->pago_medico_monto = number_format((float) $pago->monto, 2, '.', '');
+        $this->pago_medico_observaciones = $pago->observaciones ?? '';
+        $this->pago_medico_fecha = $pago->fecha_pago ? $pago->fecha_pago->toDateString() : now()->toDateString();
+        $this->modalPagoMedicoOpen = true;
+    }
+
+    public function guardarPagoMedico(): void
+    {
+        $this->validate([
+            'pago_medico_id' => ['required', 'exists:users,id'],
+            'pago_medico_monto' => ['required', 'numeric', 'min:0.01'],
+            'pago_medico_fecha' => ['required', 'date'],
+            'pago_medico_observaciones' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'pago_medico_id.required' => 'Debe seleccionar el médico asignado.',
+            'pago_medico_monto.required' => 'Debe indicar el monto de honorarios a pagar.',
+            'pago_medico_monto.min' => 'El monto debe ser mayor a 0.',
+            'pago_medico_fecha.required' => 'La fecha de liquidación es requerida.',
+        ]);
+
+        if ($this->editando_pago_medico_id) {
+            $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($this->editando_pago_medico_id);
+            $pago->update([
+                'medico_id' => $this->pago_medico_id,
+                'monto' => (float) $this->pago_medico_monto,
+                'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
+                'fecha_pago' => $this->pago_medico_fecha,
+            ]);
+
+            $mensaje = 'El registro de honorarios médicos fue actualizado correctamente.';
+        } else {
+            ProformaPagoMedico::create([
+                'proforma_id' => $this->proforma->id,
+                'medico_id' => $this->pago_medico_id,
+                'monto' => (float) $this->pago_medico_monto,
+                'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
+                'fecha_pago' => $this->pago_medico_fecha,
+                'user_id' => Auth::id(),
+            ]);
+
+            $mensaje = 'El honorario médico fue registrado con éxito.';
+        }
+
+        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user');
+        $this->cerrarModalPagoMedico();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Honorario Registrado',
+            'text' => $mensaje,
+        ]);
+    }
+
+    public function eliminarPagoMedico(int $pagoId): void
+    {
+        $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
+        $pago->delete();
+
+        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Registro Eliminado',
+            'text' => 'El honorario médico fue retirado de la proforma.',
+        ]);
+    }
+
     public function render(): View
     {
         // Refrescar relaciones clave
@@ -1342,6 +1459,8 @@ class ProformaDetalle extends Component
             'recetas' => fn ($q) => $q->with(['detalles.producto', 'doctor'])->latest(),
             'consumosExtras.producto',
             'consumosExtras.user',
+            'pagosMedicos.medico.especialidad',
+            'pagosMedicos.user',
             'movimientosInventario.producto.marca',
             'movimientosInventario.lote',
             'movimientosInventario.usuario',

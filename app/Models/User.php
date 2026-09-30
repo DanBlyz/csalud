@@ -125,6 +125,11 @@ class User extends Authenticatable
         return $this->hasMany(ProformaPago::class, 'user_id');
     }
 
+    public function pagosHonorariosRecibidos(): HasMany
+    {
+        return $this->hasMany(ProformaPagoMedico::class, 'medico_id');
+    }
+
     public function movimientosInventario(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'user_id');
