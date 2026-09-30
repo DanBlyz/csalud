@@ -26,6 +26,7 @@ class MovimientoInventario extends Model
         'usuario_creador_id',
         'usuario_modificador_id',
         'usuario_eliminador_id',
+        'created_at',
     ];
 
     protected function casts(): array

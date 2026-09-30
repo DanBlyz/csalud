@@ -212,6 +212,12 @@
             <span class="ms-2">Servicios</span>
         </a>
 
+        <!-- Reportes del Sistema -->
+        <a href="{{ route('administracion.reportes') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.reportes*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+            <i class="fas fa-file-invoice w-5 text-sm {{ request()->routeIs('administracion.reportes*') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Reportes</span>
+        </a>
+
         <!-- Configuración de Perfil -->
         {{-- <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('profile.edit') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
             <i class="fas fa-cog w-5 text-sm text-slate-400"></i>

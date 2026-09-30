@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProformaPdfController;
+use App\Http\Controllers\ReportePdfController;
 use App\Livewire\Administracion\EspecialidadesIndex;
+use App\Livewire\Administracion\ReportesIndex;
 use App\Livewire\Administracion\RolesIndex;
 use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
@@ -56,6 +58,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/servicios', ServiciosIndex::class)
             ->middleware('permiso:4')
             ->name('servicios');
+
+        Route::get('/reportes', ReportesIndex::class)
+            ->middleware('permiso:1')
+            ->name('reportes');
+
+        Route::get('/reportes/movimientos/pdf', [ReportePdfController::class, 'movimientos'])
+            ->middleware('permiso:1')
+            ->name('reportes.movimientos.pdf');
     });
 
     // Módulo Pacientes e Instituciones
