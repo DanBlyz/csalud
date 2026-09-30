@@ -39,21 +39,30 @@
     <!-- Métricas del Catálogo -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Productos -->
-        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
-            <div class="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-teal-600 dark:text-teal-400 text-lg">
-                <i class="fas fa-prescription-bottle-alt"></i>
+        <button 
+            wire:click="setFiltroStock('')" 
+            type="button"
+            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-teal-400 shadow-xs flex items-center justify-between cursor-pointer {{ $filtroStock === '' ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-200 dark:border-slate-800' }}"
+        >
+            <div class="flex items-center gap-3.5">
+                <div class="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-teal-600 dark:text-teal-400 text-lg">
+                    <i class="fas fa-prescription-bottle-alt"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-medium text-slate-400">Total Artículos</span>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ $totalProductos }}</h4>
+                </div>
             </div>
-            <div>
-                <span class="text-xs font-medium text-slate-400">Total Artículos</span>
-                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ $totalProductos }}</h4>
-            </div>
-        </div>
+            @if ($filtroStock === '')
+                <i class="fas fa-check text-teal-500 text-xs"></i>
+            @endif
+        </button>
 
         <!-- Filtro Rápido: Stock Normal -->
         <button 
-            wire:click="$set('filtroStock', 'normal')" 
+            wire:click="setFiltroStock('normal')" 
             type="button"
-            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-emerald-400 shadow-xs flex items-center justify-between {{ $filtroStock === 'normal' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 dark:border-slate-800' }}"
+            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-emerald-400 shadow-xs flex items-center justify-between cursor-pointer {{ $filtroStock === 'normal' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 dark:border-slate-800' }}"
         >
             <div class="flex items-center gap-3">
                 <div class="h-11 w-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-lg">
@@ -61,7 +70,7 @@
                 </div>
                 <div>
                     <span class="text-xs font-medium text-slate-400">Stock Óptimo</span>
-                    <h4 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">Filtrar Normales</h4>
+                    <h4 class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ $totalStockNormal }}</h4>
                 </div>
             </div>
             @if ($filtroStock === 'normal')
@@ -71,9 +80,9 @@
 
         <!-- Filtro Rápido: Stock Crítico -->
         <button 
-            wire:click="$set('filtroStock', 'critico')" 
+            wire:click="setFiltroStock('critico')" 
             type="button"
-            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-amber-400 shadow-xs flex items-center justify-between {{ $filtroStock === 'critico' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800' }}"
+            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-amber-400 shadow-xs flex items-center justify-between cursor-pointer {{ $filtroStock === 'critico' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800' }}"
         >
             <div class="flex items-center gap-3">
                 <div class="h-11 w-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 text-lg">
@@ -81,7 +90,7 @@
                 </div>
                 <div>
                     <span class="text-xs font-medium text-slate-400">Stock Crítico</span>
-                    <h4 class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5">Bajo Umbral</h4>
+                    <h4 class="text-lg font-bold text-amber-600 dark:text-amber-400">{{ $totalStockCritico }}</h4>
                 </div>
             </div>
             @if ($filtroStock === 'critico')
@@ -91,9 +100,9 @@
 
         <!-- Filtro Rápido: Agotados -->
         <button 
-            wire:click="$set('filtroStock', 'agotado')" 
+            wire:click="setFiltroStock('agotado')" 
             type="button"
-            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-rose-400 shadow-xs flex items-center justify-between {{ $filtroStock === 'agotado' ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200 dark:border-slate-800' }}"
+            class="p-4 rounded-2xl bg-white dark:bg-slate-900 border text-left transition-all hover:border-rose-400 shadow-xs flex items-center justify-between cursor-pointer {{ $filtroStock === 'agotado' ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200 dark:border-slate-800' }}"
         >
             <div class="flex items-center gap-3">
                 <div class="h-11 w-11 rounded-xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 text-lg">
@@ -101,7 +110,7 @@
                 </div>
                 <div>
                     <span class="text-xs font-medium text-slate-400">Sin Existencias</span>
-                    <h4 class="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5">Stock Cero</h4>
+                    <h4 class="text-lg font-bold text-rose-600 dark:text-rose-400">{{ $totalStockAgotado }}</h4>
                 </div>
             </div>
             @if ($filtroStock === 'agotado')

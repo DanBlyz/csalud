@@ -42,7 +42,7 @@ class LotesIndex extends Component
 
     public string $codigo_lote = '';
 
-    public int $cantidad_ingresada;
+    public ?int $cantidad_ingresada = null;
 
     public ?string $fecha_vencimiento = null;
 
@@ -118,26 +118,30 @@ class LotesIndex extends Component
         $this->resetPage();
     }
 
-    public function abrirModalLote(): void
+    public function limpiarFormularioLote(): void
     {
-        $this->resetValidation();
         $this->sucursal_id = Auth::user()->sucursal_id ?? Sucursal::first()?->id;
         $this->producto_id = null;
         $this->proveedor_id = null;
         $this->codigo_lote = 'LOT-'.strtoupper(substr(uniqid(), -6));
-        /* $this->cantidad_ingresada = 20;
-        $this->fecha_vencimiento = now()->addMonths(12)->format('Y-m-d');
-        $this->precio_compra = '0.00';
-        $this->precio_venta = '0.00'; */
+        $this->cantidad_ingresada = null;
+        $this->fecha_vencimiento = null;
+        $this->precio_compra = '';
+        $this->precio_venta = '';
         $this->buscarProducto = '';
+        $this->resetValidation();
+    }
 
+    public function abrirModalLote(): void
+    {
+        $this->limpiarFormularioLote();
         $this->modalLoteOpen = true;
     }
 
     public function cerrarModalLote(): void
     {
         $this->modalLoteOpen = false;
-        $this->resetValidation();
+        $this->limpiarFormularioLote();
     }
 
     public function seleccionarProducto(int $id): void
@@ -146,6 +150,10 @@ class LotesIndex extends Component
         $prod = Producto::find($id);
         if ($prod) {
             $this->precio_venta = (string) $prod->ultimo_precio_venta;
+            $ultimoLote = Lote::where('producto_id', $id)->latest('id')->first();
+            if ($ultimoLote && empty($this->precio_compra)) {
+                $this->precio_compra = (string) $ultimoLote->precio_compra;
+            }
         }
     }
 
@@ -303,10 +311,61 @@ class LotesIndex extends Component
         $lotes = $query->orderBy('fecha_vencimiento', 'asc')->paginate($this->perPage);
 
         // Métricas
-        $totalLotesActivos = Lote::where('cantidad_actual', '>', 0)->count();
-        $lotesPorVencer = Lote::whereBetween('fecha_vencimiento', [$hoy, $proximoLimite])->where('cantidad_actual', '>', 0)->count();
-        $lotesVencidos = Lote::where('fecha_vencimiento', '<', $hoy)->where('cantidad_actual', '>', 0)->count();
-        $valorTotalInventario = Lote::where('cantidad_actual', '>', 0)->sum(DB::raw('cantidad_actual * precio_venta'));
+        $totalLotesActivos = Lote::where('cantidad_actual', '>', 0)
+            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->count();
+        $lotesPorVencer = Lote::whereBetween('fecha_vencimiento', [$hoy, $proximoLimite])
+            ->where('cantidad_actual', '>', 0)
+            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->count();
+        $lotesVencidos = Lote::where('fecha_vencimiento', '<', $hoy)
+            ->where('cantidad_actual', '>', 0)
+            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->count();
+
+        // Valorización de Stock:
+        // Se determina el último lote registrado para cada producto (último precio de compra y venta)
+        // y se multiplica por el stock actual de dicho producto.
+        $ultimosLotes = Lote::query()
+            ->whereIn('id', function ($query) {
+                $query->select(DB::raw('MAX(id)'))
+                    ->from('lotes')
+                    ->whereNull('deleted_at')
+                    ->groupBy('producto_id');
+            })
+            ->get()
+            ->keyBy('producto_id');
+
+        $productosConStock = Producto::query()
+            ->whereHas('lotes', function ($q) {
+                $q->where('cantidad_actual', '>', 0)
+                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal));
+            })
+            ->with(['lotes' => function ($q) {
+                $q->where('cantidad_actual', '>', 0)
+                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal));
+            }])
+            ->get();
+
+        $valorStockCompra = 0.0;
+        $valorStockVenta = 0.0;
+
+        foreach ($productosConStock as $prod) {
+            $stockProd = (int) $prod->lotes->sum('cantidad_actual');
+            if ($stockProd <= 0) {
+                continue;
+            }
+
+            $loteReciente = $ultimosLotes->get($prod->id);
+            $ultimoPrecioCompra = $loteReciente ? (float) $loteReciente->precio_compra : 0.0;
+            $ultimoPrecioVenta = (float) ($prod->ultimo_precio_venta ?? 0);
+            if ($ultimoPrecioVenta <= 0 && $loteReciente) {
+                $ultimoPrecioVenta = (float) $loteReciente->precio_venta;
+            }
+
+            $valorStockCompra += ($stockProd * $ultimoPrecioCompra);
+            $valorStockVenta += ($stockProd * $ultimoPrecioVenta);
+        }
 
         // Colecciones auxiliares
         $sucursales = Sucursal::orderBy('nombre')->get();
@@ -323,6 +382,8 @@ class LotesIndex extends Component
             $productosEncontrados = $pQuery->take(10)->get();
         }
 
+        $productoSeleccionado = $this->producto_id ? Producto::with('marca')->find($this->producto_id) : null;
+
         // Lote en ajuste
         $loteAjuste = $this->loteAjusteId ? Lote::with('producto')->find($this->loteAjusteId) : null;
 
@@ -331,10 +392,13 @@ class LotesIndex extends Component
             'totalLotesActivos' => $totalLotesActivos,
             'lotesPorVencer' => $lotesPorVencer,
             'lotesVencidos' => $lotesVencidos,
-            'valorTotalInventario' => $valorTotalInventario,
+            'valorStockCompra' => $valorStockCompra,
+            'valorStockVenta' => $valorStockVenta,
+            'valorTotalInventario' => $valorStockVenta,
             'sucursales' => $sucursales,
             'proveedores' => $proveedores,
             'productosEncontrados' => $productosEncontrados,
+            'productoSeleccionado' => $productoSeleccionado,
             'loteAjuste' => $loteAjuste,
         ]);
     }

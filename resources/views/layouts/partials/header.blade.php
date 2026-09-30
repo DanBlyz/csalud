@@ -42,7 +42,7 @@
             </button>
 
             <!-- Notifications Dropdown -->
-            <div class="relative" x-data="{ open: false }">
+            {{-- <div class="relative" x-data="{ open: false }">
                 <button 
                     @click="open = !open" 
                     @click.away="open = false" 
@@ -108,7 +108,7 @@
                         <a href="#" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium">Ver todas las notificaciones</a>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- User Menu Dropdown -->
             <div class="relative" x-data="{ open: false }">

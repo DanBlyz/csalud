@@ -87,6 +87,16 @@ class ProductosIndex extends Component
         $this->resetPage();
     }
 
+    public function setFiltroStock(string $filtro): void
+    {
+        if ($filtro === '') {
+            $this->filtroStock = '';
+        } else {
+            $this->filtroStock = ($this->filtroStock === $filtro) ? '' : $filtro;
+        }
+        $this->resetPage();
+    }
+
     public function abrirModalProducto(?int $id = null): void
     {
         $this->resetValidation();
@@ -216,17 +226,26 @@ class ProductosIndex extends Component
         }
 
         if ($this->filtroStock === 'agotado') {
-            $query->having('stock_total', '<=', 0)->orHavingRaw('stock_total IS NULL');
+            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= 0');
         } elseif ($this->filtroStock === 'critico') {
-            $query->havingRaw('stock_total > 0 AND stock_total <= stock_minimo');
+            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > 0')
+                ->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= productos.stock_minimo');
         } elseif ($this->filtroStock === 'normal') {
-            $query->havingRaw('stock_total > stock_minimo');
+            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > productos.stock_minimo');
         }
 
         $productos = $query->orderBy('nombre', 'asc')->paginate($this->perPage);
 
-        // Métricas rápidas
-        $totalProductos = Producto::count();
+        // Métricas rápidas del Catálogo
+        $productosTotales = Producto::query()
+            ->withSum('lotes as stock_total', 'cantidad_actual')
+            ->get(['id', 'stock_minimo']);
+
+        $totalProductos = $productosTotales->count();
+        $totalStockNormal = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > $p->stock_minimo)->count();
+        $totalStockCritico = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > 0 && ($p->stock_total ?? 0) <= $p->stock_minimo)->count();
+        $totalStockAgotado = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) <= 0)->count();
+
         $marcas = Marca::orderBy('nombre')->get();
 
         // Producto seleccionado para ver lotes
@@ -237,6 +256,9 @@ class ProductosIndex extends Component
         return view('livewire.farmacia.productos-index', [
             'productos' => $productos,
             'totalProductos' => $totalProductos,
+            'totalStockNormal' => $totalStockNormal,
+            'totalStockCritico' => $totalStockCritico,
+            'totalStockAgotado' => $totalStockAgotado,
             'marcas' => $marcas,
             'productoSeleccionado' => $productoSeleccionado,
         ]);

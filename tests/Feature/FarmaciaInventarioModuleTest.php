@@ -455,3 +455,205 @@ test('puede despachar medicamentos de receta junto con insumos extras y reflejar
     // Total = 19.00
     expect((float) $proforma->fresh()->costo_total)->toBe(19.00);
 });
+
+test('los campos del modal de lote se resetean completamente despues de guardar o cerrar', function () {
+    $this->actingAs($this->admin);
+
+    $producto = Producto::create([
+        'nombre' => 'Paracetamol 500mg Test',
+        'marca_id' => $this->marca->id,
+        'unidad_medida' => 'Tableta',
+        'ultimo_precio_venta' => 1.50,
+        'stock_minimo' => 10,
+    ]);
+
+    $component = Livewire::test(LotesIndex::class)
+        ->call('abrirModalLote')
+        ->set('sucursal_id', $this->sucursal->id)
+        ->set('producto_id', $producto->id)
+        ->set('codigo_lote', 'PAR-RESET-01')
+        ->set('cantidad_ingresada', 25)
+        ->set('fecha_vencimiento', '2028-06-30')
+        ->set('precio_compra', '0.80')
+        ->set('precio_venta', '1.50')
+        ->call('guardarLote')
+        ->assertDispatched('swal');
+
+    // Al haberse guardado, el modal debe estar cerrado y los campos limpios
+    $component->assertSet('modalLoteOpen', false)
+        ->assertSet('producto_id', null)
+        ->assertSet('cantidad_ingresada', null)
+        ->assertSet('fecha_vencimiento', null)
+        ->assertSet('precio_compra', '')
+        ->assertSet('precio_venta', '');
+
+    // Al abrir el modal de nuevo, no deben reflejarse los datos anteriores
+    $component->call('abrirModalLote')
+        ->assertSet('modalLoteOpen', true)
+        ->assertSet('producto_id', null)
+        ->assertSet('cantidad_ingresada', null)
+        ->assertSet('fecha_vencimiento', null)
+        ->assertSet('precio_compra', '')
+        ->assertSet('precio_venta', '');
+});
+
+test('calcula correctamente las tarjetas de valorizacion stock compra y venta usando el ultimo precio de cada producto', function () {
+    $this->actingAs($this->admin);
+
+    $prod1 = Producto::create([
+        'nombre' => 'Producto Val 1',
+        'marca_id' => $this->marca->id,
+        'unidad_medida' => 'Frasco',
+        'ultimo_precio_venta' => 20.00,
+        'stock_minimo' => 5,
+    ]);
+
+    $prod2 = Producto::create([
+        'nombre' => 'Producto Val 2',
+        'marca_id' => $this->marca->id,
+        'unidad_medida' => 'Caja',
+        'ultimo_precio_venta' => 50.00,
+        'stock_minimo' => 5,
+    ]);
+
+    // Lotes Prod 1: Lote antiguo a compra 8 / venta 15; lote nuevo a compra 10 / venta 20
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prod1->id,
+        'codigo_lote' => 'VAL1-OLD',
+        'cantidad_ingresada' => 10,
+        'cantidad_actual' => 10,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 8.00,
+        'precio_venta' => 15.00,
+    ]);
+
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prod1->id,
+        'codigo_lote' => 'VAL1-NEW',
+        'cantidad_ingresada' => 20,
+        'cantidad_actual' => 20,
+        'fecha_vencimiento' => now()->addYears(2),
+        'precio_compra' => 10.00, // Último precio de compra de Prod 1
+        'precio_venta' => 20.00,  // Último precio de venta de Prod 1
+    ]);
+
+    // Stock total Prod 1 = 10 + 20 = 30 unidades
+    // Valor compra Prod 1 = 30 * 10.00 = 300.00
+    // Valor venta Prod 1 = 30 * 20.00 = 600.00
+
+    // Lote Prod 2: compra 35 / venta 50
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prod2->id,
+        'codigo_lote' => 'VAL2-LOTE',
+        'cantidad_ingresada' => 5,
+        'cantidad_actual' => 5,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 35.00, // Último precio de compra de Prod 2
+        'precio_venta' => 50.00,  // Último precio de venta de Prod 2
+    ]);
+
+    // Stock total Prod 2 = 5 unidades
+    // Valor compra Prod 2 = 5 * 35.00 = 175.00
+    // Valor venta Prod 2 = 5 * 50.00 = 250.00
+
+    // Total general esperado:
+    // Compra = 300 + 175 = 475.00
+    // Venta = 600 + 250 = 850.00
+
+    Livewire::test(LotesIndex::class)
+        ->assertViewHas('valorStockCompra', 475.00)
+        ->assertViewHas('valorStockVenta', 850.00)
+        ->assertSee('Valorización Stock - Precio Compra')
+        ->assertSee('Valorización Stock - Precio Venta')
+        ->assertSee('475.00')
+        ->assertSee('850.00');
+});
+
+test('muestra metricas del catalogo de productos y permite filtrar interactivamente por condicion de stock', function () {
+    $this->actingAs($this->admin);
+
+    // Producto 1: Stock Normal (Stock 50 > Min 10)
+    $prodNormal = Producto::create([
+        'nombre' => 'Paracetamol 500mg Normal',
+        'marca_id' => $this->marca->id,
+        'stock_minimo' => 10,
+        'unidad_medida' => 'Tableta',
+        'ultimo_precio_venta' => 2.00,
+        'activo' => true,
+    ]);
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prodNormal->id,
+        'codigo_lote' => 'LOTE-NORM',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 1.00,
+        'precio_venta' => 2.00,
+    ]);
+
+    // Producto 2: Stock Crítico (Stock 5 <= Min 15)
+    $prodCritico = Producto::create([
+        'nombre' => 'Omeprazol 20mg Critico',
+        'marca_id' => $this->marca->id,
+        'stock_minimo' => 15,
+        'unidad_medida' => 'Capsula',
+        'ultimo_precio_venta' => 4.00,
+        'activo' => true,
+    ]);
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prodCritico->id,
+        'codigo_lote' => 'LOTE-CRIT',
+        'cantidad_ingresada' => 5,
+        'cantidad_actual' => 5,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 2.00,
+        'precio_venta' => 4.00,
+    ]);
+
+    // Producto 3: Sin existencias (Stock 0)
+    $prodAgotado = Producto::create([
+        'nombre' => 'Loratadina 10mg Agotado',
+        'marca_id' => $this->marca->id,
+        'stock_minimo' => 10,
+        'unidad_medida' => 'Tableta',
+        'ultimo_precio_venta' => 1.50,
+        'activo' => true,
+    ]);
+
+    Livewire::test(ProductosIndex::class)
+        ->assertViewHas('totalStockNormal', 1)
+        ->assertViewHas('totalStockCritico', 1)
+        ->assertViewHas('totalStockAgotado', 1)
+        ->assertSee('Paracetamol 500mg Normal')
+        ->assertSee('Omeprazol 20mg Critico')
+        ->assertSee('Loratadina 10mg Agotado')
+        // Filtrar por Crítico
+        ->call('setFiltroStock', 'critico')
+        ->assertSet('filtroStock', 'critico')
+        ->assertSee('Omeprazol 20mg Critico')
+        ->assertDontSee('Paracetamol 500mg Normal')
+        ->assertDontSee('Loratadina 10mg Agotado')
+        // Toggle Crítico apaga el filtro
+        ->call('setFiltroStock', 'critico')
+        ->assertSet('filtroStock', '')
+        ->assertSee('Paracetamol 500mg Normal')
+        ->assertSee('Omeprazol 20mg Critico')
+        ->assertSee('Loratadina 10mg Agotado')
+        // Filtrar por Agotado
+        ->call('setFiltroStock', 'agotado')
+        ->assertSet('filtroStock', 'agotado')
+        ->assertSee('Loratadina 10mg Agotado')
+        ->assertDontSee('Paracetamol 500mg Normal')
+        ->assertDontSee('Omeprazol 20mg Critico')
+        // Filtrar por Normal
+        ->call('setFiltroStock', 'normal')
+        ->assertSet('filtroStock', 'normal')
+        ->assertSee('Paracetamol 500mg Normal')
+        ->assertDontSee('Omeprazol 20mg Critico')
+        ->assertDontSee('Loratadina 10mg Agotado');
+});

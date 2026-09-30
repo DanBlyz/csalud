@@ -85,6 +85,15 @@
                 <!-- Proforma Operational Meta Info -->
                 <div class="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
                     <div class="px-2">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Proforma #</span>
+                        <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {{ $proforma->id }}
+                        </span>
+                    </div>
+
+                    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+                    <div class="px-2">
                         <span class="text-[10px] uppercase font-bold text-slate-400 block">Modalidad</span>
                         <span class="inline-flex items-center gap-1 text-xs font-bold {{ $proforma->tipo_atencion === 'Internacion' ? 'text-purple-600 dark:text-purple-400' : 'text-blue-600 dark:text-blue-400' }}">
                             <i class="fas {{ $proforma->tipo_atencion === 'Internacion' ? 'fa-bed' : 'fa-walking' }}"></i>

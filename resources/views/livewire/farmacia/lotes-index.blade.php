@@ -37,7 +37,7 @@
     </div>
 
     <!-- Métricas de Lotes -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <!-- Lotes Activos -->
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
             <div class="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-teal-600 dark:text-teal-400 text-lg">
@@ -89,15 +89,28 @@
             @endif
         </button>
 
-        <!-- Valor Total Inventario -->
+        <!-- Valorización Stock - Precio Compra -->
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+            <div class="h-11 w-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 text-lg">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-medium text-slate-400 block leading-tight">Valorización Stock - Precio Compra</span>
+                <h4 class="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+                    Bs. {{ number_format($valorStockCompra, 2) }}
+                </h4>
+            </div>
+        </div>
+
+        <!-- Valorización Stock - Precio Venta -->
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
             <div class="h-11 w-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-lg">
                 <i class="fas fa-coins"></i>
             </div>
             <div>
-                <span class="text-xs font-medium text-slate-400">Valorización Stock</span>
-                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100 font-mono">
-                    Bs. {{ number_format($valorTotalInventario, 2) }}
+                <span class="text-[11px] font-medium text-slate-400 block leading-tight">Valorización Stock - Precio Venta</span>
+                <h4 class="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                    Bs. {{ number_format($valorStockVenta, 2) }}
                 </h4>
             </div>
         </div>
@@ -400,6 +413,20 @@
                                     </div>
                                 @endforelse
                             </div>
+                            @if ($productoSeleccionado)
+                                <div class="mt-2 p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-check-circle text-teal-600 dark:text-teal-400 text-sm"></i>
+                                        <div>
+                                            <span class="font-bold text-slate-800 dark:text-slate-100">{{ $productoSeleccionado->nombre }}</span>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 ms-1">({{ $productoSeleccionado->unidad_medida }} • {{ $productoSeleccionado->marca->nombre ?? 'Genérico' }})</span>
+                                        </div>
+                                    </div>
+                                    <button wire:click="$set('producto_id', null)" type="button" class="text-slate-400 hover:text-rose-500 text-xs p-1" title="Cambiar selección">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            @endif
                             @error('producto_id') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                         </div>
 

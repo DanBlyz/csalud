@@ -23,7 +23,7 @@
     </div>
 
     <!-- User Info Box (AdminLTE style) -->
-    <div class="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center space-x-3 shrink-0">
+    {{-- <div class="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center space-x-3 shrink-0">
         <div class="relative">
             <div class="h-9 w-9 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
@@ -36,7 +36,7 @@
                 <i class="fas fa-circle text-[7px] me-1.5"></i> En línea
             </p>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Navigation Menu (Scrollable) -->
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-xs select-none custom-scrollbar">
