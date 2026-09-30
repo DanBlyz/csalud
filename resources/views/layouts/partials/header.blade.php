@@ -118,7 +118,7 @@
                     type="button" 
                     class="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 >
-                    <div class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                    <div class="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
                         {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
                     </div>
                     <div class="hidden sm:block text-left">
@@ -141,7 +141,7 @@
                     style="display: none;"
                 >
                     <!-- Header -->
-                    <div class="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900/80 dark:to-slate-850">
+                    <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
                         <p class="text-xs text-gray-500 dark:text-slate-400">Sesión iniciada como</p>
                         <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ Auth::user()->name ?? 'Usuario' }}</p>
                         <p class="text-[11px] text-gray-500 dark:text-slate-400 truncate">{{ Auth::user()->email ?? '' }}</p>

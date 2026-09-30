@@ -23,59 +23,79 @@
         </div>
     </div>
 
-    <!-- Card Principal: Controles y Listado de Recetas -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-        <!-- Filtros y Búsqueda -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Selector de Paginación -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Mostrar:</span>
-                    <select wire:model.live="perPage" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                    </select>
+    <!-- Main Card Container -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+        <!-- Card Header: Controles Estándar -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Selector de Paginación -->
+                    <div class="flex items-center gap-2">
+                        <label for="perPageDesp" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                        <select 
+                            id="perPageDesp" 
+                            wire:model.live="perPage" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro de Sucursal -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroSucDesp" class="text-xs font-medium text-slate-600 dark:text-slate-400">Sede:</label>
+                        <select 
+                            id="filtroSucDesp" 
+                            wire:model.live="filtroSucursal" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="">Todas las sedes</option>
+                            @foreach ($sucursales as $s)
+                                <option value="{{ $s->id }}">{{ $s->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro Estado Despacho -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroEstDesp" class="text-xs font-medium text-slate-600 dark:text-slate-400">Estado:</label>
+                        <select 
+                            id="filtroEstDesp" 
+                            wire:model.live="filtroEstadoDespacho" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="pendientes">Pendientes de Despacho</option>
+                            <option value="completadas">Completadas Totalmente</option>
+                            <option value="todas">Todas las Recetas Activas</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Filtro de Sucursal -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Sede:</span>
-                    <select wire:model.live="filtroSucursal" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="">Todas las sedes</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre }}</option>
-                        @endforeach
-                    </select>
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.300ms="search" 
+                        placeholder="Buscar por paciente, CI, médico, receta #..." 
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                    />
+                    @if ($search !== '')
+                        <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fas fa-times-circle text-xs"></i>
+                        </button>
+                    @endif
                 </div>
-
-                <!-- Filtro Estado Despacho -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Estado:</span>
-                    <select wire:model.live="filtroEstadoDespacho" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="pendientes">Pendientes de Despacho</option>
-                        <option value="completadas">Completadas Totalmente</option>
-                        <option value="todas">Todas las Recetas Activas</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Buscador -->
-            <div class="relative w-full md:w-80">
-                <input 
-                    type="text" 
-                    wire:model.live.debounce.300ms="search" 
-                    placeholder="Buscar por paciente, CI, médico, receta #..." 
-                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-9 pr-3 py-2 focus:ring-2 focus:ring-teal-500 shadow-2xs placeholder-slate-400"
-                />
-                <span class="absolute left-3 top-2.5 text-slate-400">
-                    <i class="fas fa-search text-xs"></i>
-                </span>
-                @if ($search)
-                    <button wire:click="$set('search', '')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                @endif
             </div>
         </div>
 
@@ -231,7 +251,7 @@
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl">
                     <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white text-sm">
                                 <i class="fas fa-hand-holding-medical"></i>
@@ -393,20 +413,23 @@
                                         @else
                                             <!-- Buscador Reactivo con Sugerencias -->
                                             <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                                    <i class="fas fa-search text-xs"></i>
+                                                </div>
                                                 <input 
                                                     type="text" 
                                                     wire:model.live.debounce.250ms="buscarExtraProducto"
                                                     @focus="openDropdown = true"
                                                     placeholder="Escriba para buscar insumo por nombre..."
-                                                    class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-8 pr-7 py-2 focus:ring-2 focus:ring-teal-500 shadow-2xs placeholder-slate-400"
+                                                    class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                                                 />
                                                 @if ($buscarExtraProducto)
                                                     <button 
                                                         wire:click="$set('buscarExtraProducto', '')" 
                                                         type="button" 
-                                                        class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                                                        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                                     >
-                                                        <i class="fas fa-times text-xs"></i>
+                                                        <i class="fas fa-times-circle text-xs"></i>
                                                     </button>
                                                 @endif
 

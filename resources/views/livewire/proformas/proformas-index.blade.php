@@ -16,7 +16,7 @@
         <div class="flex items-center gap-2">
             <a 
                 href="{{ route('proformas.crear') }}" 
-                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
             >
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Admisión / Proforma</span>
@@ -69,16 +69,16 @@
 
     <!-- Main Card Container -->
     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
-        <!-- Card Header: Controles y Filtros -->
+        <!-- Card Header: Controles Estándar -->
         <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center gap-2">
                         <label for="perPageProf" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
                         <select 
                             id="perPageProf" 
                             wire:model.live="perPage" 
-                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 py-1.5 px-2.5 shadow-2xs"
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                         >
                             <option value="10">10</option>
                             <option value="25">25</option>
@@ -96,7 +96,7 @@
                             <select 
                                 id="filtroSuc" 
                                 wire:model.live="filtroSucursal" 
-                                class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 py-1.5 px-2.5 shadow-2xs"
+                                class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                             >
                                 <option value="">Todas las Sedes</option>
                                 @foreach ($sucursales as $suc)
@@ -114,7 +114,7 @@
                         <select 
                             id="filtroEstProf" 
                             wire:model.live="filtroEstado" 
-                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 py-1.5 px-2.5 shadow-2xs"
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                         >
                             <option value="">Todos los Estados</option>
                             <option value="En Curso">En Curso</option>
@@ -131,7 +131,7 @@
                         <select 
                             id="filtroTipAt" 
                             wire:model.live="filtroTipo" 
-                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 py-1.5 px-2.5 shadow-2xs"
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                         >
                             <option value="">Todas</option>
                             <option value="Ambulatoria">Ambulatoria</option>
@@ -141,7 +141,7 @@
                 </div>
 
                 <!-- Buscador Debounce -->
-                <div class="relative w-full lg:w-80">
+                <div class="relative w-full md:w-80">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <i class="fas fa-search text-xs"></i>
                     </div>
@@ -149,7 +149,7 @@
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
                         placeholder="Buscar por código, paciente, CI o médico..." 
-                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                     />
                     @if ($search !== '')
                         <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
@@ -316,7 +316,9 @@
                                                 confirmButtonText: 'Sí, anular',
                                                 cancelButtonText: 'Cancelar',
                                                 event: 'anularProforma',
-                                                params: {{ $proforma->id }}
+                                                componentId: '{{ $this->getId() }}',
+                                                method: 'anularProforma',
+                                                params: [{{ $proforma->id }}]
                                             })"
                                             class="p-1.5 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                             title="Anular Proforma"
@@ -334,7 +336,9 @@
                                                 confirmButtonText: 'Sí, eliminar',
                                                 cancelButtonText: 'Cancelar',
                                                 event: 'eliminarProforma',
-                                                params: {{ $proforma->id }}
+                                                componentId: '{{ $this->getId() }}',
+                                                method: 'eliminarProforma',
+                                                params: [{{ $proforma->id }}]
                                             })"
                                             class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                             title="Eliminar Proforma"

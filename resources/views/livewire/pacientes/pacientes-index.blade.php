@@ -18,7 +18,7 @@
                 wire:click="abrirModalCrear" 
                 wire:loading.attr="disabled"
                 type="button" 
-                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
                 <i class="fas fa-user-plus"></i>
                 <span>Nuevo Paciente</span>
@@ -227,7 +227,9 @@
                                             confirmButtonText: 'Sí, eliminar',
                                             cancelButtonText: 'Cancelar',
                                             event: 'eliminarPaciente',
-                                            params: {{ $paciente->id }}
+                                            componentId: '{{ $this->getId() }}',
+                                            method: 'eliminarPaciente',
+                                            params: [{{ $paciente->id }}]
                                         })"
                                         class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                         title="Eliminar Paciente"
@@ -278,7 +280,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white text-sm">
                                 <i class="fas {{ $pacienteId ? 'fa-user-edit' : 'fa-user-plus' }}"></i>
@@ -425,7 +427,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-3xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white text-sm">
                                 <i class="fas fa-history"></i>

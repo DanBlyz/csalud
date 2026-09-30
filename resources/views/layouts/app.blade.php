@@ -191,16 +191,16 @@
                             if (data.componentId && window.Livewire) {
                                 const component = window.Livewire.find(data.componentId);
                                 if (component && typeof component.call === 'function' && data.method) {
-                                    component.call(data.method, ...(Array.isArray(safeParams) ? safeParams : [safeParams]));
+                                    if (Array.isArray(safeParams)) {
+                                        component.call(data.method, ...safeParams);
+                                    } else {
+                                        component.call(data.method, safeParams);
+                                    }
                                     return;
                                 }
                             }
                             if (window.Livewire && data.event) {
-                                if (Array.isArray(safeParams)) {
-                                    window.Livewire.dispatch(data.event, ...safeParams);
-                                } else {
-                                    window.Livewire.dispatch(data.event, safeParams);
-                                }
+                                window.Livewire.dispatch(data.event, safeParams);
                             }
                         }
                     });

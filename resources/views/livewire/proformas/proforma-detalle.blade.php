@@ -38,11 +38,11 @@
     <!-- FICHA CLÍNICA DEL PACIENTE Y CABECERA PROFORMA -->
     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden mb-6">
         <!-- Patient Identity Banner -->
-        <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-850 dark:via-slate-900 dark:to-slate-850 border-b border-slate-200 dark:border-slate-800">
+        <div class="p-5 sm:p-6 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                 <!-- Patient Avatar and Bio -->
                 <div class="flex items-start sm:items-center gap-4">
-                    <div class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-blue-500/25 shrink-0">
+                    <div class="h-14 w-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-blue-500/25 shrink-0">
                         {{ substr($proforma->paciente->nombres ?? 'P', 0, 1) }}{{ substr($proforma->paciente->apellido_paterno ?? 'A', 0, 1) }}
                     </div>
                     <div>
@@ -231,7 +231,7 @@
                         @else
                             <a 
                                 href="{{ route('caja.index', ['search' => $proforma->id]) }}" 
-                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
                             >
                                 <i class="fas fa-cash-register text-sm"></i>
                                 <span>Liquidar en Caja</span>
@@ -720,7 +720,7 @@
 
                     <!-- RECETA ACTIVA VIGENTE -->
                     @if ($proforma->recetaActiva)
-                        <div class="p-5 rounded-2xl border-2 border-emerald-500/80 bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/30 dark:from-slate-850 dark:via-slate-900 dark:to-emerald-950/20 shadow-xs">
+                        <div class="p-5 rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/40 dark:bg-slate-850 shadow-xs">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                                 <div class="flex items-center gap-2.5">
                                     <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white text-base shadow-sm">
@@ -1254,7 +1254,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <i class="fas fa-briefcase-medical text-indigo-600"></i>
                             <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">
@@ -1304,7 +1304,7 @@
                                             type="text" 
                                             wire:model.live.debounce.250ms="buscarServicio" 
                                             placeholder="Escriba para buscar por nombre o categoría..." 
-                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                                         >
                                         @if ($buscarServicio)
                                             <button type="button" wire:click="$set('buscarServicio', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
@@ -1428,7 +1428,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fas fa-flask text-blue-600"></i>
                             Solicitud de Examen o Estudio Clínico
@@ -1533,7 +1533,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-md">
-                    <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fas fa-file-arrow-up text-blue-600"></i>
                             Adjuntar Resultado / Documento
@@ -1600,7 +1600,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-lg">
-                    <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fas fa-calendar-plus text-purple-600"></i>
                             Programar Actividades / Controles
@@ -1712,7 +1712,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div>
                             <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 <i class="fas fa-prescription text-teal-600"></i>
@@ -1882,7 +1882,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fas fa-boxes-stacked text-amber-600"></i>
                             Cargar Consumos de Insumos Hospitalarios
@@ -1932,7 +1932,7 @@
                                             type="text" 
                                             wire:model.live.debounce.250ms="buscarInsumoConsumo" 
                                             placeholder="Escriba para buscar por nombre o descripción..." 
-                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                                         >
                                         @if ($buscarInsumoConsumo)
                                             <button type="button" wire:click="$set('buscarInsumoConsumo', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
@@ -2092,7 +2092,7 @@
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl max-h-[90vh] flex flex-col">
                     <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
                         <div>
                             <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 <i class="fas fa-dolly-flatbed text-emerald-600 dark:text-emerald-400"></i>
@@ -2311,7 +2311,7 @@
                                                 type="text" 
                                                 wire:model.live.debounce.250ms="buscarDespachoExtraProducto" 
                                                 placeholder="Escriba para buscar medicamento o insumo con existencias..." 
-                                                class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                                                class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                                             >
                                             @if ($buscarDespachoExtraProducto)
                                                 <button type="button" wire:click="$set('buscarDespachoExtraProducto', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">

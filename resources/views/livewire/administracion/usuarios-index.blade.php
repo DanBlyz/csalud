@@ -17,7 +17,7 @@
             wire:click="abrirModalCrear" 
             wire:loading.attr="disabled"
             type="button" 
-            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
             <i class="fas fa-user-plus"></i>
             <span>Nuevo Usuario</span>
@@ -26,16 +26,16 @@
 
     <!-- Main Card Container -->
     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
-        <!-- Card Header: Barra Superior de Control y Filtros -->
+        <!-- Card Header: Controles Estándar -->
         <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3.5">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <!-- Selector de Paginación -->
                 <div class="flex items-center gap-2">
                     <label for="perPageUsuarios" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
                     <select 
                         id="perPageUsuarios" 
                         wire:model.live="perPage" 
-                        class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-1.5 px-2.5 shadow-2xs"
+                        class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                     >
                         <option value="10">10</option>
                         <option value="25">25</option>
@@ -45,8 +45,8 @@
                     <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
                 </div>
 
-                <!-- Buscador en tiempo real con debounce -->
-                <div class="relative w-full lg:w-96">
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <i class="fas fa-search text-xs"></i>
                     </div>
@@ -54,7 +54,7 @@
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
                         placeholder="Buscar por nombre, cédula o email..." 
-                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs"
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                     />
                     @if ($search !== '')
                         <button 
@@ -74,7 +74,7 @@
                 <div>
                     <select 
                         wire:model.live="filtroRol" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-1.5 px-2.5 shadow-2xs"
+                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                     >
                         <option value="">Todos los Roles</option>
                         @foreach ($roles as $r)
@@ -87,7 +87,7 @@
                 <div>
                     <select 
                         wire:model.live="filtroSucursal" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-1.5 px-2.5 shadow-2xs"
+                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                     >
                         <option value="">Todas las Sedes</option>
                         @foreach ($sucursales as $s)
@@ -100,7 +100,7 @@
                 <div>
                     <select 
                         wire:model.live="filtroEspecialidad" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-1.5 px-2.5 shadow-2xs"
+                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                     >
                         <option value="">Todas las Especialidades</option>
                         @foreach ($especialidades as $e)
@@ -113,7 +113,7 @@
                 <div>
                     <select 
                         wire:model.live="filtroActivo" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-1.5 px-2.5 shadow-2xs"
+                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
                     >
                         <option value="">Todos los Estados</option>
                         <option value="1">Solo Activos</option>
@@ -143,7 +143,7 @@
                             <!-- Colaborador / Avatar & Nombre -->
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                    <div class="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                                         {{ strtoupper(substr($user->nombres ?? $user->name, 0, 1) . substr($user->apellido_paterno ?? '', 0, 1)) }}
                                     </div>
                                     <div class="min-w-0">
@@ -262,7 +262,9 @@
                                                 confirmButtonText: 'Sí, dar de baja',
                                                 cancelButtonText: 'Cancelar',
                                                 event: 'eliminarUsuario',
-                                                params: {{ $user->id }}
+                                                componentId: '{{ $this->getId() }}',
+                                                method: 'eliminar',
+                                                params: [{{ $user->id }}]
                                             })"
                                             class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                             title="Eliminar Usuario"
@@ -306,7 +308,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-teal-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm">
                                 <i class="fas {{ $usuarioId ? 'fa-user-edit' : 'fa-user-plus' }}"></i>
@@ -483,7 +485,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-md">
-                    <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white text-sm">
                                 <i class="fas fa-key"></i>
@@ -558,7 +560,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-lg">
-                    <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white text-sm">
                                 <i class="fas fa-user-shield"></i>

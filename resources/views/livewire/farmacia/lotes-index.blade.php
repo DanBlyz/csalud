@@ -103,73 +103,93 @@
         </div>
     </div>
 
-    <!-- Card Principal: Controles y Tabla -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-        <!-- Barra de Búsqueda y Filtros -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Selector de Paginación -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Mostrar:</span>
-                    <select wire:model.live="perPage" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
+    <!-- Main Card Container -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+        <!-- Card Header: Controles Estándar -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Selector de Paginación -->
+                    <div class="flex items-center gap-2">
+                        <label for="perPageLotes" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                        <select 
+                            id="perPageLotes" 
+                            wire:model.live="perPage" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro por Sucursal -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroSucLotes" class="text-xs font-medium text-slate-600 dark:text-slate-400">Sede:</label>
+                        <select 
+                            id="filtroSucLotes" 
+                            wire:model.live="filtroSucursal" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="">Todas las sedes</option>
+                            @foreach ($sucursales as $s)
+                                <option value="{{ $s->id }}">{{ $s->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro por Proveedor -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroProvLotes" class="text-xs font-medium text-slate-600 dark:text-slate-400">Proveedor:</label>
+                        <select 
+                            id="filtroProvLotes" 
+                            wire:model.live="filtroProveedor" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="">Todos los distribuidores</option>
+                            @foreach ($proveedores as $pr)
+                                <option value="{{ $pr->id }}">{{ $pr->razon_social }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Limpiar Filtros Rápidos -->
+                    @if ($filtroVencimiento)
+                        <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+                        <button 
+                            wire:click="$set('filtroVencimiento', '')" 
+                            type="button" 
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+                        >
+                            <span>Todos los vencimientos</span>
+                            <i class="fas fa-times text-[10px]"></i>
+                        </button>
+                    @endif
                 </div>
 
-                <!-- Filtro por Sucursal -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Sede:</span>
-                    <select wire:model.live="filtroSucursal" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="">Todas las sedes</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre }}</option>
-                        @endforeach
-                    </select>
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.300ms="search" 
+                        placeholder="Buscar por lote, medicamento, proveedor..." 
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                    />
+                    @if ($search !== '')
+                        <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fas fa-times-circle text-xs"></i>
+                        </button>
+                    @endif
                 </div>
-
-                <!-- Filtro por Proveedor -->
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Proveedor:</span>
-                    <select wire:model.live="filtroProveedor" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
-                        <option value="">Todos los distribuidores</option>
-                        @foreach ($proveedores as $pr)
-                            <option value="{{ $pr->id }}">{{ $pr->razon_social }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Limpiar Filtros Rápidos -->
-                @if ($filtroVencimiento)
-                    <button 
-                        wire:click="$set('filtroVencimiento', '')" 
-                        type="button" 
-                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 cursor-pointer"
-                    >
-                        <span>Todos los vencimientos</span>
-                        <i class="fas fa-times text-[10px]"></i>
-                    </button>
-                @endif
-            </div>
-
-            <!-- Buscador Reactivo -->
-            <div class="relative w-full md:w-80">
-                <input 
-                    type="text" 
-                    wire:model.live.debounce.300ms="search" 
-                    placeholder="Buscar por lote, medicamento, proveedor..." 
-                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-9 pr-3 py-2 focus:ring-2 focus:ring-teal-500 shadow-2xs placeholder-slate-400"
-                />
-                <span class="absolute left-3 top-2.5 text-slate-400">
-                    <i class="fas fa-search text-xs"></i>
-                </span>
-                @if ($search)
-                    <button wire:click="$set('search', '')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
-                        <i class="fas fa-times text-xs"></i>
-                    </button>
-                @endif
             </div>
         </div>
 
@@ -321,7 +341,7 @@
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
                     <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white text-sm">
                                 <i class="fas fa-boxes"></i>
@@ -342,12 +362,22 @@
                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                 Seleccionar Medicamento / Insumo <span class="text-rose-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                wire:model.live.debounce.300ms="buscarProducto" 
-                                placeholder="Escriba para buscar medicamento o insumo..." 
-                                class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-teal-500 shadow-2xs mb-2"
-                            />
+                            <div class="relative w-full mb-2">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fas fa-search text-xs"></i>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    wire:model.live.debounce.300ms="buscarProducto" 
+                                    placeholder="Escriba para buscar medicamento o insumo..." 
+                                    class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                                />
+                                @if ($buscarProducto !== '')
+                                    <button wire:click="$set('buscarProducto', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                        <i class="fas fa-times-circle text-xs"></i>
+                                    </button>
+                                @endif
+                            </div>
                             
                             <div class="max-h-36 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                                 @forelse ($productosEncontrados as $p)
@@ -539,7 +569,7 @@
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-md">
                     <!-- Modal Header -->
-                    <div class="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600 text-white text-sm">
                                 <i class="fas fa-minus-circle"></i>

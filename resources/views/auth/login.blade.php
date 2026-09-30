@@ -2,8 +2,8 @@
     <!-- AdminLTE Style Login Box -->
     <div class="bg-white dark:bg-slate-900 shadow-xl rounded-2xl border border-gray-200/80 dark:border-slate-800 overflow-hidden transition-colors duration-200">
         <!-- Brand Header -->
-        <div class="px-6 pt-8 pb-6 text-center bg-gradient-to-b from-blue-50/60 to-white dark:from-slate-900 dark:to-slate-900 border-b border-gray-100 dark:border-slate-800">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-teal-500 text-white shadow-lg shadow-blue-500/25 mb-3">
+        <div class="px-6 pt-8 pb-6 text-center bg-slate-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25 mb-3">
                 <i class="fas fa-hospital-alt text-2xl"></i>
             </div>
             <h1 class="text-2xl font-bold tracking-tight">

@@ -108,27 +108,38 @@
         </button>
     </div>
 
-    <!-- Card Principal: Controles y Tabla Kardex -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-        <!-- Filtros Multicriterio -->
-        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-2.5">
+    <!-- Main Card Container -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+        <!-- Card Header: Controles Estándar -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3.5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
                     <!-- Selector de Paginación -->
-                    <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <span>Mostrar:</span>
-                        <select wire:model.live="perPage" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
+                    <div class="flex items-center gap-2">
+                        <label for="perPageMov" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                        <select 
+                            id="perPageMov" 
+                            wire:model.live="perPage" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
                         </select>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
                     </div>
 
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
                     <!-- Filtro por Sede -->
-                    <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <span>Sede:</span>
-                        <select wire:model.live="filtroSucursal" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
+                    <div class="flex items-center gap-2">
+                        <label for="filtroSucMov" class="text-xs font-medium text-slate-600 dark:text-slate-400">Sede:</label>
+                        <select 
+                            id="filtroSucMov" 
+                            wire:model.live="filtroSucursal" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
                             <option value="">Todas las sedes</option>
                             @foreach ($sucursales as $s)
                                 <option value="{{ $s->id }}">{{ $s->nombre }}</option>
@@ -136,10 +147,16 @@
                         </select>
                     </div>
 
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
                     <!-- Filtro por Tipo de Movimiento -->
-                    <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <span>Concepto:</span>
-                        <select wire:model.live="filtroTipo" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs">
+                    <div class="flex items-center gap-2">
+                        <label for="filtroTipoMov" class="text-xs font-medium text-slate-600 dark:text-slate-400">Concepto:</label>
+                        <select 
+                            id="filtroTipoMov" 
+                            wire:model.live="filtroTipo" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
                             <option value="">Todos los conceptos</option>
                             <option value="Entrada Compra">Entrada Compra</option>
                             <option value="Salida Receta">Salida Receta (Proforma)</option>
@@ -150,10 +167,16 @@
                         </select>
                     </div>
 
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
                     <!-- Filtro por Medicamento -->
-                    <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                        <span>Medicamento:</span>
-                        <select wire:model.live="filtroProducto" class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-1.5 shadow-2xs max-w-xs">
+                    <div class="flex items-center gap-2">
+                        <label for="filtroProdMov" class="text-xs font-medium text-slate-600 dark:text-slate-400">Medicamento:</label>
+                        <select 
+                            id="filtroProdMov" 
+                            wire:model.live="filtroProducto" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs max-w-xs"
+                        >
                             <option value="">Todos los medicamentos</option>
                             @foreach ($productos as $p)
                                 <option value="{{ $p->id }}">{{ $p->nombre }}</option>
@@ -162,20 +185,20 @@
                     </div>
                 </div>
 
-                <!-- Buscador Reactivo -->
-                <div class="relative w-full sm:w-72">
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </div>
                     <input 
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
                         placeholder="Buscar por lote, medicamento, paciente..." 
-                        class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-9 pr-3 py-1.5 focus:ring-2 focus:ring-teal-500 shadow-2xs placeholder-slate-400"
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                     />
-                    <span class="absolute left-3 top-2 text-slate-400">
-                        <i class="fas fa-search text-xs"></i>
-                    </span>
-                    @if ($search)
-                        <button wire:click="$set('search', '')" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600">
-                            <i class="fas fa-times text-xs"></i>
+                    @if ($search !== '')
+                        <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fas fa-times-circle text-xs"></i>
                         </button>
                     @endif
                 </div>
@@ -232,7 +255,7 @@
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                     @forelse ($movimientos as $mov)
                         @php
-                            $esEntrada = str_contains($mov->tipo_movimiento, 'Entrada');
+                            $esEntrada = str_contains($mov->tipo_movimiento, 'Entrada') || str_contains($mov->tipo_movimiento, 'Ajuste');
                             $esMerma = str_contains($mov->tipo_movimiento, 'Merma') || str_contains($mov->tipo_movimiento, 'Baja');
                         @endphp
                         <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">

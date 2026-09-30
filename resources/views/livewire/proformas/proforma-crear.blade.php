@@ -8,7 +8,7 @@
                 <span class="text-slate-700 dark:text-slate-300 font-semibold">Admisión y Apertura (Fase 1)</span>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2.5">
-                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20">
                     <i class="fas fa-clipboard-user text-base"></i>
                 </span>
                 Apertura de Proforma Clínica
@@ -54,7 +54,7 @@
 
             @if ($pacienteSeleccionado)
                 <!-- Tarjeta del Paciente Seleccionado -->
-                <div class="p-4 rounded-xl border border-teal-200 dark:border-teal-800/60 bg-gradient-to-r from-teal-50/70 to-emerald-50/50 dark:from-teal-950/30 dark:to-emerald-950/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="p-4 rounded-xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/80 dark:bg-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-start sm:items-center gap-3.5">
                         <div class="h-12 w-12 rounded-full bg-teal-600 text-white flex items-center justify-center text-lg font-bold shrink-0 shadow-sm">
                             {{ substr($pacienteSeleccionado->nombres, 0, 1) }}{{ substr($pacienteSeleccionado->apellido_paterno, 0, 1) }}
@@ -225,7 +225,7 @@
                             type="text" 
                             wire:model.live.debounce.200ms="medicoSearch" 
                             placeholder="Buscar médico por nombre o especialidad para añadir..." 
-                            class="w-full pl-10 pr-4 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                            class="w-full pl-10 pr-4 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                         />
                     </div>
 
@@ -366,7 +366,7 @@
                         type="text" 
                         wire:model.live.debounce.200ms="servicioSearch" 
                         placeholder="Buscar procedimiento por nombre o categoría (ej. Consulta, Sutura, Curación)..." 
-                        class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                        class="w-full pl-10 pr-4 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                     />
                 </div>
 
@@ -663,7 +663,7 @@
                             type="text" 
                             wire:model.live.debounce.200ms="medicamentoSearch" 
                             placeholder="Buscar fármaco en catálogo (ej. Paracetamol, Amoxicilina, Ibuprofeno)..." 
-                            class="w-full pl-10 pr-4 py-2.5 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 shadow-2xs"
+                            class="w-full pl-10 pr-4 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                         />
                     </div>
 
@@ -771,7 +771,7 @@
                     type="submit" 
                     wire:loading.attr="disabled"
                     wire:target="abrirProforma"
-                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/25 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/25 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                     <span wire:loading.remove wire:target="abrirProforma">
                         <i class="fas fa-save me-1.5"></i> Aperturar Proforma y Registrar Todo en Lote
@@ -790,7 +790,7 @@
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
-                    <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white text-sm">
                                 <i class="fas fa-user-plus"></i>

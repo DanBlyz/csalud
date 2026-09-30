@@ -10,7 +10,7 @@
                 <span class="text-slate-800 dark:text-slate-200">Marcas y Laboratorios</span>
             </div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span class="p-2 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white shadow-md shadow-teal-500/20">
+                <span class="p-2 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-500/20">
                     <i class="fas fa-trademark text-lg"></i>
                 </span>
                 Marcas y Laboratorios
@@ -23,7 +23,7 @@
         <button 
             type="button" 
             wire:click="abrirModal" 
-            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
         >
             <i class="fas fa-plus text-xs"></i>
             <span>Nueva Marca / Laboratorio</span>
@@ -59,31 +59,45 @@
         </div>
     </div> --}}
 
-    <!-- Contenedor Principal: Filtros y Tabla -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <!-- Barra de Búsqueda y Paginador -->
-        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-                <label class="text-xs text-slate-500 dark:text-slate-400 font-medium">Mostrar:</label>
-                <select 
-                    wire:model.live="perPage" 
-                    class="text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 py-1.5 px-3 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
-                >
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
+    <!-- Main Card Container -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+        <!-- Card Header: Controles Estándar -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="perPageMarcas" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                        <select 
+                            id="perPageMarcas" 
+                            wire:model.live="perPage" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
+                    </div>
+                </div>
 
-            <div class="relative w-full sm:w-80">
-                <input 
-                    type="text" 
-                    wire:model.live.debounce.300ms="search" 
-                    placeholder="Buscar por nombre o descripción..."
-                    class="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 ps-9 pe-3 py-2 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                >
-                <i class="fas fa-search absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.300ms="search" 
+                        placeholder="Buscar por nombre o descripción..." 
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                    />
+                    @if ($search !== '')
+                        <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fas fa-times-circle text-xs"></i>
+                        </button>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -104,7 +118,7 @@
                         <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500/10 to-emerald-500/10 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800 flex items-center justify-center font-bold text-xs shrink-0">
+                                    <div class="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800 flex items-center justify-center font-bold text-xs shrink-0">
                                         {{ strtoupper(substr($marca->nombre, 0, 2)) }}
                                     </div>
                                     <div>
@@ -190,7 +204,7 @@
                 <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-lg">
                     <form wire:submit="guardar">
                         <!-- Modal Header -->
-                        <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/80 dark:to-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
                                 <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white text-sm">
                                     <i class="fas {{ $marcaId ? 'fa-edit' : 'fa-plus' }}"></i>

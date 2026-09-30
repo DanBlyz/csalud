@@ -5,7 +5,7 @@
     <!-- Brand / Logo -->
     <div class="h-14 flex items-center justify-between px-4 bg-slate-950 border-b border-slate-800 shrink-0">
         <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 text-white font-bold text-base tracking-wide">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-teal-400 text-white shadow-md">
+            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white shadow-md">
                 <i class="fas fa-heartbeat text-sm"></i>
             </span>
             <span class="truncate">
@@ -25,7 +25,7 @@
     <!-- User Info Box (AdminLTE style) -->
     <div class="px-4 py-3 bg-slate-900/60 border-b border-slate-800 flex items-center space-x-3 shrink-0">
         <div class="relative">
-            <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-teal-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+            <div class="h-9 w-9 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
             </div>
             <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" title="En línea"></span>

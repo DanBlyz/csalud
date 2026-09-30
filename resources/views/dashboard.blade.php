@@ -3,7 +3,7 @@
     <!-- AdminLTE Small Boxes / Metric Stat Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Box 1: Pacientes -->
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md p-4 flex flex-col justify-between group">
+        <div class="relative overflow-hidden rounded-xl bg-blue-600 text-white shadow-md p-4 flex flex-col justify-between group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wider text-blue-100">Total Pacientes</p>
@@ -23,7 +23,7 @@
         </div>
 
         <!-- Box 2: Citas de Hoy -->
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md p-4 flex flex-col justify-between group">
+        <div class="relative overflow-hidden rounded-xl bg-emerald-600 text-white shadow-md p-4 flex flex-col justify-between group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wider text-emerald-100">Citas de Hoy</p>
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Box 3: Médicos Activos -->
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md p-4 flex flex-col justify-between group">
+        <div class="relative overflow-hidden rounded-xl bg-amber-500 text-white shadow-md p-4 flex flex-col justify-between group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wider text-amber-100">Médicos en Turno</p>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Box 4: Triajes / Consultas -->
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-md p-4 flex flex-col justify-between group">
+        <div class="relative overflow-hidden rounded-xl bg-purple-600 text-white shadow-md p-4 flex flex-col justify-between group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wider text-purple-100">Historias Clínicas</p>

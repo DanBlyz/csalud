@@ -8,7 +8,7 @@
                 <span class="text-slate-800 dark:text-slate-200">Cobranzas</span>
             </div>
             <h1 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                <span class="p-2 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/20">
+                <span class="p-2 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20">
                     <i class="fas fa-cash-register text-lg"></i>
                 </span>
                 Cobro y Liquidación de Pagos
@@ -37,7 +37,7 @@
     <!-- Tarjetas de Arqueo y Recaudación Diaria -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total General del Día -->
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-lg shadow-emerald-600/10 p-5 group">
+        <div class="relative overflow-hidden rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/10 p-5 group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-emerald-100">Recaudación de Hoy</p>
@@ -109,51 +109,66 @@
         </div>
     </div>
 
-    <!-- Pestañas de Navegación de Caja -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <!-- Tabs -->
-            <div class="flex items-center gap-2 border-b md:border-b-0 border-slate-200 dark:border-slate-800 pb-2 md:pb-0 overflow-x-auto">
-                <button 
-                    type="button" 
-                    wire:click="cambiarTab('pendientes')" 
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'pendientes' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                >
-                    <i class="fas fa-hand-holding-usd text-xs"></i>
-                    <span>Cuentas por Cobrar (Pendientes)</span>
-                </button>
+    <!-- Main Card Container -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+        <!-- Navegación por Tabs -->
+        <div class="p-3 sm:px-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center gap-2 overflow-x-auto">
+            <button 
+                type="button" 
+                wire:click="cambiarTab('pendientes')" 
+                class="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'pendientes' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800' }}"
+            >
+                <i class="fas fa-hand-holding-usd text-xs"></i>
+                <span>Cuentas por Cobrar (Pendientes)</span>
+            </button>
 
-                <button 
-                    type="button" 
-                    wire:click="cambiarTab('pagadas')" 
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'pagadas' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}"
-                >
-                    <i class="fas fa-check-circle text-xs"></i>
-                    <span>Historial de Liquidaciones (Pagadas)</span>
-                </button>
-            </div>
+            <button 
+                type="button" 
+                wire:click="cambiarTab('pagadas')" 
+                class="px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer {{ $activeTab === 'pagadas' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800' }}"
+            >
+                <i class="fas fa-check-circle text-xs"></i>
+                <span>Historial de Liquidaciones (Pagadas)</span>
+            </button>
+        </div>
 
-            <!-- Buscador y Selector de Cantidad -->
-            <div class="flex items-center gap-3">
-                <div class="relative w-full sm:w-64">
+        <!-- Card Header: Controles Estándar -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="perPageCaja" class="text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                        <select 
+                            id="perPageCaja" 
+                            wire:model.live="perPage" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">registros</span>
+                    </div>
+                </div>
+
+                <!-- Buscador Debounce -->
+                <div class="relative w-full md:w-80">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </div>
                     <input 
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
-                        placeholder="Buscar por paciente, CI o N°..."
-                        class="w-full text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 ps-9 pe-3 py-2 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                    >
-                    <i class="fas fa-search absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        placeholder="Buscar por paciente, CI o N°..." 
+                        class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                    />
+                    @if ($search !== '')
+                        <button wire:click="$set('search', '')" type="button" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i class="fas fa-times-circle text-xs"></i>
+                        </button>
+                    @endif
                 </div>
-
-                <select 
-                    wire:model.live="perPage" 
-                    class="text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 py-2 px-3 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                >
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
             </div>
         </div>
 
@@ -451,23 +466,26 @@
                 <!-- Modal Panel -->
                 <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200 dark:border-slate-800">
                     <!-- Modal Header -->
-                    <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white flex items-center justify-between">
-                        <div>
-                            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-100">Cobro y Liquidaciones</span>
-                            <h3 class="text-lg font-black flex items-center gap-2">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white text-sm">
                                 <i class="fas fa-cash-register"></i>
-                                Liquidar Proforma #{{ str_pad($proformaCobro->id, 5, '0', STR_PAD_LEFT) }}
-                            </h3>
-                            <p class="text-xs text-emerald-100 mt-0.5">
-                                Paciente: <strong>{{ $proformaCobro->paciente->nombre_completo ?? 'N/D' }}</strong> (CI: {{ $proformaCobro->paciente->cedula ?? '-' }})
-                            </p>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100" id="modal-cobro-title">
+                                    Liquidar Proforma #{{ str_pad($proformaCobro->id, 5, '0', STR_PAD_LEFT) }}
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Paciente: <strong>{{ $proformaCobro->paciente->nombre_completo ?? 'N/D' }}</strong> (CI: {{ $proformaCobro->paciente->cedula ?? '-' }})
+                                </p>
+                            </div>
                         </div>
                         <button 
                             type="button" 
                             wire:click="cerrarModalCobro" 
-                            class="text-emerald-100 hover:text-white p-2 rounded-xl hover:bg-white/10 transition"
+                            class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
                         >
-                            <i class="fas fa-times text-lg"></i>
+                            <i class="fas fa-times text-base"></i>
                         </button>
                     </div>
 
