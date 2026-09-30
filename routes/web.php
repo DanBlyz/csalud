@@ -8,6 +8,7 @@ use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
 use App\Livewire\Caja\CajaIndex;
+use App\Livewire\Caja\CierresIndex;
 use App\Livewire\Farmacia\DespachosIndex;
 use App\Livewire\Farmacia\LotesIndex;
 use App\Livewire\Farmacia\MarcasIndex;
@@ -115,6 +116,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/', CajaIndex::class)
             ->middleware('permiso:10')
             ->name('index');
+
+        Route::get('/cierres', CierresIndex::class)
+            ->middleware('permiso:10')
+            ->name('cierres');
     });
 
     // Rutas de Documentos e Impresión PDF

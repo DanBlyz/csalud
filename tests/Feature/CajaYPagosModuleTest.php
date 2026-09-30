@@ -1,7 +1,9 @@
 <?php
 
 use App\Livewire\Caja\CajaIndex;
+use App\Livewire\Caja\CierresIndex;
 use App\Models\Categoria;
+use App\Models\CierreMensual;
 use App\Models\Paciente;
 use App\Models\Permiso;
 use App\Models\Proforma;
@@ -293,4 +295,73 @@ test('puede generar y descargar el pdf del recibo de caja', function () {
 
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('usuario con permiso puede acceder a la seccion de cierres mensuales', function () {
+    $this->actingAs($this->cajero);
+
+    $response = $this->get(route('caja.cierres'));
+
+    $response->assertOk()
+        ->assertSeeLivewire(CierresIndex::class);
+});
+
+test('usuario sin permiso no puede acceder a la seccion de cierres mensuales', function () {
+    $this->actingAs($this->usuarioSinPermiso);
+
+    $response = $this->get(route('caja.cierres'));
+
+    $response->assertForbidden();
+});
+
+test('puede aperturar un cierre mensual, registrar egresos y finalizar el periodo', function () {
+    $this->actingAs($this->cajero);
+
+    $component = Livewire::test(CierresIndex::class)
+        ->call('abrirModalCrear')
+        ->set('nuevo_anio', 2026)
+        ->set('nuevo_mes', 9)
+        ->set('nuevo_fecha_inicio', '2026-09-01')
+        ->set('nuevo_fecha_fin', '2026-09-30')
+        ->set('nuevo_observaciones', 'Cierre de prueba Septiembre 2026')
+        ->call('crearCierre');
+
+    $cierre = CierreMensual::where('anio', 2026)->where('mes', 9)->first();
+    expect($cierre)->not->toBeNull()
+        ->and($cierre->estado)->toBe('Borrador');
+
+    // Agregar partida manual de egreso operativo (ej. Luz y Agua)
+    $component->call('abrirModalPartida', 'Egreso')
+        ->set('partida_categoria', 'Servicio Básico')
+        ->set('partida_concepto', 'Pago Servicio de Electricidad y Agua')
+        ->set('partida_monto', '450.50')
+        ->set('partida_fecha', '2026-09-15')
+        ->call('guardarPartida');
+
+    $cierre->refresh();
+    expect((float) $cierre->total_egresos)->toBe(450.50)
+        ->and((float) $cierre->utilidad_neta)->toBe(-450.50);
+
+    // Agregar partida manual de ingreso extra
+    $component->call('abrirModalPartida', 'Ingreso')
+        ->set('partida_categoria', 'Cobro Proforma')
+        ->set('partida_concepto', 'Ingreso por atención especializada')
+        ->set('partida_monto', '1000.00')
+        ->set('partida_fecha', '2026-09-20')
+        ->call('guardarPartida');
+
+    $cierre->refresh();
+    expect((float) $cierre->total_ingresos)->toBe(1000.00)
+        ->and((float) $cierre->total_egresos)->toBe(450.50)
+        ->and((float) $cierre->utilidad_neta)->toBe(549.50);
+
+    // Cerrar el período
+    $component->call('cambiarEstadoCierre', 'Cerrado');
+    $cierre->refresh();
+    expect($cierre->estado)->toBe('Cerrado');
+
+    // Reabrir el período
+    $component->call('cambiarEstadoCierre', 'Borrador');
+    $cierre->refresh();
+    expect($cierre->estado)->toBe('Borrador');
 });

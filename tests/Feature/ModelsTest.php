@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\CierreDetalle;
+use App\Models\CierreMensual;
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
 use App\Models\Producto;
@@ -90,4 +92,72 @@ test('auditable trait sets usuario_creador_id on authenticated user', function (
 
     expect($sucursal->usuario_creador_id)->toBe($user->id);
     expect($sucursal->usuarioCreador->id)->toBe($user->id);
+});
+
+test('cierre mensual consolida ingresos, egresos y calcula utilidad neta correctamente', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $sucursal = Sucursal::factory()->create();
+
+    $cierre = CierreMensual::create([
+        'sucursal_id' => $sucursal->id,
+        'anio' => 2026,
+        'mes' => 9,
+        'fecha_inicio' => '2026-09-01',
+        'fecha_fin' => '2026-09-30',
+        'estado' => 'Borrador',
+        'user_id' => $user->id,
+    ]);
+
+    expect($cierre->nombre_mes)->toBe('Septiembre');
+
+    // Ingresos: Cobros de proformas
+    CierreDetalle::create([
+        'cierre_mensual_id' => $cierre->id,
+        'tipo' => 'Ingreso',
+        'categoria' => 'Cobro Proforma',
+        'concepto' => 'Cobros de proformas ambulatorias e internación',
+        'monto' => 15000.00,
+        'fecha' => '2026-09-15',
+    ]);
+
+    // Egresos: Honorarios Médicos
+    CierreDetalle::create([
+        'cierre_mensual_id' => $cierre->id,
+        'tipo' => 'Egreso',
+        'categoria' => 'Honorario Médico',
+        'concepto' => 'Honorarios cirujanos y especialistas',
+        'monto' => 5000.00,
+        'fecha' => '2026-09-20',
+    ]);
+
+    // Egresos: Compra de Farmacia / Lotes
+    CierreDetalle::create([
+        'cierre_mensual_id' => $cierre->id,
+        'tipo' => 'Egreso',
+        'categoria' => 'Compra Farmacia',
+        'concepto' => 'Adquisición de lotes e insumos droguería',
+        'monto' => 3000.00,
+        'fecha' => '2026-09-22',
+    ]);
+
+    // Egresos: Servicios básicos (Luz/Internet)
+    CierreDetalle::create([
+        'cierre_mensual_id' => $cierre->id,
+        'tipo' => 'Egreso',
+        'categoria' => 'Servicio Básico',
+        'concepto' => 'Pago servicio eléctrico e internet fibra óptica',
+        'monto' => 800.00,
+        'fecha' => '2026-09-25',
+    ]);
+
+    $cierre->recalcularTotales();
+
+    expect((float) $cierre->fresh()->total_ingresos)->toBe(15000.00);
+    expect((float) $cierre->fresh()->total_egresos)->toBe(8800.00);
+    expect((float) $cierre->fresh()->utilidad_neta)->toBe(6200.00);
+    expect($cierre->ingresos)->toHaveCount(1);
+    expect($cierre->egresos)->toHaveCount(3);
+    expect($cierre->usuario_creador_id)->toBe($user->id);
 });
