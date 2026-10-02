@@ -16,14 +16,16 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <button 
-                wire:click="abrirModalEditarCabecera" 
-                type="button" 
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-                <i class="fas fa-edit text-xs text-blue-500"></i>
-                <span>Editar Cabecera</span>
-            </button>
+            @if ($proforma->estado !== 'Pagada')
+                <button 
+                    wire:click="abrirModalEditarCabecera" 
+                    type="button" 
+                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                    <i class="fas fa-edit text-xs text-blue-500"></i>
+                    <span>Editar Cabecera</span>
+                </button>
+            @endif
 
             <a 
                 href="{{ route('proformas.index') }}" 
@@ -34,6 +36,34 @@
             </a>
         </div>
     </div>
+
+    @if ($proforma->estado === 'Pagada')
+        <!-- AVISO DE PROFORMA CERRADA / ESTADO PAGADA -->
+        <div class="mb-5 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shrink-0">
+                    <i class="fas fa-lock text-base"></i>
+                </span>
+                <div>
+                    <h3 class="text-sm font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                        <span>Expediente Cerrado (Proforma Pagada)</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Solo Lectura</span>
+                    </h3>
+                    <p class="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                        Esta proforma se encuentra saldada y cerrada. Los servicios, exámenes, cronograma, recetas e insumos no admiten nuevas adiciones, ediciones ni eliminaciones. Únicamente está habilitada la gestión de liquidación de honorarios a médicos tratantes.
+                    </p>
+                </div>
+            </div>
+            <button 
+                wire:click="cambiarTab('pagos_medicos')" 
+                type="button" 
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-sm transition-colors shrink-0 cursor-pointer self-start md:self-auto"
+            >
+                <i class="fas fa-hand-holding-medical"></i>
+                <span>Gestionar Honorarios Médicos</span>
+            </button>
+        </div>
+    @endif
 
     <!-- FICHA CLÍNICA DEL PACIENTE Y CABECERA PROFORMA -->
     <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden mb-6">
@@ -403,15 +433,17 @@
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Asigne consultas, procedimientos, quirófano o curaciones al paciente.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalServicio" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus"></i>
-                            <span>Agregar Procedimiento / Servicio</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalServicio" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus"></i>
+                                <span>Agregar Procedimiento / Servicio</span>
+                            </button>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto">
@@ -424,7 +456,9 @@
                                     <th class="py-3 px-4">Observaciones Clínicas</th>
                                     <th class="py-3 px-4 text-right">Precio Catálogo</th>
                                     <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Costo Final Acordado</th>
-                                    <th class="py-3 px-4 text-center w-20">Acción</th>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        <th class="py-3 px-4 text-center w-20">Acción</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -450,39 +484,43 @@
                                         <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-emerald-400 text-sm">
                                             Bs. {{ number_format($ps->costo_final, 2) }}
                                         </td>
-                                        <td class="py-3 px-4 text-center">
-                                            <button 
-                                                type="button" 
-                                                @click="$dispatch('swal:confirm', {
-                                                    title: '¿Remover \'{{ addslashes($ps->servicio?->nombre ?? 'Servicio') }}\'?',
-                                                    text: 'Se descontará del costo total de la proforma.',
-                                                    icon: 'warning',
-                                                    confirmButtonText: 'Sí, remover',
-                                                    cancelButtonText: 'Cancelar',
-                                                    componentId: '{{ $this->getId() }}',
-                                                    method: 'eliminarServicioProforma',
-                                                    params: [{{ $ps->id }}],
-                                                    event: 'eliminarServicioProforma'
-                                                })"
-                                                class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                title="Eliminar Servicio de la Proforma"
-                                            >
-                                                <i class="fas fa-trash-alt text-xs"></i>
-                                            </button>
-                                        </td>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <td class="py-3 px-4 text-center">
+                                                <button 
+                                                    type="button" 
+                                                    @click="$dispatch('swal:confirm', {
+                                                        title: '¿Remover \'{{ addslashes($ps->servicio?->nombre ?? 'Servicio') }}\'?',
+                                                        text: 'Se descontará del costo total de la proforma.',
+                                                        icon: 'warning',
+                                                        confirmButtonText: 'Sí, remover',
+                                                        cancelButtonText: 'Cancelar',
+                                                        componentId: '{{ $this->getId() }}',
+                                                        method: 'eliminarServicioProforma',
+                                                        params: [{{ $ps->id }}],
+                                                        event: 'eliminarServicioProforma'
+                                                    })"
+                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                    title="Eliminar Servicio de la Proforma"
+                                                >
+                                                    <i class="fas fa-trash-alt text-xs"></i>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="py-10 px-4 text-center text-slate-400">
+                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 7 : 6 }}" class="py-10 px-4 text-center text-slate-400">
                                             <i class="fas fa-briefcase-medical text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                             <p class="font-medium text-slate-600 dark:text-slate-300">No hay servicios clínicos agregados a esta proforma.</p>
-                                            <button 
-                                                wire:click="abrirModalServicio" 
-                                                type="button" 
-                                                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 cursor-pointer"
-                                            >
-                                                <i class="fas fa-plus"></i> Agregar Primer Servicio
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    wire:click="abrirModalServicio" 
+                                                    type="button" 
+                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 cursor-pointer"
+                                                >
+                                                    <i class="fas fa-plus"></i> Agregar Primer Servicio
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
@@ -505,15 +543,17 @@
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Órdenes de laboratorio, ecografías, rayos X y recepción de archivos digitales adjuntos.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalSolicitud" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus"></i>
-                            <span>Nueva Solicitud / Examen</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalSolicitud" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus"></i>
+                                <span>Nueva Solicitud / Examen</span>
+                            </button>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -525,7 +565,9 @@
                                     <th class="py-3 px-4">Indicaciones / Observaciones</th>
                                     <th class="py-3 px-4">Fecha de Solicitud</th>
                                     <th class="py-3 px-4">Documento / Informe</th>
-                                    <th class="py-3 px-4 text-center">Acciones</th>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        <th class="py-3 px-4 text-center">Acciones</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -563,52 +605,56 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            <div class="inline-flex items-center gap-1.5">
-                                                <button 
-                                                    type="button" 
-                                                    wire:click="abrirModalSubirArchivo({{ $sol->id }})" 
-                                                    wire:loading.attr="disabled"
-                                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-colors cursor-pointer"
-                                                    title="{{ $sol->archivo ? 'Reemplazar / Actualizar archivo' : 'Adjuntar informe digital' }}"
-                                                >
-                                                    <i class="fas {{ $sol->archivo ? 'fa-arrow-up-from-bracket' : 'fa-paperclip' }}"></i>
-                                                    <span>{{ $sol->archivo ? 'Actualizar' : 'Subir archivo' }}</span>
-                                                </button>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1.5">
+                                                    <button 
+                                                        type="button" 
+                                                        wire:click="abrirModalSubirArchivo({{ $sol->id }})" 
+                                                        wire:loading.attr="disabled"
+                                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-colors cursor-pointer"
+                                                        title="{{ $sol->archivo ? 'Reemplazar / Actualizar archivo' : 'Adjuntar informe digital' }}"
+                                                    >
+                                                        <i class="fas {{ $sol->archivo ? 'fa-arrow-up-from-bracket' : 'fa-paperclip' }}"></i>
+                                                        <span>{{ $sol->archivo ? 'Actualizar' : 'Subir archivo' }}</span>
+                                                    </button>
 
-                                                <button 
-                                                    type="button" 
-                                                    @click="$dispatch('swal:confirm', {
-                                                        title: '¿Remover orden de \'{{ addslashes($sol->tipoSolicitud->nombre ?? 'Examen') }}\'?',
-                                                        text: 'Se eliminará la solicitud médica y cualquier archivo adjunto.',
-                                                        icon: 'warning',
-                                                        confirmButtonText: 'Sí, remover',
-                                                        cancelButtonText: 'Cancelar',
-                                                        componentId: '{{ $this->getId() }}',
-                                                        method: 'eliminarSolicitudProforma',
-                                                        params: [{{ $sol->id }}],
-                                                        event: 'eliminarSolicitudProforma'
-                                                    })"
-                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                    title="Eliminar Solicitud"
-                                                >
-                                                    <i class="fas fa-trash-alt text-xs"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                                                    <button 
+                                                        type="button" 
+                                                        @click="$dispatch('swal:confirm', {
+                                                            title: '¿Remover orden de \'{{ addslashes($sol->tipoSolicitud->nombre ?? 'Examen') }}\'?',
+                                                            text: 'Se eliminará la solicitud médica y cualquier archivo adjunto.',
+                                                            icon: 'warning',
+                                                            confirmButtonText: 'Sí, remover',
+                                                            cancelButtonText: 'Cancelar',
+                                                            componentId: '{{ $this->getId() }}',
+                                                            method: 'eliminarSolicitudProforma',
+                                                            params: [{{ $sol->id }}],
+                                                            event: 'eliminarSolicitudProforma'
+                                                        })"
+                                                        class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                        title="Eliminar Solicitud"
+                                                    >
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="py-10 px-4 text-center text-slate-400">
+                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
                                             <i class="fas fa-flask text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                             <p class="font-medium text-slate-600 dark:text-slate-300">No se han emitido órdenes de laboratorio o estudios complementarios.</p>
-                                            <button 
-                                                wire:click="abrirModalSolicitud" 
-                                                type="button" 
-                                                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
-                                            >
-                                                <i class="fas fa-plus"></i> Solicitar Primer Examen
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    wire:click="abrirModalSolicitud" 
+                                                    type="button" 
+                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                                                >
+                                                    <i class="fas fa-plus"></i> Solicitar Primer Examen
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
@@ -631,15 +677,17 @@
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Agenda cronológica de rondas de enfermería, cambio de sueros, curaciones o cirugías.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalCalendario" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus"></i>
-                            <span>Programar Actividad</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalCalendario" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus"></i>
+                                <span>Programar Actividad</span>
+                            </button>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -651,7 +699,9 @@
                                     <th class="py-3 px-4">Hora</th>
                                     <th class="py-3 px-4">Actividad / Control / Procedimiento</th>
                                     <th class="py-3 px-4 text-center">Estado</th>
-                                    <th class="py-3 px-4 text-center">Acciones</th>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        <th class="py-3 px-4 text-center">Acciones</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -674,50 +724,61 @@
                                             </span>
                                         </td>
                                         <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            <button 
-                                                type="button" 
-                                                wire:click="toggleEstadoEvento({{ $cal->id }})" 
-                                                wire:loading.attr="disabled"
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}"
-                                                title="Haz clic para alternar entre Programado y Realizado"
-                                            >
-                                                <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
-                                                <span>{{ $cal->estado }}</span>
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="toggleEstadoEvento({{ $cal->id }})" 
+                                                    wire:loading.attr="disabled"
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}"
+                                                    title="Haz clic para alternar entre Programado y Realizado"
+                                                >
+                                                    <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
+                                                    <span>{{ $cal->estado }}</span>
+                                                </button>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}">
+                                                    <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
+                                                    <span>{{ $cal->estado }}</span>
+                                                </span>
+                                            @endif
                                         </td>
-                                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            <button 
-                                                type="button" 
-                                                @click="$dispatch('swal:confirm', {
-                                                    title: '¿Remover actividad del calendario?',
-                                                    text: 'Se eliminará \'{{ addslashes($cal->descripcion) }}\' de la agenda del paciente.',
-                                                    icon: 'warning',
-                                                    confirmButtonText: 'Sí, remover',
-                                                    cancelButtonText: 'Cancelar',
-                                                    componentId: '{{ $this->getId() }}',
-                                                    method: 'eliminarEventoCalendario',
-                                                    params: [{{ $cal->id }}],
-                                                    event: 'eliminarEventoCalendario'
-                                                })"
-                                                class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                title="Eliminar Actividad"
-                                            >
-                                                <i class="fas fa-trash-alt text-xs"></i>
-                                            </button>
-                                        </td>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                <button 
+                                                    type="button" 
+                                                    @click="$dispatch('swal:confirm', {
+                                                        title: '¿Remover actividad del calendario?',
+                                                        text: 'Se eliminará \'{{ addslashes($cal->descripcion) }}\' de la agenda del paciente.',
+                                                        icon: 'warning',
+                                                        confirmButtonText: 'Sí, remover',
+                                                        cancelButtonText: 'Cancelar',
+                                                        componentId: '{{ $this->getId() }}',
+                                                        method: 'eliminarEventoCalendario',
+                                                        params: [{{ $cal->id }}],
+                                                        event: 'eliminarEventoCalendario'
+                                                    })"
+                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                    title="Eliminar Actividad"
+                                                >
+                                                    <i class="fas fa-trash-alt text-xs"></i>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="py-10 px-4 text-center text-slate-400">
+                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
                                             <i class="fas fa-calendar-times text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                             <p class="font-medium text-slate-600 dark:text-slate-300">No hay citas, rondas o curaciones programadas en la agenda.</p>
-                                            <button 
-                                                wire:click="abrirModalCalendario" 
-                                                type="button" 
-                                                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 cursor-pointer"
-                                            >
-                                                <i class="fas fa-plus"></i> Programar Primera Actividad
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    wire:click="abrirModalCalendario" 
+                                                    type="button" 
+                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 cursor-pointer"
+                                                >
+                                                    <i class="fas fa-plus"></i> Programar Primera Actividad
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
@@ -745,15 +806,17 @@
                             </div>
                             <p class="text-xs text-slate-400 mt-0.5">Farmacia despacha únicamente los ítems de la prescripción marcada como Activa.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalReceta" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus"></i>
-                            <span>Prescribir Nueva Receta</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalReceta" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus"></i>
+                                <span>Prescribir Nueva Receta</span>
+                            </button>
+                        @endif
                     </div>
 
                     <!-- BANNER EXPLICATIVO: REGLA DE COBRO POR SALIDA DE FARMACIA -->
@@ -863,13 +926,15 @@
                             <i class="fas fa-prescription-bottle text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                             <p class="font-medium text-slate-700 dark:text-slate-200">No hay receta activa vigente para este paciente.</p>
                             <p class="text-xs text-slate-400 mt-1">Prescriba una receta para que farmacia proceda al despacho de medicamentos.</p>
-                            <button 
-                                wire:click="abrirModalReceta" 
-                                type="button" 
-                                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 cursor-pointer"
-                            >
-                                <i class="fas fa-plus"></i> Prescribir Receta Ahora
-                            </button>
+                            @if ($proforma->estado !== 'Pagada')
+                                <button 
+                                    wire:click="abrirModalReceta" 
+                                    type="button" 
+                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 cursor-pointer"
+                                >
+                                    <i class="fas fa-plus"></i> Prescribir Receta Ahora
+                                </button>
+                            @endif
                         </div>
                     @endif
 
@@ -931,15 +996,17 @@
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Jeringas, soluciones fisiológicas, apósitos o catéteres reportados directamente por enfermería y médicos.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalConsumo" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus"></i>
-                            <span>Registrar Consumo de Insumo</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalConsumo" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus"></i>
+                                <span>Registrar Consumo de Insumo</span>
+                            </button>
+                        @endif
                     </div>
 
                     <div class="overflow-x-auto">
@@ -953,7 +1020,9 @@
                                     <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Subtotal</th>
                                     <th class="py-3 px-4">Reportado Por</th>
                                     <th class="py-3 px-4">Fecha y Hora</th>
-                                    <th class="py-3 px-4 text-center w-20">Acción</th>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        <th class="py-3 px-4 text-center w-20">Acción</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -983,39 +1052,43 @@
                                         <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">
                                             {{ $ce->created_at?->format('d/m/Y H:i') }}
                                         </td>
-                                        <td class="py-3 px-4 text-center">
-                                            <button 
-                                                type="button" 
-                                                @click="$dispatch('swal:confirm', {
-                                                    title: '¿Remover insumo extra?',
-                                                    text: 'Se descontará del costo total de la proforma y las existencias se reintegrarán al inventario.',
-                                                    icon: 'warning',
-                                                    confirmButtonText: 'Sí, remover',
-                                                    cancelButtonText: 'Cancelar',
-                                                    componentId: '{{ $this->getId() }}',
-                                                    method: 'eliminarConsumoExtra',
-                                                    params: [{{ $ce->id }}],
-                                                    event: 'eliminarConsumoExtra'
-                                                })"
-                                                class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                title="Eliminar Insumo"
-                                            >
-                                                <i class="fas fa-trash-alt text-xs"></i>
-                                            </button>
-                                        </td>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <td class="py-3 px-4 text-center">
+                                                <button 
+                                                    type="button" 
+                                                    @click="$dispatch('swal:confirm', {
+                                                        title: '¿Remover insumo extra?',
+                                                        text: 'Se descontará del costo total de la proforma y las existencias se reintegrarán al inventario.',
+                                                        icon: 'warning',
+                                                        confirmButtonText: 'Sí, remover',
+                                                        cancelButtonText: 'Cancelar',
+                                                        componentId: '{{ $this->getId() }}',
+                                                        method: 'eliminarConsumoExtra',
+                                                        params: [{{ $ce->id }}],
+                                                        event: 'eliminarConsumoExtra'
+                                                    })"
+                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                    title="Eliminar Insumo"
+                                                >
+                                                    <i class="fas fa-trash-alt text-xs"></i>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="py-10 px-4 text-center text-slate-400">
+                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 8 : 7 }}" class="py-10 px-4 text-center text-slate-400">
                                             <i class="fas fa-syringe text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                             <p class="font-medium text-slate-600 dark:text-slate-300">No se han registrado consumos extras de insumos o materiales hospitalarios.</p>
-                                            <button 
-                                                wire:click="abrirModalConsumo" 
-                                                type="button" 
-                                                class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 cursor-pointer"
-                                            >
-                                                <i class="fas fa-plus"></i> Registrar Primer Insumo
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    wire:click="abrirModalConsumo" 
+                                                    type="button" 
+                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 cursor-pointer"
+                                                >
+                                                    <i class="fas fa-plus"></i> Registrar Primer Insumo
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
@@ -1038,15 +1111,17 @@
                             </h3>
                             <p class="text-xs text-slate-400 mt-0.5">Control de medicamentos e insumos dispensados físicamente con descuento en tiempo real del stock de inventario.</p>
                         </div>
-                        <button 
-                            wire:click="abrirModalDespacho" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus-circle"></i>
-                            <span>Realizar Despacho</span>
-                        </button>
+                        @if ($proforma->estado !== 'Pagada')
+                            <button 
+                                wire:click="abrirModalDespacho" 
+                                wire:loading.attr="disabled"
+                                type="button" 
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                            >
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Realizar Despacho</span>
+                            </button>
+                        @endif
                     </div>
 
                     <!-- Resumen rápido de despachos -->
@@ -1173,13 +1248,15 @@
                                             <i class="fas fa-dolly-flatbed text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                             <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado despachos de farmacia ni consumos para esta proforma.</p>
                                             <p class="text-xs text-slate-400 mt-0.5">Puede dispensar los medicamentos de la receta activa o cargar insumos extras directamente.</p>
-                                            <button 
-                                                wire:click="abrirModalDespacho" 
-                                                type="button" 
-                                                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer shadow-md shadow-emerald-500/20"
-                                            >
-                                                <i class="fas fa-plus-circle"></i> Realizar Primer Despacho
-                                            </button>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <button 
+                                                    wire:click="abrirModalDespacho" 
+                                                    type="button" 
+                                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer shadow-md shadow-emerald-500/20"
+                                                >
+                                                    <i class="fas fa-plus-circle"></i> Realizar Primer Despacho
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse

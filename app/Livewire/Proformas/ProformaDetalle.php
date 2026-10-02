@@ -180,11 +180,30 @@ class ProformaDetalle extends Component
         $this->tab = $tab;
     }
 
+    public function asegurarProformaModificable(): bool
+    {
+        if ($this->proforma->estado === 'Pagada') {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Proforma Cerrada',
+                'text' => 'Esta proforma ya se encuentra Pagada y cerrada. No se pueden agregar, editar o eliminar ítems clínicos o insumos. Solo se permite gestionar honorarios médicos.',
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
     // =========================================================================
     // 1. EDICIÓN DE CABECERA CLÍNICA
     // =========================================================================
     public function abrirModalEditarCabecera(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->edit_pieza = $this->proforma->pieza ?? '';
         $this->edit_fecha_salida = $this->proforma->fecha_salida?->format('Y-m-d\TH:i');
         $this->edit_motivo = $this->proforma->motivo_consulta ?? '';
@@ -202,6 +221,10 @@ class ProformaDetalle extends Component
 
     public function guardarCabecera(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->validate([
             'edit_pieza' => ['nullable', 'string', 'max:100'],
             'edit_fecha_salida' => ['nullable', 'date'],
@@ -237,6 +260,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalServicio(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->reset([
             'nuevo_servicio_id',
@@ -314,6 +341,10 @@ class ProformaDetalle extends Component
 
     public function agregarServicio(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         if ($this->nuevo_servicio_id) {
             $this->agregarServicioACola();
         }
@@ -352,6 +383,10 @@ class ProformaDetalle extends Component
     #[On('eliminarServicioProforma')]
     public function eliminarServicioProforma(int $id): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $item = ProformaServicio::where('proforma_id', $this->proforma->id)->findOrFail($id);
         $item->delete();
 
@@ -369,6 +404,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalSolicitud(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->reset([
             'nuevo_tipo_solicitud_id',
@@ -415,6 +454,10 @@ class ProformaDetalle extends Component
 
     public function agregarSolicitud(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         if ($this->nuevo_tipo_solicitud_id) {
             $this->agregarSolicitudACola();
         }
@@ -457,6 +500,10 @@ class ProformaDetalle extends Component
     #[On('eliminarSolicitudProforma')]
     public function eliminarSolicitudProforma(int $id): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $solicitud = ProformaSolicitud::where('proforma_id', $this->proforma->id)->findOrFail($id);
 
         if ($solicitud->archivo) {
@@ -474,6 +521,10 @@ class ProformaDetalle extends Component
 
     public function abrirModalSubirArchivo(int $solicitudId): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $solicitud = ProformaSolicitud::where('proforma_id', $this->proforma->id)->with('tipoSolicitud')->findOrFail($solicitudId);
         $this->solicitud_id_archivo = $solicitud->id;
@@ -491,6 +542,10 @@ class ProformaDetalle extends Component
 
     public function guardarArchivoSolicitud(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->validate([
             'solicitud_nuevo_archivo' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
         ], [
@@ -522,6 +577,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalCalendario(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->nuevo_evento_fecha = now()->format('Y-m-d');
         $this->nuevo_evento_hora = now()->addHour()->format('H:00');
@@ -565,6 +624,10 @@ class ProformaDetalle extends Component
 
     public function agregarEventoCalendario(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         if (! empty(trim($this->nuevo_evento_descripcion))) {
             $this->agregarEventoACola();
         }
@@ -602,6 +665,10 @@ class ProformaDetalle extends Component
 
     public function toggleEstadoEvento(int $id): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $evento = ProformaCalendario::where('proforma_id', $this->proforma->id)->findOrFail($id);
         $nuevoEstado = $evento->estado === 'Realizado' ? 'Programado' : 'Realizado';
         $evento->update(['estado' => $nuevoEstado]);
@@ -616,6 +683,10 @@ class ProformaDetalle extends Component
     #[On('eliminarEventoCalendario')]
     public function eliminarEventoCalendario(int $id): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $evento = ProformaCalendario::where('proforma_id', $this->proforma->id)->findOrFail($id);
         $evento->delete();
 
@@ -631,6 +702,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalReceta(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->receta_medico_id = Auth::id();
         $this->receta_observaciones = '';
@@ -690,6 +765,10 @@ class ProformaDetalle extends Component
 
     public function prescribirReceta(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->validate([
             'receta_medico_id' => ['required', 'exists:users,id'],
             'receta_observaciones' => ['nullable', 'string', 'max:1000'],
@@ -737,6 +816,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalConsumo(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->reset([
             'consumo_producto_id',
@@ -881,6 +964,10 @@ class ProformaDetalle extends Component
 
     public function registrarConsumoExtra(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         if ($this->consumo_producto_id) {
             $this->agregarConsumoACola();
         }
@@ -976,6 +1063,10 @@ class ProformaDetalle extends Component
     #[On('eliminarConsumoExtra')]
     public function eliminarConsumoExtra(int $id): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $consumo = ConsumoExtra::where('proforma_id', $this->proforma->id)->findOrFail($id);
 
         DB::transaction(function () use ($consumo) {
@@ -1028,6 +1119,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalDespacho(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $this->resetValidation();
         $this->proforma->load(['recetaActiva.detalles.producto', 'sucursal']);
         $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
@@ -1204,6 +1299,10 @@ class ProformaDetalle extends Component
 
     public function procesarDespacho(): void
     {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
         $hayDespachosPrescritos = false;
         foreach ($this->despachosItems as $item) {
             $cant = (int) ($item['cantidad_despachar'] ?? 0);

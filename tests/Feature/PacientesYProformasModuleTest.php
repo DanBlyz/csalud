@@ -902,3 +902,64 @@ test('puede gestionar honorarios y pagos a medicos segun ponderacion de servicio
     expect(ProformaPagoMedico::find($pago->id))->toBeNull();
     expect($proforma->fresh()->totalPagosMedicos())->toBe(0.00);
 });
+
+test('en estado Pagada la proforma bloquea agregar editar o eliminar items pero permite liquidar honorarios medicos', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::factory()->create();
+    $servicio = Servicio::factory()->create(['precio_tentativo' => 250.00]);
+
+    $proforma = Proforma::factory()->create([
+        'paciente_id' => $paciente->id,
+        'sucursal_id' => $this->sucursal->id,
+        'estado' => 'Pagada',
+    ]);
+
+    $ps = ProformaServicio::create([
+        'proforma_id' => $proforma->id,
+        'servicio_id' => $servicio->id,
+        'costo_final' => 250.00,
+    ]);
+
+    $medico = User::factory()->create([
+        'rol_id' => Rol::firstOrCreate(['nombre' => 'Médico'])->id,
+        'activo' => true,
+    ]);
+    $proforma->medicos()->attach($medico->id);
+
+    // 1. Probar que la vista oculta los botones de accion pero muestra el de honorarios
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->assertDontSee('Agregar Procedimiento / Servicio')
+        ->assertDontSee('Editar Cabecera')
+        ->assertSee('Expediente Cerrado (Proforma Pagada)')
+        ->call('cambiarTab', 'pagos_medicos')
+        ->assertSee('Asignar Honorario');
+
+    // 2. Probar que abrir o agregar servicio esta bloqueado por el backend
+    $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalServicio')
+        ->assertSet('modalServicioOpen', false)
+        ->assertDispatched('swal')
+        ->set('nuevo_servicio_id', $servicio->id)
+        ->set('nuevo_servicio_costo', '250.00')
+        ->call('agregarServicio')
+        ->assertDispatched('swal');
+
+    expect(ProformaServicio::where('proforma_id', $proforma->id)->count())->toBe(1);
+
+    // 3. Probar que eliminar servicio esta bloqueado por el backend
+    $component->call('eliminarServicioProforma', $ps->id)
+        ->assertDispatched('swal');
+
+    expect(ProformaServicio::find($ps->id))->not->toBeNull();
+
+    // 4. Probar que la liquidacion de honorarios medicos SI funciona con normalidad
+    $component->call('abrirModalPagoMedico', $medico->id)
+        ->assertSet('modalPagoMedicoOpen', true)
+        ->set('pago_medico_monto', '100.00')
+        ->set('pago_medico_fecha', now()->toDateString())
+        ->call('guardarPagoMedico')
+        ->assertDispatched('swal');
+
+    expect(ProformaPagoMedico::where('proforma_id', $proforma->id)->count())->toBe(1);
+});
