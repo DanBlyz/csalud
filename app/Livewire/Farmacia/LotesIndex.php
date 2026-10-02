@@ -3,9 +3,11 @@
 namespace App\Livewire\Farmacia;
 
 use App\Models\Lote;
+use App\Models\LoteSeccion;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Proveedor;
+use App\Models\Seccion;
 use App\Models\Sucursal;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +29,8 @@ class LotesIndex extends Component
 
     public ?int $filtroSucursal = null;
 
+    public ?int $filtroSeccion = null;
+
     public ?int $filtroProveedor = null;
 
     public string $filtroVencimiento = ''; // '' = Todos, 'vigentes', 'proximos', 'vencidos', 'agotados'
@@ -35,6 +39,8 @@ class LotesIndex extends Component
     public bool $modalLoteOpen = false;
 
     public ?int $sucursal_id = null;
+
+    public ?int $seccion_ingreso_id = null;
 
     public ?int $producto_id = null;
 
@@ -58,11 +64,26 @@ class LotesIndex extends Component
 
     public ?int $loteAjusteId = null;
 
+    public ?int $seccionAjusteId = null;
+
     public string $tipoAjuste = 'Merma por Vencimiento';
 
     public int $cantidadAjuste = 1;
 
     public string $motivoAjuste = '';
+
+    // Modal Transferencia entre Secciones Hospitalarias
+    public bool $modalTransferenciaOpen = false;
+
+    public ?int $loteTransferenciaId = null;
+
+    public ?int $seccion_origen_id = null;
+
+    public ?int $seccion_destino_id = null;
+
+    public ?int $cantidad_transferir = 1;
+
+    public string $motivo_transferencia = 'Transferencia interna a área de atención';
 
     protected function rules(): array
     {
@@ -105,6 +126,12 @@ class LotesIndex extends Component
 
     public function updatingFiltroSucursal(): void
     {
+        $this->filtroSeccion = null;
+        $this->resetPage();
+    }
+
+    public function updatingFiltroSeccion(): void
+    {
         $this->resetPage();
     }
 
@@ -121,6 +148,9 @@ class LotesIndex extends Component
     public function limpiarFormularioLote(): void
     {
         $this->sucursal_id = Auth::user()->sucursal_id ?? Sucursal::first()?->id;
+        $this->seccion_ingreso_id = Seccion::where('sucursal_id', $this->sucursal_id)
+            ->where('es_almacen_principal', true)
+            ->value('id') ?? Seccion::where('sucursal_id', $this->sucursal_id)->value('id');
         $this->producto_id = null;
         $this->proveedor_id = null;
         $this->codigo_lote = 'LOT-'.strtoupper(substr(uniqid(), -6));
@@ -130,6 +160,13 @@ class LotesIndex extends Component
         $this->precio_venta = '';
         $this->buscarProducto = '';
         $this->resetValidation();
+    }
+
+    public function updatedSucursalId(int $val): void
+    {
+        $this->seccion_ingreso_id = Seccion::where('sucursal_id', $val)
+            ->where('es_almacen_principal', true)
+            ->value('id') ?? Seccion::where('sucursal_id', $val)->value('id');
     }
 
     public function abrirModalLote(): void
@@ -159,7 +196,17 @@ class LotesIndex extends Component
 
     public function guardarLote(): void
     {
-        $this->validate();
+        $this->validate([
+            'sucursal_id' => 'required|exists:sucursales,id',
+            'seccion_ingreso_id' => 'nullable|exists:secciones,id',
+            'producto_id' => 'required|exists:productos,id',
+            'proveedor_id' => 'nullable|exists:proveedores,id',
+            'codigo_lote' => 'required|string|max:100',
+            'cantidad_ingresada' => 'required|integer|min:1',
+            'fecha_vencimiento' => 'nullable|date',
+            'precio_compra' => 'required|numeric|min:0',
+            'precio_venta' => 'required|numeric|min:0',
+        ]);
 
         DB::transaction(function () {
             // 1. Crear el Lote
@@ -175,17 +222,37 @@ class LotesIndex extends Component
                 'precio_venta' => (float) $this->precio_venta,
             ]);
 
-            // 2. Generar Movimiento Automático de Entrada en Kardex
+            // Determinar sección de ingreso (por defecto almacén principal de la sede)
+            $seccionDestinoId = $this->seccion_ingreso_id
+                ?? Seccion::where('sucursal_id', $lote->sucursal_id)->where('es_almacen_principal', true)->value('id')
+                ?? Seccion::where('sucursal_id', $lote->sucursal_id)->value('id');
+
+            if ($seccionDestinoId) {
+                // Sincronizar o actualizar el lote_secciones generado
+                $ls = LoteSeccion::where('lote_id', $lote->id)->first();
+                if ($ls) {
+                    $ls->update(['seccion_id' => $seccionDestinoId]);
+                } else {
+                    LoteSeccion::create([
+                        'lote_id' => $lote->id,
+                        'seccion_id' => $seccionDestinoId,
+                        'cantidad_actual' => $lote->cantidad_actual,
+                    ]);
+                }
+            }
+
+            // 2. Generar Movimiento Automático de Entrada en Kardex con destino de sección
             MovimientoInventario::create([
                 'sucursal_id' => $lote->sucursal_id,
                 'producto_id' => $lote->producto_id,
                 'lote_id' => $lote->id,
                 'cantidad' => $lote->cantidad_ingresada,
                 'tipo_movimiento' => 'Entrada Compra',
+                'seccion_destino_id' => $seccionDestinoId,
                 'user_id' => Auth::id(),
             ]);
 
-            // 3. Observer: Actualizar último precio de venta en el producto padre
+            // 3. Actualizar último precio de venta en el producto padre
             $producto = Producto::find($this->producto_id);
             if ($producto && (float) $this->precio_venta > 0) {
                 $producto->update([
@@ -205,11 +272,15 @@ class LotesIndex extends Component
 
     public function abrirModalAjuste(int $loteId): void
     {
-        $lote = Lote::findOrFail($loteId);
+        $lote = Lote::with('loteSecciones.seccion')->findOrFail($loteId);
         $this->loteAjusteId = $loteId;
         $this->tipoAjuste = ($lote->fecha_vencimiento && $lote->fecha_vencimiento->isPast())
             ? 'Merma por Vencimiento'
             : 'Ajuste de Inventario';
+
+        // Preseleccionar sección con existencias
+        $primeraConStock = $lote->loteSecciones->where('cantidad_actual', '>', 0)->first();
+        $this->seccionAjusteId = $primeraConStock?->seccion_id;
         $this->cantidadAjuste = min(1, $lote->cantidad_actual);
         $this->motivoAjuste = '';
         $this->modalAjusteOpen = true;
@@ -219,12 +290,14 @@ class LotesIndex extends Component
     {
         $this->modalAjusteOpen = false;
         $this->loteAjusteId = null;
+        $this->seccionAjusteId = null;
     }
 
     public function procesarAjuste(): void
     {
         $this->validate([
             'loteAjusteId' => 'required|exists:lotes,id',
+            'seccionAjusteId' => 'nullable|exists:secciones,id',
             'tipoAjuste' => 'required|string',
             'cantidadAjuste' => 'required|integer|min:1',
             'motivoAjuste' => 'required|string|min:3|max:255',
@@ -239,15 +312,46 @@ class LotesIndex extends Component
             $this->dispatch('swal', [
                 'type' => 'error',
                 'title' => 'Cantidad no disponible',
-                'message' => "El lote solo dispone de {$lote->cantidad_actual} unidades.",
+                'message' => "El lote solo dispone de {$lote->cantidad_actual} unidades consolidadas.",
             ]);
 
             return;
         }
 
+        if ($this->seccionAjusteId) {
+            $ls = LoteSeccion::where('lote_id', $lote->id)
+                ->where('seccion_id', $this->seccionAjusteId)
+                ->first();
+
+            if (! $ls || $ls->cantidad_actual < $this->cantidadAjuste) {
+                $disp = $ls ? $ls->cantidad_actual : 0;
+                $this->dispatch('swal', [
+                    'type' => 'error',
+                    'title' => 'Stock insuficiente en la sección',
+                    'message' => "La sección seleccionada solo dispone de {$disp} unidades para dar de baja.",
+                ]);
+
+                return;
+            }
+        }
+
         DB::transaction(function () use ($lote) {
-            // Descontar del lote
+            // Descontar del lote consolidado
             $lote->decrement('cantidad_actual', $this->cantidadAjuste);
+
+            // Descontar de la sección específica
+            if ($this->seccionAjusteId) {
+                LoteSeccion::where('lote_id', $lote->id)
+                    ->where('seccion_id', $this->seccionAjusteId)
+                    ->decrement('cantidad_actual', $this->cantidadAjuste);
+            } else {
+                $ls = LoteSeccion::where('lote_id', $lote->id)
+                    ->where('cantidad_actual', '>=', $this->cantidadAjuste)
+                    ->first();
+                if ($ls) {
+                    $ls->decrement('cantidad_actual', $this->cantidadAjuste);
+                }
+            }
 
             // Asentar salida en Kardex
             MovimientoInventario::create([
@@ -256,6 +360,7 @@ class LotesIndex extends Component
                 'lote_id' => $lote->id,
                 'cantidad' => $this->cantidadAjuste,
                 'tipo_movimiento' => $this->tipoAjuste,
+                'seccion_origen_id' => $this->seccionAjusteId,
                 'user_id' => Auth::id(),
             ]);
         });
@@ -269,10 +374,85 @@ class LotesIndex extends Component
         ]);
     }
 
+    public function abrirModalTransferencia(int $loteId): void
+    {
+        $lote = Lote::with('loteSecciones.seccion')->findOrFail($loteId);
+        $this->loteTransferenciaId = $loteId;
+
+        // Sección origen por defecto (la que tenga mayor stock)
+        $origenConStock = $lote->loteSecciones->where('cantidad_actual', '>', 0)->sortByDesc('cantidad_actual')->first();
+        $this->seccion_origen_id = $origenConStock?->seccion_id;
+
+        // Sección destino por defecto (otra sección de la misma sucursal)
+        $otraSeccion = Seccion::where('sucursal_id', $lote->sucursal_id)
+            ->where('activo', true)
+            ->where('id', '!=', $this->seccion_origen_id)
+            ->first();
+        $this->seccion_destino_id = $otraSeccion?->id;
+
+        $this->cantidad_transferir = 1;
+        $this->motivo_transferencia = 'Transferencia interna para atención clínica';
+        $this->resetValidation();
+        $this->modalTransferenciaOpen = true;
+    }
+
+    public function cerrarModalTransferencia(): void
+    {
+        $this->modalTransferenciaOpen = false;
+        $this->loteTransferenciaId = null;
+        $this->seccion_origen_id = null;
+        $this->seccion_destino_id = null;
+        $this->cantidad_transferir = 1;
+        $this->motivo_transferencia = '';
+    }
+
+    public function transferirStock(): void
+    {
+        $this->validate([
+            'loteTransferenciaId' => 'required|exists:lotes,id',
+            'seccion_origen_id' => 'required|exists:secciones,id',
+            'seccion_destino_id' => 'required|exists:secciones,id|different:seccion_origen_id',
+            'cantidad_transferir' => 'required|integer|min:1',
+            'motivo_transferencia' => 'nullable|string|max:255',
+        ], [
+            'seccion_origen_id.required' => 'Debe seleccionar el área u hospital de origen.',
+            'seccion_destino_id.required' => 'Debe seleccionar el área u hospital de destino.',
+            'seccion_destino_id.different' => 'El área de destino debe ser distinta a la de origen.',
+            'cantidad_transferir.required' => 'Debe ingresar la cantidad a transferir.',
+            'cantidad_transferir.min' => 'La cantidad a transferir debe ser al menos 1 unidad.',
+        ]);
+
+        $lote = Lote::findOrFail($this->loteTransferenciaId);
+
+        try {
+            $lote->transferirASeccion(
+                seccionOrigenId: $this->seccion_origen_id,
+                seccionDestinoId: $this->seccion_destino_id,
+                cantidad: $this->cantidad_transferir,
+                motivo: $this->motivo_transferencia,
+                userId: Auth::id()
+            );
+
+            $this->cerrarModalTransferencia();
+
+            $this->dispatch('swal', [
+                'type' => 'success',
+                'title' => '¡Transferencia Exitosa!',
+                'message' => "Se transfirieron {$this->cantidad_transferir} unidades entre áreas con su correspondiente registro en Kardex.",
+            ]);
+        } catch (\Throwable $e) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Error en Transferencia',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
     public function render(): View
     {
         $query = Lote::query()
-            ->with(['producto.marca', 'sucursal', 'proveedor']);
+            ->with(['producto.marca', 'sucursal', 'proveedor', 'loteSecciones.seccion']);
 
         if (! empty($this->search)) {
             $search = '%'.trim($this->search).'%';
@@ -289,6 +469,12 @@ class LotesIndex extends Component
 
         if ($this->filtroSucursal) {
             $query->where('sucursal_id', $this->filtroSucursal);
+        }
+
+        if ($this->filtroSeccion) {
+            $query->whereHas('loteSecciones', function ($sq) {
+                $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0);
+            });
         }
 
         if ($this->filtroProveedor) {
@@ -313,19 +499,20 @@ class LotesIndex extends Component
         // Métricas
         $totalLotesActivos = Lote::where('cantidad_actual', '>', 0)
             ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
         $lotesPorVencer = Lote::whereBetween('fecha_vencimiento', [$hoy, $proximoLimite])
             ->where('cantidad_actual', '>', 0)
             ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
         $lotesVencidos = Lote::where('fecha_vencimiento', '<', $hoy)
             ->where('cantidad_actual', '>', 0)
             ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
 
         // Valorización de Stock:
-        // Se determina el último lote registrado para cada producto (último precio de compra y venta)
-        // y se multiplica por el stock actual de dicho producto.
         $ultimosLotes = Lote::query()
             ->whereIn('id', function ($query) {
                 $query->select(DB::raw('MAX(id)'))
@@ -339,11 +526,13 @@ class LotesIndex extends Component
         $productosConStock = Producto::query()
             ->whereHas('lotes', function ($q) {
                 $q->where('cantidad_actual', '>', 0)
-                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal));
+                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
+                    ->when($this->filtroSeccion, fn ($sq) => $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
             })
             ->with(['lotes' => function ($q) {
                 $q->where('cantidad_actual', '>', 0)
-                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal));
+                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
+                    ->when($this->filtroSeccion, fn ($sq) => $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
             }])
             ->get();
 
@@ -371,6 +560,23 @@ class LotesIndex extends Component
         $sucursales = Sucursal::orderBy('nombre')->get();
         $proveedores = Proveedor::orderBy('razon_social')->get();
 
+        // Secciones disponibles para la sucursal activa o seleccionada
+        $seccionesSucursalId = $this->filtroSucursal ?? $this->sucursal_id ?? Auth::user()->sucursal_id ?? Sucursal::first()?->id;
+        $secciones = Seccion::query()
+            ->where('activo', true)
+            ->when($seccionesSucursalId, fn ($q) => $q->where('sucursal_id', $seccionesSucursalId))
+            ->orderBy('es_almacen_principal', 'desc')
+            ->orderBy('nombre')
+            ->get();
+
+        // Secciones para modal de ingreso (basadas en la sucursal elegida en el modal)
+        $seccionesModalIngreso = Seccion::query()
+            ->where('activo', true)
+            ->where('sucursal_id', $this->sucursal_id)
+            ->orderBy('es_almacen_principal', 'desc')
+            ->orderBy('nombre')
+            ->get();
+
         // Búsqueda de productos en modal de lote
         $productosEncontrados = collect();
         if ($this->modalLoteOpen) {
@@ -385,7 +591,20 @@ class LotesIndex extends Component
         $productoSeleccionado = $this->producto_id ? Producto::with('marca')->find($this->producto_id) : null;
 
         // Lote en ajuste
-        $loteAjuste = $this->loteAjusteId ? Lote::with('producto')->find($this->loteAjusteId) : null;
+        $loteAjuste = $this->loteAjusteId ? Lote::with(['producto', 'loteSecciones.seccion'])->find($this->loteAjusteId) : null;
+
+        // Lote en transferencia
+        $loteTransferencia = $this->loteTransferenciaId ? Lote::with(['producto.marca', 'sucursal', 'loteSecciones.seccion'])->find($this->loteTransferenciaId) : null;
+
+        // Secciones destino posibles para la transferencia
+        $seccionesDestino = collect();
+        if ($loteTransferencia) {
+            $seccionesDestino = Seccion::where('sucursal_id', $loteTransferencia->sucursal_id)
+                ->where('activo', true)
+                ->where('id', '!=', $this->seccion_origen_id)
+                ->orderBy('nombre')
+                ->get();
+        }
 
         return view('livewire.farmacia.lotes-index', [
             'lotes' => $lotes,
@@ -397,9 +616,13 @@ class LotesIndex extends Component
             'valorTotalInventario' => $valorStockVenta,
             'sucursales' => $sucursales,
             'proveedores' => $proveedores,
+            'secciones' => $secciones,
+            'seccionesModalIngreso' => $seccionesModalIngreso,
+            'seccionesDestino' => $seccionesDestino,
             'productosEncontrados' => $productosEncontrados,
             'productoSeleccionado' => $productoSeleccionado,
             'loteAjuste' => $loteAjuste,
+            'loteTransferencia' => $loteTransferencia,
         ]);
     }
 }

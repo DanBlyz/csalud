@@ -263,7 +263,12 @@
                                 {{ $mov->created_at?->format('d/m/Y H:i') }}
                             </td>
                             <td class="py-3 px-4">
-                                @if ($esEntrada)
+                                @if ($mov->tipo_movimiento === 'Transferencia Interna')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                                        <i class="fas fa-dolly text-[9px]"></i>
+                                        Transferencia Interna
+                                    </span>
+                                @elseif ($esEntrada)
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                                         <i class="fas fa-arrow-down text-[9px]"></i>
                                         {{ $mov->tipo_movimiento }}
@@ -305,7 +310,11 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-center font-mono font-bold text-xs">
-                                @if ($esEntrada)
+                                @if ($mov->tipo_movimiento === 'Transferencia Interna')
+                                    <span class="text-blue-600 dark:text-blue-400">
+                                        &plusmn;{{ $mov->cantidad }}
+                                    </span>
+                                @elseif ($esEntrada)
                                     <span class="text-emerald-600 dark:text-emerald-400">
                                         +{{ $mov->cantidad }}
                                     </span>
@@ -316,7 +325,16 @@
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
-                                @if ($mov->proforma)
+                                @if ($mov->tipo_movimiento === 'Transferencia Interna')
+                                    <div class="flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                                        <span class="text-slate-500">{{ $mov->seccionOrigen?->nombre ?? 'Área Origen' }}</span>
+                                        <i class="fas fa-arrow-right text-[10px] text-blue-500"></i>
+                                        <span class="font-bold text-blue-600 dark:text-blue-400">{{ $mov->seccionDestino?->nombre ?? 'Área Destino' }}</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">
+                                        Distribución interna hospitalaria
+                                    </div>
+                                @elseif ($mov->proforma)
                                     <div>
                                         <a 
                                             href="{{ route('proformas.show', $mov->proforma_id) }}" 
@@ -334,7 +352,17 @@
                                         </div>
                                     @endif
                                 @else
-                                    <span class="text-slate-400 italic">Abastecimiento / Ajuste General</span>
+                                    @if ($mov->seccionDestino)
+                                        <div class="text-[11px]">
+                                            Destino: <strong class="text-teal-600 dark:text-teal-400">{{ $mov->seccionDestino->nombre }}</strong>
+                                        </div>
+                                    @elseif ($mov->seccionOrigen)
+                                        <div class="text-[11px]">
+                                            Origen: <strong class="text-amber-600 dark:text-amber-400">{{ $mov->seccionOrigen->nombre }}</strong>
+                                        </div>
+                                    @else
+                                        <span class="text-slate-400 italic">Abastecimiento / Ajuste General</span>
+                                    @endif
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-right text-slate-600 dark:text-slate-300">

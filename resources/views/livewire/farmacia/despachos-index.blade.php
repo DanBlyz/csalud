@@ -272,6 +272,36 @@
 
                     <!-- Modal Body -->
                     <div class="p-6 space-y-6">
+                        <!-- Banner Selector de Área / Almacén por Defecto -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-teal-50/70 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800/60 shadow-2xs">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white text-xs shadow-xs">
+                                    <i class="fas fa-boxes-stacked"></i>
+                                </span>
+                                <div>
+                                    <label for="seccionDefectoModal" class="block text-xs font-bold text-slate-800 dark:text-slate-100">
+                                        Área / Almacén de Despacho Sugerido:
+                                    </label>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Asigna el origen por defecto para los medicamentos de la receta e insumos extras.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select 
+                                    id="seccionDefectoModal"
+                                    wire:model.live="seccion_defecto_id"
+                                    class="text-xs rounded-lg border-teal-300 dark:border-teal-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 py-1.5 px-3 focus:ring-2 focus:ring-teal-500 font-semibold shadow-2xs"
+                                >
+                                    @foreach ($seccionesSucursal as $sec)
+                                        <option value="{{ $sec->id }}">
+                                            {{ $sec->nombre }} {{ $sec->es_almacen_principal ? '★ (Principal)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- SECCIÓN 1: Medicamentos Prescritos en la Receta -->
                         <div class="space-y-2.5">
                             <div class="flex items-center justify-between">
@@ -280,7 +310,7 @@
                                     1. Medicamentos Prescritos en la Receta
                                 </h4>
                                 <span class="text-[11px] text-slate-400">
-                                    Priorización sugerida de lotes por fecha de vencimiento
+                                    Priorización sugerida de lotes por fecha de vencimiento y existencias en el área
                                 </span>
                             </div>
 
@@ -290,6 +320,7 @@
                                         <tr>
                                             <th class="py-2.5 px-3">Medicamento</th>
                                             <th class="py-2.5 px-3 text-center">Prescrito / Saldo</th>
+                                            <th class="py-2.5 px-3 w-44">Área / Sección de Origen</th>
                                             <th class="py-2.5 px-3">Lote a Descargar</th>
                                             <th class="py-2.5 px-3 text-center w-28">Cant. a Despachar</th>
                                         </tr>
@@ -319,6 +350,22 @@
                                                 </td>
                                                 <td class="py-2.5 px-3">
                                                     @if ($saldo <= 0)
+                                                        <span class="text-xs text-slate-400 italic">Dispensado</span>
+                                                    @else
+                                                        <select 
+                                                            wire:change="cambiarSeccionItem({{ $detId }}, $event.target.value)"
+                                                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-1.5 focus:ring-2 focus:ring-teal-500 shadow-2xs font-medium"
+                                                        >
+                                                            @foreach ($seccionesSucursal as $sec)
+                                                                <option value="{{ $sec->id }}" {{ ($item['seccion_id'] ?? null) == $sec->id ? 'selected' : '' }}>
+                                                                    {{ $sec->nombre }} {{ $sec->es_almacen_principal ? '★' : '' }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    @endif
+                                                </td>
+                                                <td class="py-2.5 px-3">
+                                                    @if ($saldo <= 0)
                                                         <span class="text-xs text-emerald-600 font-semibold italic flex items-center gap-1">
                                                             <i class="fas fa-check-circle"></i> Prescripción entregada en su totalidad
                                                         </span>
@@ -328,14 +375,17 @@
                                                             class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-teal-500 shadow-2xs font-mono"
                                                         >
                                                             @foreach ($lotesDisponibles as $l)
+                                                                @php
+                                                                    $stkSec = $l->stockEnSeccion($item['seccion_id']);
+                                                                @endphp
                                                                 <option value="{{ $l->id }}">
-                                                                    {{ $l->codigo_lote }} (Vence: {{ $l->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }} - Stock: {{ $l->cantidad_actual }} un.)
+                                                                    {{ $l->codigo_lote }} (Stock en área: {{ $stkSec }} un. - Vence: {{ $l->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }})
                                                                 </option>
                                                             @endforeach
                                                         </select>
                                                     @else
                                                         <span class="text-xs text-rose-500 font-bold flex items-center gap-1">
-                                                            <i class="fas fa-exclamation-circle"></i> Sin stock disponible en la sede
+                                                            <i class="fas fa-exclamation-circle"></i> Sin stock en esta área
                                                         </span>
                                                     @endif
                                                 </td>
@@ -379,8 +429,25 @@
                             <!-- Barra de Adición Rápida de Insumos Extras -->
                             <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-3">
                                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                                    <!-- Selector de Sección / Área de Origen -->
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Área / Botiquín de Origen:
+                                        </label>
+                                        <select 
+                                            wire:model.live="extra_seccion_id"
+                                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-teal-500 shadow-2xs font-semibold"
+                                        >
+                                            @foreach ($seccionesSucursal as $sec)
+                                                <option value="{{ $sec->id }}">
+                                                    {{ $sec->nombre }} {{ $sec->es_almacen_principal ? '★' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <!-- Buscador Reactivo de Insumo / Medicamento Extra -->
-                                    <div class="sm:col-span-5 relative" x-data="{ openDropdown: false }" @click.outside="openDropdown = false">
+                                    <div class="sm:col-span-4 relative" x-data="{ openDropdown: false }" @click.outside="openDropdown = false">
                                         <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                             Insumo / Fármaco Extra:
                                         </label>
@@ -420,7 +487,7 @@
                                                     type="text" 
                                                     wire:model.live.debounce.250ms="buscarExtraProducto"
                                                     @focus="openDropdown = true"
-                                                    placeholder="Escriba para buscar insumo por nombre..."
+                                                    placeholder="Buscar insumo en esta área..."
                                                     class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
                                                 />
                                                 @if ($buscarExtraProducto)
@@ -442,7 +509,7 @@
                                                 >
                                                     @forelse ($productosParaExtras as $prod)
                                                         @php
-                                                            $stockTotal = $prod->lotes->sum('cantidad_actual');
+                                                            $stockEnSec = $prod->lotes->sum(fn ($lt) => $lt->loteSecciones->sum('cantidad_actual'));
                                                         @endphp
                                                         <button 
                                                             wire:click="seleccionarProductoExtra({{ $prod->id }})" 
@@ -463,13 +530,13 @@
                                                                     Bs. {{ number_format($prod->ultimo_precio_venta ?? 0, 2) }}
                                                                 </div>
                                                                 <div class="text-[10px] text-slate-500 font-mono">
-                                                                    Stock: {{ $stockTotal }} un.
+                                                                    Stock: {{ $stockEnSec }} un.
                                                                 </div>
                                                             </div>
                                                         </button>
                                                     @empty
                                                         <div class="p-3 text-center text-xs text-slate-400">
-                                                            <i class="fas fa-box-open me-1"></i> No se encontraron insumos con existencias en sede
+                                                            <i class="fas fa-box-open me-1"></i> No se encontraron insumos con existencias en esta área
                                                         </div>
                                                     @endforelse
                                                 </div>
@@ -478,8 +545,8 @@
                                         @error('extra_producto_id') <span class="text-[10px] text-rose-500 font-semibold">{{ $message }}</span> @enderror
                                     </div>
 
-                                    <!-- Selector de Lote -->
-                                    <div class="sm:col-span-4">
+                                    <!-- Selector de Lote en la Sección -->
+                                    <div class="sm:col-span-3">
                                         <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                             Lote con Stock:
                                         </label>
@@ -489,11 +556,14 @@
                                             class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-teal-500 shadow-2xs font-mono disabled:opacity-50"
                                         >
                                             @if ($lotesParaExtra->isEmpty())
-                                                <option value="">-- Sin lotes con stock --</option>
+                                                <option value="">-- Sin lotes en esta área --</option>
                                             @else
                                                 @foreach ($lotesParaExtra as $le)
+                                                    @php
+                                                        $stkLoteSec = $le->loteSecciones->where('seccion_id', $extra_seccion_id)->sum('cantidad_actual');
+                                                    @endphp
                                                     <option value="{{ $le->id }}">
-                                                        {{ $le->codigo_lote }} (Vence: {{ $le->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }} - Stock: {{ $le->cantidad_actual }})
+                                                        {{ $le->codigo_lote }} (Stock: {{ $stkLoteSec }} - Vto: {{ $le->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }})
                                                     </option>
                                                 @endforeach
                                             @endif
@@ -516,16 +586,16 @@
                                     </div>
 
                                     <!-- Botón Añadir -->
-                                    <div class="sm:col-span-2 flex items-end">
+                                    <div class="sm:col-span-1 flex items-end">
                                         <button 
                                             wire:click="agregarItemExtra" 
                                             type="button" 
                                             wire:loading.attr="disabled"
                                             @disabled(empty($extra_producto_id) || empty($extra_lote_id))
                                             class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                                            title="Añadir insumo extra"
                                         >
                                             <i class="fas fa-plus text-xs"></i>
-                                            <span>Añadir</span>
                                         </button>
                                     </div>
                                 </div>
@@ -547,6 +617,7 @@
                                         <thead class="bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 font-semibold border-b border-indigo-100 dark:border-slate-800 text-[10px] uppercase">
                                             <tr>
                                                 <th class="py-2 px-3">Insumo / Medicamento Extra</th>
+                                                <th class="py-2 px-3">Área de Origen</th>
                                                 <th class="py-2 px-3">Lote</th>
                                                 <th class="py-2 px-3 text-center">Cant.</th>
                                                 <th class="py-2 px-3 text-right">P. Unitario</th>
@@ -561,6 +632,11 @@
                                                     <td class="py-2 px-3 font-semibold text-slate-800 dark:text-white">
                                                         {{ $extra['producto_nombre'] }}
                                                         <span class="text-[10px] text-slate-400 font-normal">({{ $extra['unidad_medida'] }})</span>
+                                                    </td>
+                                                    <td class="py-2 px-3">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60">
+                                                            <i class="fas fa-hospital-user text-[9px]"></i> {{ $extra['seccion_nombre'] }}
+                                                        </span>
                                                     </td>
                                                     <td class="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
                                                         {{ $extra['lote_codigo'] }}

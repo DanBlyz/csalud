@@ -22,6 +22,8 @@ class MovimientoInventario extends Model
         'tipo_movimiento',
         'receta_id',
         'proforma_id',
+        'seccion_origen_id',
+        'seccion_destino_id',
         'user_id',
         'usuario_creador_id',
         'usuario_modificador_id',
@@ -39,6 +41,16 @@ class MovimientoInventario extends Model
     public function sucursal(): BelongsTo
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+
+    public function seccionOrigen(): BelongsTo
+    {
+        return $this->belongsTo(Seccion::class, 'seccion_origen_id');
+    }
+
+    public function seccionDestino(): BelongsTo
+    {
+        return $this->belongsTo(Seccion::class, 'seccion_destino_id');
     }
 
     public function producto(): BelongsTo

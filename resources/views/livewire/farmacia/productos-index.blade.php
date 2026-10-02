@@ -158,6 +158,25 @@
                         </select>
                     </div>
 
+                    <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
+
+                    <!-- Filtro por Área / Sección -->
+                    <div class="flex items-center gap-2">
+                        <label for="filtroSecProd" class="text-xs font-medium text-slate-600 dark:text-slate-400">Área:</label>
+                        <select 
+                            id="filtroSecProd" 
+                            wire:model.live="filtroSeccion" 
+                            class="text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 py-1.5 px-2.5 shadow-2xs"
+                        >
+                            <option value="">Todas las áreas (Consolidado)</option>
+                            @foreach ($secciones as $sec)
+                                <option value="{{ $sec->id }}">
+                                    {{ $sec->nombre }} {{ $sec->es_almacen_principal ? '★ (Principal)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <!-- Filtro Estado Stock -->
                     @if ($filtroStock)
                         <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
@@ -537,8 +556,21 @@
                                                 <td class="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                                                     {{ $lote->sucursal->nombre ?? 'Sede Central' }}
                                                 </td>
-                                                <td class="py-2.5 px-3 text-center font-mono font-bold text-xs {{ $lote->cantidad_actual > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400' }}">
-                                                    {{ $lote->cantidad_actual }} / {{ $lote->cantidad_ingresada }}
+                                                <td class="py-2.5 px-3 text-center">
+                                                    <div class="font-mono font-bold text-xs {{ $lote->cantidad_actual > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400' }}">
+                                                        {{ $lote->cantidad_actual }} / {{ $lote->cantidad_ingresada }}
+                                                    </div>
+                                                    @if ($lote->loteSecciones && $lote->loteSecciones->isNotEmpty())
+                                                        <div class="flex flex-wrap items-center justify-center gap-1 mt-1">
+                                                            @foreach ($lote->loteSecciones as $ls)
+                                                                @if ($ls->cantidad_actual > 0)
+                                                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" title="{{ $ls->seccion->nombre }}">
+                                                                        <strong class="text-teal-600 dark:text-teal-400 font-bold">{{ $ls->cantidad_actual }}</strong> {{ $ls->seccion->nombre }}
+                                                                    </span>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 <td class="py-2.5 px-3 text-center font-mono text-[11px]">
                                                     {{ $lote->fecha_vencimiento?->format('d/m/Y') ?? 'Sin fecha' }}

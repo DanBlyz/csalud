@@ -51,4 +51,9 @@ class Sucursal extends Model
     {
         return $this->hasMany(MovimientoInventario::class, 'sucursal_id');
     }
+
+    public function secciones(): HasMany
+    {
+        return $this->hasMany(Seccion::class, 'sucursal_id');
+    }
 }

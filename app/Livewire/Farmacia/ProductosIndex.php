@@ -4,6 +4,7 @@ namespace App\Livewire\Farmacia;
 
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\Seccion;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
@@ -21,6 +22,8 @@ class ProductosIndex extends Component
     public int $perPage = 10;
 
     public ?int $filtroMarca = null;
+
+    public ?int $filtroSeccion = null;
 
     public string $filtroStock = ''; // '' = Todos, 'normal' = Stock suficiente, 'critico' = <= stock_minimo, 'agotado' = 0
 
@@ -78,6 +81,11 @@ class ProductosIndex extends Component
     }
 
     public function updatingFiltroMarca(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFiltroSeccion(): void
     {
         $this->resetPage();
     }
@@ -206,8 +214,21 @@ class ProductosIndex extends Component
     {
         // Query de productos con relación a marca y cálculo de stock total
         $query = Producto::query()
-            ->with(['marca'])
-            ->withSum('lotes as stock_total', 'cantidad_actual');
+            ->with(['marca']);
+
+        if ($this->filtroSeccion) {
+            $query->select('productos.*')
+                ->selectSub(function ($sub) {
+                    $sub->from('lote_secciones')
+                        ->join('lotes', 'lotes.id', '=', 'lote_secciones.lote_id')
+                        ->whereColumn('lotes.producto_id', 'productos.id')
+                        ->where('lote_secciones.seccion_id', $this->filtroSeccion)
+                        ->whereNull('lotes.deleted_at')
+                        ->selectRaw('COALESCE(SUM(lote_secciones.cantidad_actual), 0)');
+                }, 'stock_total');
+        } else {
+            $query->withSum('lotes as stock_total', 'cantidad_actual');
+        }
 
         if (! empty($this->search)) {
             $search = '%'.trim($this->search).'%';
@@ -226,12 +247,25 @@ class ProductosIndex extends Component
         }
 
         if ($this->filtroStock === 'agotado') {
-            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= 0');
+            if ($this->filtroSeccion) {
+                $query->whereRaw('(SELECT COALESCE(SUM(ls.cantidad_actual), 0) FROM lote_secciones ls INNER JOIN lotes l ON l.id = ls.lote_id WHERE l.producto_id = productos.id AND ls.seccion_id = ? AND l.deleted_at IS NULL) <= 0', [$this->filtroSeccion]);
+            } else {
+                $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= 0');
+            }
         } elseif ($this->filtroStock === 'critico') {
-            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > 0')
-                ->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= productos.stock_minimo');
+            if ($this->filtroSeccion) {
+                $query->whereRaw('(SELECT COALESCE(SUM(ls.cantidad_actual), 0) FROM lote_secciones ls INNER JOIN lotes l ON l.id = ls.lote_id WHERE l.producto_id = productos.id AND ls.seccion_id = ? AND l.deleted_at IS NULL) > 0', [$this->filtroSeccion])
+                    ->whereRaw('(SELECT COALESCE(SUM(ls.cantidad_actual), 0) FROM lote_secciones ls INNER JOIN lotes l ON l.id = ls.lote_id WHERE l.producto_id = productos.id AND ls.seccion_id = ? AND l.deleted_at IS NULL) <= productos.stock_minimo', [$this->filtroSeccion]);
+            } else {
+                $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > 0')
+                    ->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) <= productos.stock_minimo');
+            }
         } elseif ($this->filtroStock === 'normal') {
-            $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > productos.stock_minimo');
+            if ($this->filtroSeccion) {
+                $query->whereRaw('(SELECT COALESCE(SUM(ls.cantidad_actual), 0) FROM lote_secciones ls INNER JOIN lotes l ON l.id = ls.lote_id WHERE l.producto_id = productos.id AND ls.seccion_id = ? AND l.deleted_at IS NULL) > productos.stock_minimo', [$this->filtroSeccion]);
+            } else {
+                $query->whereRaw('(SELECT COALESCE(SUM(lotes.cantidad_actual), 0) FROM lotes WHERE lotes.producto_id = productos.id AND lotes.deleted_at IS NULL) > productos.stock_minimo');
+            }
         }
 
         $productos = $query->orderBy('nombre', 'asc')->paginate($this->perPage);
@@ -247,10 +281,11 @@ class ProductosIndex extends Component
         $totalStockAgotado = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) <= 0)->count();
 
         $marcas = Marca::orderBy('nombre')->get();
+        $secciones = Seccion::where('activo', true)->orderBy('es_almacen_principal', 'desc')->orderBy('nombre')->get();
 
-        // Producto seleccionado para ver lotes
+        // Producto seleccionado para ver lotes con distribución de secciones
         $productoSeleccionado = $this->productoDetalleId
-            ? Producto::with(['marca', 'lotes.sucursal', 'lotes.proveedor'])->find($this->productoDetalleId)
+            ? Producto::with(['marca', 'lotes.sucursal', 'lotes.proveedor', 'lotes.loteSecciones.seccion'])->find($this->productoDetalleId)
             : null;
 
         return view('livewire.farmacia.productos-index', [
@@ -260,6 +295,7 @@ class ProductosIndex extends Component
             'totalStockCritico' => $totalStockCritico,
             'totalStockAgotado' => $totalStockAgotado,
             'marcas' => $marcas,
+            'secciones' => $secciones,
             'productoSeleccionado' => $productoSeleccionado,
         ]);
     }

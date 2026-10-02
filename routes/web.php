@@ -17,6 +17,7 @@ use App\Livewire\Farmacia\MarcasIndex;
 use App\Livewire\Farmacia\MovimientosIndex;
 use App\Livewire\Farmacia\ProductosIndex;
 use App\Livewire\Farmacia\ProveedoresIndex;
+use App\Livewire\Farmacia\SeccionesIndex;
 use App\Livewire\Pacientes\InstitucionesIndex;
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
@@ -103,6 +104,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/lotes', LotesIndex::class)
             ->middleware('permiso:9')
             ->name('lotes');
+
+        Route::get('/secciones', SeccionesIndex::class)
+            ->middleware('permiso:9')
+            ->name('secciones');
 
         Route::get('/despachos', DespachosIndex::class)
             ->middleware('permiso:9')

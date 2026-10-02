@@ -91,6 +91,8 @@ class MovimientosIndex extends Component
                 'sucursal',
                 'usuario',
                 'proforma.paciente',
+                'seccionOrigen',
+                'seccionDestino',
             ]);
 
         if (! empty($this->search)) {

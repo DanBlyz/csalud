@@ -127,6 +127,15 @@
             <span class="ms-2">Lotes y Stock</span>
         </a>
 
+        <!-- Secciones y Áreas Hospitalarias -->
+        <a 
+            href="{{ route('farmacia.secciones') }}" 
+            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.secciones') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+        >
+            <i class="fas fa-layer-group w-5 text-sm {{ request()->routeIs('farmacia.secciones') ? 'text-white' : 'text-teal-400' }}"></i>
+            <span class="ms-2">Secciones y Áreas</span>
+        </a>
+
         <!-- Marcas y Laboratorios -->
         <a 
             href="{{ route('farmacia.marcas') }}" 

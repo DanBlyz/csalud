@@ -4,11 +4,13 @@ namespace App\Livewire\Farmacia;
 
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
+use App\Models\LoteSeccion;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\Receta;
 use App\Models\RecetaDetalle;
+use App\Models\Seccion;
 use App\Models\Sucursal;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,10 +39,14 @@ class DespachosIndex extends Component
 
     public ?int $recetaId = null;
 
-    public array $despachosItems = []; // [detalle_id => ['lote_id' => X, 'cantidad_despachar' => Y]]
+    public ?int $seccion_defecto_id = null;
+
+    public array $despachosItems = []; // [detalle_id => ['lote_id' => X, 'seccion_id' => S, 'cantidad_despachar' => Y]]
 
     // Insumos y Medicamentos Extras / Adicionales
     public array $extrasItems = [];
+
+    public ?int $extra_seccion_id = null;
 
     public ?int $extra_producto_id = null;
 
@@ -77,6 +83,68 @@ class DespachosIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedSeccionDefectoId($val): void
+    {
+        if (! $val) {
+            return;
+        }
+
+        $this->extra_seccion_id = (int) $val;
+
+        foreach ($this->despachosItems as $detId => $item) {
+            $this->cambiarSeccionItem((int) $detId, (int) $val);
+        }
+
+        if ($this->extra_producto_id) {
+            $this->updatedExtraProductoId($this->extra_producto_id);
+        }
+    }
+
+    public function updatedExtraSeccionId($val): void
+    {
+        if ($this->extra_producto_id) {
+            $this->updatedExtraProductoId($this->extra_producto_id);
+        }
+    }
+
+    public function cambiarSeccionItem(int $detId, int $seccionId): void
+    {
+        if (! isset($this->despachosItems[$detId])) {
+            return;
+        }
+
+        $receta = Receta::with('proforma')->find($this->recetaId);
+        $sucursalId = $receta?->proforma?->sucursal_id ?? Auth::user()->sucursal_id;
+
+        $this->despachosItems[$detId]['seccion_id'] = $seccionId;
+
+        $lote = Lote::where('producto_id', $this->despachosItems[$detId]['producto_id'])
+            ->where('sucursal_id', $sucursalId)
+            ->whereHas('loteSecciones', function ($q) use ($seccionId) {
+                $q->where('seccion_id', $seccionId)->where('cantidad_actual', '>', 0);
+            })
+            ->where(function ($q) {
+                $q->whereNull('fecha_vencimiento')
+                    ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+            })
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->first();
+
+        $this->despachosItems[$detId]['lote_id'] = $lote?->id ?? null;
+        $stockDisp = $lote ? $lote->stockEnSeccion($seccionId) : 0;
+        $saldo = $this->despachosItems[$detId]['saldo_pendiente'];
+
+        if ($saldo > 0 && $lote && $stockDisp > 0) {
+            if ($this->despachosItems[$detId]['cantidad_despachar'] <= 0) {
+                $this->despachosItems[$detId]['cantidad_despachar'] = min($saldo, $stockDisp, 1);
+            } elseif ($this->despachosItems[$detId]['cantidad_despachar'] > $stockDisp) {
+                $this->despachosItems[$detId]['cantidad_despachar'] = min($saldo, $stockDisp);
+            }
+        } else {
+            $this->despachosItems[$detId]['cantidad_despachar'] = 0;
+        }
+    }
+
     public function seleccionarProductoExtra(int $productoId): void
     {
         $this->extra_producto_id = $productoId;
@@ -98,19 +166,40 @@ class DespachosIndex extends Component
         $this->extra_lote_id = null;
         $this->extra_cantidad = 1;
 
-        if ($val && $this->recetaId) {
+        if ($val && $this->recetaId && $this->extra_seccion_id) {
             $receta = Receta::with('proforma')->find($this->recetaId);
             $sucursalId = $receta?->proforma?->sucursal_id ?? Auth::user()->sucursal_id;
 
             $primerLote = Lote::where('producto_id', $val)
                 ->where('sucursal_id', $sucursalId)
-                ->where('cantidad_actual', '>', 0)
+                ->whereHas('loteSecciones', function ($q) {
+                    $q->where('seccion_id', $this->extra_seccion_id)->where('cantidad_actual', '>', 0);
+                })
                 ->where(function ($q) {
                     $q->whereNull('fecha_vencimiento')
                         ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
                 })
                 ->orderBy('fecha_vencimiento', 'asc')
                 ->first();
+
+            if (! $primerLote) {
+                $primerLote = Lote::where('producto_id', $val)
+                    ->where('sucursal_id', $sucursalId)
+                    ->where('cantidad_actual', '>', 0)
+                    ->where(function ($q) {
+                        $q->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    })
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->first();
+
+                if ($primerLote && $this->extra_seccion_id) {
+                    LoteSeccion::firstOrCreate(
+                        ['lote_id' => $primerLote->id, 'seccion_id' => $this->extra_seccion_id],
+                        ['cantidad_actual' => $primerLote->cantidad_actual]
+                    );
+                }
+            }
 
             $this->extra_lote_id = $primerLote?->id ?? null;
         }
@@ -119,37 +208,42 @@ class DespachosIndex extends Component
     public function agregarItemExtra(): void
     {
         $this->validate([
+            'extra_seccion_id' => ['required', 'exists:secciones,id'],
             'extra_producto_id' => ['required', 'exists:productos,id'],
             'extra_lote_id' => ['required', 'exists:lotes,id'],
             'extra_cantidad' => ['required', 'integer', 'min:1'],
         ], [
+            'extra_seccion_id.required' => 'Seleccione la sección o almacén de origen.',
             'extra_producto_id.required' => 'Seleccione un insumo o medicamento.',
-            'extra_lote_id.required' => 'Seleccione un lote con existencias.',
+            'extra_lote_id.required' => 'Seleccione un lote con existencias en esa área.',
             'extra_cantidad.min' => 'La cantidad mínima es 1.',
         ]);
 
         $lote = Lote::with('producto')->find($this->extra_lote_id);
-        if (! $lote || $lote->cantidad_actual < $this->extra_cantidad) {
-            $disp = $lote ? $lote->cantidad_actual : 0;
+        $stockEnSeccion = $lote ? $lote->stockEnSeccion($this->extra_seccion_id) : 0;
+
+        if (! $lote || $stockEnSeccion < $this->extra_cantidad) {
             $this->dispatch('swal', [
                 'type' => 'error',
-                'title' => 'Stock insuficiente',
-                'message' => "El lote seleccionado solo dispone de {$disp} unidades.",
+                'title' => 'Stock insuficiente en la sección',
+                'message' => "El lote seleccionado solo dispone de {$stockEnSeccion} unidades en esta sección.",
             ]);
 
             return;
         }
 
-        // Si ya existe en la lista de extras con el mismo lote, acumular cantidad
+        $seccion = Seccion::find($this->extra_seccion_id);
+
+        // Si ya existe en la lista de extras con el mismo lote y misma sección, acumular cantidad
         $yaExiste = false;
         foreach ($this->extrasItems as $key => $item) {
-            if ($item['lote_id'] === $lote->id) {
+            if ($item['lote_id'] === $lote->id && $item['seccion_id'] === $this->extra_seccion_id) {
                 $nuevaCantidad = $item['cantidad'] + $this->extra_cantidad;
-                if ($nuevaCantidad > $lote->cantidad_actual) {
+                if ($nuevaCantidad > $stockEnSeccion) {
                     $this->dispatch('swal', [
                         'type' => 'error',
                         'title' => 'Stock insuficiente',
-                        'message' => "La cantidad acumulada ({$nuevaCantidad}) excede las existencias del lote ({$lote->cantidad_actual}).",
+                        'message' => "La cantidad acumulada ({$nuevaCantidad}) excede las existencias del lote en la sección ({$stockEnSeccion}).",
                     ]);
 
                     return;
@@ -170,7 +264,9 @@ class DespachosIndex extends Component
                 'lote_id' => $lote->id,
                 'lote_codigo' => $lote->codigo_lote,
                 'lote_vencimiento' => $lote->fecha_vencimiento?->format('d/m/Y') ?? 'S/F',
-                'stock_disponible' => $lote->cantidad_actual,
+                'seccion_id' => $this->extra_seccion_id,
+                'seccion_nombre' => $seccion?->nombre ?? 'Almacén',
+                'stock_disponible' => $stockEnSeccion,
                 'cantidad' => $this->extra_cantidad,
                 'precio_unitario' => $precio,
                 'subtotal' => round($this->extra_cantidad * $precio, 2),
@@ -199,6 +295,23 @@ class DespachosIndex extends Component
         $receta = Receta::with(['detalles.producto', 'proforma.paciente'])->findOrFail($recetaId);
         $sucursalId = $receta->proforma->sucursal_id ?? Auth::user()->sucursal_id;
 
+        $secciones = Seccion::where('sucursal_id', $sucursalId)
+            ->where('activo', true)
+            ->orderByDesc('es_almacen_principal')
+            ->orderBy('nombre')
+            ->get();
+
+        if ($secciones->isEmpty()) {
+            $central = Seccion::firstOrCreate(
+                ['sucursal_id' => $sucursalId, 'es_almacen_principal' => true],
+                ['nombre' => 'Farmacia Central', 'activo' => true]
+            );
+            $secciones = collect([$central]);
+        }
+
+        $this->seccion_defecto_id = $secciones->where('es_almacen_principal', true)->first()?->id ?? $secciones->first()?->id;
+        $this->extra_seccion_id = $this->seccion_defecto_id;
+
         $this->despachosItems = [];
         $this->extrasItems = [];
         $this->extra_producto_id = null;
@@ -216,16 +329,64 @@ class DespachosIndex extends Component
 
             $saldoPendiente = max(0, $det->cantidad - $despachadasPrevias);
 
-            // Buscar el mejor lote disponible según política (primer vencimiento)
-            $loteSugerido = Lote::where('producto_id', $det->producto_id)
-                ->where('sucursal_id', $sucursalId)
-                ->where('cantidad_actual', '>', 0)
-                ->where(function ($q) {
-                    $q->whereNull('fecha_vencimiento')
-                        ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
-                })
-                ->orderBy('fecha_vencimiento', 'asc')
-                ->first();
+            // Determinar la sección inicial (preferir la sección por defecto si tiene stock, sino la primera con stock)
+            $seccionElegida = $this->seccion_defecto_id;
+            $loteSugerido = null;
+
+            if ($seccionElegida) {
+                $loteSugerido = Lote::where('producto_id', $det->producto_id)
+                    ->where('sucursal_id', $sucursalId)
+                    ->whereHas('loteSecciones', function ($q) use ($seccionElegida) {
+                        $q->where('seccion_id', $seccionElegida)->where('cantidad_actual', '>', 0);
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    })
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->first();
+            }
+
+            // Si la sección por defecto no tiene stock de este medicamento, buscar si otra sección tiene
+            if (! $loteSugerido) {
+                $otroLote = Lote::where('producto_id', $det->producto_id)
+                    ->where('sucursal_id', $sucursalId)
+                    ->whereHas('loteSecciones', fn ($q) => $q->where('cantidad_actual', '>', 0))
+                    ->where(function ($q) {
+                        $q->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    })
+                    ->with(['loteSecciones' => fn ($q) => $q->where('cantidad_actual', '>', 0)])
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->first();
+
+                if ($otroLote && $otroLote->loteSecciones->isNotEmpty()) {
+                    $loteSugerido = $otroLote;
+                    $seccionElegida = $otroLote->loteSecciones->first()->seccion_id;
+                }
+            }
+
+            // Fallback para lotes sin lote_secciones previo (legacy / factories en tests)
+            if (! $loteSugerido) {
+                $loteSugerido = Lote::where('producto_id', $det->producto_id)
+                    ->where('sucursal_id', $sucursalId)
+                    ->where('cantidad_actual', '>', 0)
+                    ->where(function ($q) {
+                        $q->whereNull('fecha_vencimiento')
+                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                    })
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->first();
+
+                if ($loteSugerido && $seccionElegida) {
+                    LoteSeccion::firstOrCreate(
+                        ['lote_id' => $loteSugerido->id, 'seccion_id' => $seccionElegida],
+                        ['cantidad_actual' => $loteSugerido->cantidad_actual]
+                    );
+                }
+            }
+
+            $stockEnSeccion = ($loteSugerido && $seccionElegida) ? $loteSugerido->stockEnSeccion($seccionElegida) : 0;
 
             $this->despachosItems[$det->id] = [
                 'detalle_id' => $det->id,
@@ -236,8 +397,9 @@ class DespachosIndex extends Component
                 'cantidad_prescrita' => $det->cantidad,
                 'despachadas_previas' => $despachadasPrevias,
                 'saldo_pendiente' => $saldoPendiente,
+                'seccion_id' => $seccionElegida,
                 'lote_id' => $loteSugerido?->id ?? null,
-                'cantidad_despachar' => $saldoPendiente > 0 && $loteSugerido ? 1 : 0, // Por defecto despacha 1 unidad si hay saldo
+                'cantidad_despachar' => $saldoPendiente > 0 && $loteSugerido && $stockEnSeccion > 0 ? 1 : 0,
             ];
         }
 
@@ -268,23 +430,24 @@ class DespachosIndex extends Component
             $cant = (int) ($item['cantidad_despachar'] ?? 0);
             if ($cant > 0) {
                 $hayDespachosPrescritos = true;
-                if (empty($item['lote_id'])) {
+                if (empty($item['lote_id']) || empty($item['seccion_id'])) {
                     $this->dispatch('swal', [
                         'type' => 'error',
-                        'title' => 'Falta Lote',
-                        'message' => "Debe seleccionar un lote con stock para {$item['producto_nombre']}.",
+                        'title' => 'Datos Incompletos',
+                        'message' => "Debe seleccionar área y lote con stock para {$item['producto_nombre']}.",
                     ]);
 
                     return;
                 }
 
                 $lote = Lote::find($item['lote_id']);
-                if (! $lote || $lote->cantidad_actual < $cant) {
-                    $stockDisp = $lote ? $lote->cantidad_actual : 0;
+                $stockEnSeccion = $lote ? $lote->stockEnSeccion($item['seccion_id']) : 0;
+
+                if (! $lote || $stockEnSeccion < $cant) {
                     $this->dispatch('swal', [
                         'type' => 'error',
-                        'title' => 'Stock insuficiente',
-                        'message' => "El lote seleccionado para {$item['producto_nombre']} solo tiene {$stockDisp} unidades disponibles.",
+                        'title' => 'Stock insuficiente en área',
+                        'message' => "El lote seleccionado para {$item['producto_nombre']} solo tiene {$stockEnSeccion} unidades en el área seleccionada.",
                     ]);
 
                     return;
@@ -314,14 +477,16 @@ class DespachosIndex extends Component
             return;
         }
 
-        // Validar existencias de cada extra
+        // Validar existencias de cada extra en su sección asignada
         foreach ($this->extrasItems as $extra) {
             $loteExtra = Lote::find($extra['lote_id']);
-            if (! $loteExtra || $loteExtra->cantidad_actual < $extra['cantidad']) {
+            $stockEnSec = $loteExtra ? $loteExtra->stockEnSeccion($extra['seccion_id']) : 0;
+
+            if (! $loteExtra || $stockEnSec < $extra['cantidad']) {
                 $this->dispatch('swal', [
                     'type' => 'error',
                     'title' => 'Stock insuficiente en extras',
-                    'message' => "El insumo extra {$extra['producto_nombre']} no cuenta con suficiente stock en el lote.",
+                    'message' => "El insumo extra {$extra['producto_nombre']} no cuenta con suficiente stock en {$extra['seccion_nombre']}.",
                 ]);
 
                 return;
@@ -329,7 +494,7 @@ class DespachosIndex extends Component
         }
 
         DB::transaction(function () use ($receta) {
-            // 1. Procesar entregas de prescripción médica
+            // 1. Procesar entregas de prescripción médica con descuento atómico por sección
             foreach ($this->despachosItems as $detId => $item) {
                 $cant = (int) ($item['cantidad_despachar'] ?? 0);
                 if ($cant <= 0) {
@@ -338,20 +503,15 @@ class DespachosIndex extends Component
 
                 $lote = Lote::findOrFail($item['lote_id']);
 
-                // Descontar stock del lote
-                $lote->decrement('cantidad_actual', $cant);
-
-                // Crear Movimiento de Salida en Kardex
-                MovimientoInventario::create([
-                    'sucursal_id' => $lote->sucursal_id,
-                    'producto_id' => $lote->producto_id,
-                    'lote_id' => $lote->id,
-                    'cantidad' => $cant,
-                    'tipo_movimiento' => 'Salida Receta',
-                    'receta_id' => $receta->id,
-                    'proforma_id' => $receta->proforma_id,
-                    'user_id' => Auth::id(),
-                ]);
+                // Descontar tanto del lote consolidado como de la sección correspondiente
+                $lote->descontarDeSeccion(
+                    $item['seccion_id'],
+                    $cant,
+                    'Salida Receta',
+                    $receta->proforma_id,
+                    $receta->id,
+                    Auth::id()
+                );
 
                 // Verificar si se completó la totalidad de la prescripción para este detalle
                 $detalle = RecetaDetalle::find($detId);
@@ -371,31 +531,27 @@ class DespachosIndex extends Component
             foreach ($this->extrasItems as $extra) {
                 $loteExtra = Lote::findOrFail($extra['lote_id']);
 
-                // Descontar stock del lote
-                $loteExtra->decrement('cantidad_actual', $extra['cantidad']);
+                $loteExtra->descontarDeSeccion(
+                    $extra['seccion_id'],
+                    $extra['cantidad'],
+                    'Consumo Extra',
+                    $receta->proforma_id,
+                    $receta->id,
+                    Auth::id()
+                );
 
-                // Asiento en Kardex de salida por consumo extra
-                MovimientoInventario::create([
-                    'sucursal_id' => $loteExtra->sucursal_id,
-                    'producto_id' => $extra['producto_id'],
-                    'lote_id' => $loteExtra->id,
-                    'cantidad' => $extra['cantidad'],
-                    'tipo_movimiento' => 'Consumo Extra',
-                    'receta_id' => $receta->id,
-                    'proforma_id' => $receta->proforma_id,
-                    'user_id' => Auth::id(),
-                ]);
+                // Asiento de ConsumoExtra en la proforma con indicación de la sección
+                $obsTexto = ! empty($extra['observaciones'])
+                    ? "[{$extra['seccion_nombre']}] {$extra['observaciones']}"
+                    : "Despacho extra de {$extra['seccion_nombre']} (Receta #{$receta->id})";
 
-                // Asiento de ConsumoExtra en la proforma
                 ConsumoExtra::create([
                     'proforma_id' => $receta->proforma_id,
                     'producto_id' => $extra['producto_id'],
                     'cantidad' => $extra['cantidad'],
                     'precio_unitario' => $extra['precio_unitario'],
                     'user_id' => Auth::id(),
-                    'observaciones' => ! empty($extra['observaciones'])
-                        ? $extra['observaciones']
-                        : "Despacho extra de farmacia (Receta #{$receta->id})",
+                    'observaciones' => $obsTexto,
                 ]);
             }
 
@@ -410,7 +566,7 @@ class DespachosIndex extends Component
         $this->dispatch('swal', [
             'type' => 'success',
             'title' => '¡Dispensación Realizada!',
-            'message' => 'Despacho registrado en Kardex y cargado al costo cobrable de la proforma.',
+            'message' => 'Despacho registrado en Kardex por sección y cargado al costo cobrable de la proforma.',
         ]);
     }
 
@@ -470,6 +626,7 @@ class DespachosIndex extends Component
             ->count();
 
         // Lotes e insumos disponibles para el modal de despacho
+        $seccionesSucursal = collect();
         $lotesDisponiblesPorItem = [];
         $productosParaExtras = collect();
         $lotesParaExtra = collect();
@@ -478,26 +635,84 @@ class DespachosIndex extends Component
             $receta = Receta::with('proforma')->find($this->recetaId);
             $sucursalId = $receta?->proforma?->sucursal_id ?? Auth::user()->sucursal_id;
 
-            foreach ($this->despachosItems as $detId => $item) {
-                $lotesDisponiblesPorItem[$detId] = Lote::where('producto_id', $item['producto_id'])
-                    ->where('sucursal_id', $sucursalId)
-                    ->where('cantidad_actual', '>', 0)
-                    ->where(function ($q) {
-                        $q->whereNull('fecha_vencimiento')
-                            ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
-                    })
-                    ->orderBy('fecha_vencimiento', 'asc')
-                    ->get();
+            $seccionesSucursal = Seccion::where('sucursal_id', $sucursalId)
+                ->where('activo', true)
+                ->orderByDesc('es_almacen_principal')
+                ->orderBy('nombre')
+                ->get();
+
+            if ($seccionesSucursal->isEmpty()) {
+                $central = Seccion::firstOrCreate(
+                    ['sucursal_id' => $sucursalId, 'es_almacen_principal' => true],
+                    ['nombre' => 'Farmacia Central', 'activo' => true]
+                );
+                $seccionesSucursal = collect([$central]);
             }
 
-            // Catálogo disponible para agregar como insumo o medicamento extra con búsqueda reactiva
-            $pQuery = Producto::whereHas('lotes', function ($q) use ($sucursalId) {
+            foreach ($this->despachosItems as $detId => $item) {
+                $secId = $item['seccion_id'] ?? $this->seccion_defecto_id;
+
+                if ($secId) {
+                    $lotes = Lote::where('producto_id', $item['producto_id'])
+                        ->where('sucursal_id', $sucursalId)
+                        ->whereHas('loteSecciones', function ($q) use ($secId) {
+                            $q->where('seccion_id', $secId)->where('cantidad_actual', '>', 0);
+                        })
+                        ->where(function ($q) {
+                            $q->whereNull('fecha_vencimiento')
+                                ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                        })
+                        ->with(['loteSecciones' => function ($q) use ($secId) {
+                            $q->where('seccion_id', $secId);
+                        }])
+                        ->orderBy('fecha_vencimiento', 'asc')
+                        ->get();
+
+                    if ($lotes->isEmpty()) {
+                        $lotesHeredados = Lote::where('producto_id', $item['producto_id'])
+                            ->where('sucursal_id', $sucursalId)
+                            ->where('cantidad_actual', '>', 0)
+                            ->where(function ($q) {
+                                $q->whereNull('fecha_vencimiento')
+                                    ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
+                            })
+                            ->orderBy('fecha_vencimiento', 'asc')
+                            ->get();
+
+                        foreach ($lotesHeredados as $lh) {
+                            LoteSeccion::firstOrCreate(
+                                ['lote_id' => $lh->id, 'seccion_id' => $secId],
+                                ['cantidad_actual' => $lh->cantidad_actual]
+                            );
+                        }
+
+                        if ($lotesHeredados->isNotEmpty()) {
+                            $lotes = $lotesHeredados;
+                        }
+                    }
+
+                    $lotesDisponiblesPorItem[$detId] = $lotes;
+                } else {
+                    $lotesDisponiblesPorItem[$detId] = collect();
+                }
+            }
+
+            // Catálogo disponible para extras filtrado por la sección de extra seleccionada
+            $secExtraId = $this->extra_seccion_id ?? $this->seccion_defecto_id;
+
+            $pQuery = Producto::whereHas('lotes', function ($q) use ($secExtraId, $sucursalId) {
                 $q->where('sucursal_id', $sucursalId)
                     ->where('cantidad_actual', '>', 0)
                     ->where(function ($vq) {
                         $vq->whereNull('fecha_vencimiento')
                             ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
                     });
+                if ($secExtraId) {
+                    $q->where(function ($sq) use ($secExtraId) {
+                        $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $secExtraId)->where('cantidad_actual', '>', 0))
+                            ->orWhereDoesntHave('loteSecciones');
+                    });
+                }
             })->with(['marca', 'lotes' => function ($q) use ($sucursalId) {
                 $q->where('sucursal_id', $sucursalId)->where('cantidad_actual', '>', 0);
             }]);
@@ -511,7 +726,6 @@ class DespachosIndex extends Component
                 });
                 $productosParaExtras = $pQuery->orderBy('nombre')->take(10)->get();
             } else {
-                // Sugerencias inmediatas de insumos con stock
                 $productosParaExtras = $pQuery->orderBy('nombre')->take(8)->get();
             }
 
@@ -519,7 +733,7 @@ class DespachosIndex extends Component
                 ? Producto::with('marca')->find($this->extra_producto_id)
                 : null;
 
-            if ($this->extra_producto_id) {
+            if ($this->extra_producto_id && $secExtraId) {
                 $lotesParaExtra = Lote::where('producto_id', $this->extra_producto_id)
                     ->where('sucursal_id', $sucursalId)
                     ->where('cantidad_actual', '>', 0)
@@ -529,6 +743,15 @@ class DespachosIndex extends Component
                     })
                     ->orderBy('fecha_vencimiento', 'asc')
                     ->get();
+
+                foreach ($lotesParaExtra as $le) {
+                    if (! $le->loteSecciones()->where('seccion_id', $secExtraId)->exists()) {
+                        LoteSeccion::firstOrCreate(
+                            ['lote_id' => $le->id, 'seccion_id' => $secExtraId],
+                            ['cantidad_actual' => $le->cantidad_actual]
+                        );
+                    }
+                }
             }
         }
 
@@ -536,6 +759,7 @@ class DespachosIndex extends Component
             'recetas' => $recetas,
             'totalPendientes' => $totalPendientes,
             'sucursales' => $sucursales,
+            'seccionesSucursal' => $seccionesSucursal,
             'lotesDisponiblesPorItem' => $lotesDisponiblesPorItem,
             'productosParaExtras' => $productosParaExtras,
             'productoExtraSeleccionado' => $productoExtraSeleccionado ?? null,
