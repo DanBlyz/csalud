@@ -135,6 +135,7 @@ Route::middleware('auth')->group(function () {
     // Rutas de Documentos e Impresión PDF
     Route::prefix('proformas/{proforma}/pdf')->as('proformas.pdf.')->group(function () {
         Route::get('/detalle', [ProformaPdfController::class, 'detalle'])->name('detalle');
+        Route::get('/resumen', [ProformaPdfController::class, 'resumen'])->name('resumen');
         Route::get('/recibo', [ProformaPdfController::class, 'recibo'])->name('recibo');
     });
 });

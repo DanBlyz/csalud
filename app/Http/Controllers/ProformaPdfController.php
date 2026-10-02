@@ -36,6 +36,32 @@ class ProformaPdfController extends Controller
     }
 
     /**
+     * Genera e imprime el Resumen Clínico-Administrativo de la Proforma en PDF (Costos Finales consolidados para Farmacia y Extras).
+     */
+    public function resumen(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'medicos',
+            'servicios.servicio.categoria',
+            'consumosExtras',
+            'movimientosInventario' => function ($query) {
+                $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
+                    ->with(['producto']);
+            },
+            'pagos.user',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-resumen', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("proforma-{$proforma->id}-resumen.pdf");
+    }
+
+    /**
      * Genera e imprime el Recibo Oficial de Caja / Comprobante de Pago en PDF.
      */
     public function recibo(Proforma $proforma): Response

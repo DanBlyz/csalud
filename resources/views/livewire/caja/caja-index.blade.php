@@ -302,6 +302,15 @@
                                         >
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
+
+                                        <a 
+                                            href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                            target="_blank"
+                                            class="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-xs transition"
+                                            title="Imprimir Resumen Clínico PDF"
+                                        >
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -412,10 +421,21 @@
                                             href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
                                             target="_blank"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 transition"
-                                            title="Imprimir Detalle Clínico-Administrativo"
+                                            title="Imprimir Detalle Clínico"
                                         >
                                             <i class="fas fa-file-medical text-xs"></i>
                                             <span>Detalle</span>
+                                        </a>
+
+                                        <!-- Resumen Clínico PDF -->
+                                        <a 
+                                            href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                            target="_blank"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 transition"
+                                            title="Imprimir Resumen Clínico"
+                                        >
+                                            <i class="fas fa-file-medical text-xs"></i>
+                                            <span>Resumen</span>
                                         </a>
 
                                         <!-- Ver Proforma -->

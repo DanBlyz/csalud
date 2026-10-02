@@ -305,6 +305,16 @@
                                         <i class="fas fa-file-pdf text-xs"></i>
                                     </a>
 
+                                    <!-- Imprimir Resumen Clínico PDF -->
+                                    <a 
+                                        href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                        target="_blank"
+                                        class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
+                                        title="Imprimir Resumen Clínico PDF"
+                                    >
+                                        <i class="fas fa-file-invoice-dollar text-xs"></i>
+                                    </a>
+
                                     @if ($proforma->estado === 'En Curso')
                                         <!-- Anular -->
                                         <button 

@@ -297,6 +297,46 @@ test('puede generar y descargar el pdf del recibo de caja', function () {
     $response->assertHeader('content-type', 'application/pdf');
 });
 
+test('puede generar y descargar el pdf del resumen de proforma con costos finales de farmacia y extras', function () {
+    $this->actingAs($this->cajero);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $this->paciente->id,
+        'tipo_atencion' => 'Hospitalaria',
+        'pieza' => 'Sala 102',
+        'fecha_ingreso' => now(),
+        'estado' => 'Confirmada',
+        'diagnostico' => 'Apendicitis aguda',
+        'costo_total' => 250.00,
+    ]);
+
+    ProformaServicio::create([
+        'proforma_id' => $proforma->id,
+        'servicio_id' => $this->servicio->id,
+        'costo_final' => 150.00,
+        'observaciones' => 'Atención quirúrgica',
+    ]);
+
+    $response = $this->get(route('proformas.pdf.resumen', $proforma->id));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/pdf');
+
+    // Validar renderizado de la plantilla del PDF de resumen
+    $proforma->load('servicios.servicio.categoria', 'movimientosInventario', 'consumosExtras');
+    $html = view('pdf.proforma-resumen', [
+        'proforma' => $proforma,
+        'fechaEmision' => now()->format('d/m/Y H:i'),
+    ])->render();
+
+    expect($html)->toContain('RESUMEN DE CUENTA CLÍNICO')
+        ->and($html)->toContain('1. Información del Paciente y Admisión')
+        ->and($html)->toContain('2. Servicios Médicos y Procedimientos Realizados')
+        ->and($html)->toContain('3. Medicamentos e Insumos Despachados por Farmacia')
+        ->and($html)->toContain('TOTAL CUENTA:');
+});
+
 test('usuario con permiso puede acceder a la seccion de cierres mensuales', function () {
     $this->actingAs($this->cajero);
 

@@ -238,10 +238,19 @@
                                 <span>Recibo Caja</span>
                             </a>
                             <a 
+                                href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                title="Imprimir Resumen Clínico PDF (Costos Finales)"
+                            >
+                                <i class="fas fa-file-invoice text-xs"></i>
+                                <span>Resumen PDF</span>
+                            </a>
+                            <a 
                                 href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
                                 target="_blank"
                                 class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition-all transform active:scale-95"
-                                title="Imprimir Detalle Clínico PDF"
+                                title="Imprimir Detalle Clínico Completo PDF"
                             >
                                 <i class="fas fa-file-pdf text-xs"></i>
                                 <span>Detalle PDF</span>
@@ -255,13 +264,22 @@
                                 <span>Liquidar en Caja</span>
                             </a>
                             <a 
+                                href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                title="Imprimir Resumen Clínico PDF (Costos Finales)"
+                            >
+                                <i class="fas fa-file-invoice text-xs"></i>
+                                <span>Resumen PDF</span>
+                            </a>
+                            <a 
                                 href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
                                 target="_blank"
                                 class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
-                                title="Imprimir Detalle Clínico PDF"
+                                title="Imprimir Detalle Clínico Completo PDF"
                             >
                                 <i class="fas fa-file-pdf text-xs text-rose-400"></i>
-                                <span>PDF</span>
+                                <span>Detalle PDF</span>
                             </a>
                         @endif
                     </div>
