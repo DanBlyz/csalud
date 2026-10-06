@@ -5,7 +5,7 @@ namespace App\Livewire\Caja;
 use App\Models\CierreDetalle;
 use App\Models\CierreMensual;
 use App\Models\Lote;
-use App\Models\ProformaPago;
+use App\Models\Pago;
 use App\Models\ProformaPagoMedico;
 use App\Models\Sucursal;
 use Carbon\Carbon;
@@ -232,30 +232,62 @@ class CierresIndex extends Component
         $fin = Carbon::parse($cierre->fecha_fin)->endOfDay();
         $sucursalId = $cierre->sucursal_id;
 
-        // 1. INGRESOS: Cobros de Caja (ProformaPago agrupados por método y día)
-        $pagosQuery = ProformaPago::whereBetween('created_at', [$inicio, $fin]);
+        // 1. INGRESOS Y EGRESOS DE CAJA (Cobros de Proforma, Ingresos Extras y Egresos Menores)
+        $pagosQuery = Pago::whereBetween('created_at', [$inicio, $fin]);
         if ($sucursalId) {
-            $pagosQuery->whereHas('proforma', fn ($q) => $q->where('sucursal_id', $sucursalId));
+            $pagosQuery->where(function ($q) use ($sucursalId) {
+                $q->whereHas('caja', fn ($c) => $c->where('sucursal_id', $sucursalId))
+                    ->orWhereHas('proforma', fn ($p) => $p->where('sucursal_id', $sucursalId));
+            });
         }
 
         $pagos = $pagosQuery->with(['proforma.paciente', 'user'])->get();
 
         foreach ($pagos as $pago) {
-            $pacienteNombre = $pago->proforma?->paciente?->nombre_completo ?? 'Paciente';
             $refText = $pago->numero_referencia ? " [Ref: {$pago->numero_referencia}]" : '';
 
-            CierreDetalle::create([
-                'cierre_mensual_id' => $cierre->id,
-                'tipo' => 'Ingreso',
-                'categoria' => 'Cobro Proforma',
-                'concepto' => "Cobro Proforma #{$pago->proforma_id} ({$pacienteNombre}) - {$pago->tipo_pago}{$refText}",
-                'monto' => (float) $pago->monto,
-                'fecha' => $pago->created_at->toDateString(),
-                'comprobante_referencia' => $pago->numero_referencia,
-                'origen_tipo' => ProformaPago::class,
-                'origen_id' => $pago->id,
-                'user_id' => Auth::id(),
-            ]);
+            if ($pago->tipo_movimiento === 'Egreso Caja') {
+                CierreDetalle::create([
+                    'cierre_mensual_id' => $cierre->id,
+                    'tipo' => 'Egreso',
+                    'categoria' => $pago->categoria ?: 'Gasto Operativo',
+                    'concepto' => "Salida de Caja: {$pago->concepto} - {$pago->tipo_pago}{$refText}",
+                    'monto' => (float) $pago->monto,
+                    'fecha' => $pago->created_at->toDateString(),
+                    'comprobante_referencia' => $pago->numero_referencia,
+                    'origen_tipo' => Pago::class,
+                    'origen_id' => $pago->id,
+                    'user_id' => Auth::id(),
+                ]);
+            } elseif ($pago->proforma_id) {
+                $pacienteNombre = $pago->proforma?->paciente?->nombre_completo ?? 'Paciente';
+                CierreDetalle::create([
+                    'cierre_mensual_id' => $cierre->id,
+                    'tipo' => 'Ingreso',
+                    'categoria' => $pago->categoria ?: 'Cobro Proforma',
+                    'concepto' => "Cobro Proforma #{$pago->proforma_id} ({$pacienteNombre}) - {$pago->tipo_pago}{$refText}",
+                    'monto' => (float) $pago->monto,
+                    'fecha' => $pago->created_at->toDateString(),
+                    'comprobante_referencia' => $pago->numero_referencia,
+                    'origen_tipo' => Pago::class,
+                    'origen_id' => $pago->id,
+                    'user_id' => Auth::id(),
+                ]);
+            } else {
+                // Ingreso Extra
+                CierreDetalle::create([
+                    'cierre_mensual_id' => $cierre->id,
+                    'tipo' => 'Ingreso',
+                    'categoria' => $pago->categoria ?: 'Extra',
+                    'concepto' => "Ingreso Extra: {$pago->concepto} - {$pago->tipo_pago}{$refText}",
+                    'monto' => (float) $pago->monto,
+                    'fecha' => $pago->created_at->toDateString(),
+                    'comprobante_referencia' => $pago->numero_referencia,
+                    'origen_tipo' => Pago::class,
+                    'origen_id' => $pago->id,
+                    'user_id' => Auth::id(),
+                ]);
+            }
         }
 
         // 2. EGRESOS CLÍNICOS: Honorarios Médicos (ProformaPagoMedico)

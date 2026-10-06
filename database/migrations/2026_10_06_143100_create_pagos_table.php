@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('proforma_pagos', function (Blueprint $table) {
+        Schema::create('pagos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('proforma_id')->constrained('proformas')->cascadeOnDelete();
-            $table->string('tipo_pago'); // Efectivo, QR, Transferencia
+            $table->foreignId('caja_id')->constrained('cajas')->cascadeOnDelete();
+            $table->foreignId('proforma_id')->nullable()->constrained('proformas')->nullOnDelete();
+            $table->string('tipo_movimiento')->default('Ingreso Proforma'); // Ingreso Proforma, Ingreso Extra, Egreso Caja
+            $table->string('categoria')->default('Proforma'); // Proforma, Extra, Gasto Operativo, Servicio Básico, Insumos, etc.
+            $table->string('tipo_pago')->default('Efectivo'); // Efectivo, QR, Transferencia
+            $table->string('concepto');
             $table->decimal('monto', 10, 2);
             $table->string('numero_referencia')->nullable();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
@@ -33,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('proforma_pagos');
+        Schema::dropIfExists('pagos');
     }
 };

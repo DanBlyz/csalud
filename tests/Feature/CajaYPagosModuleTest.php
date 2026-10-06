@@ -2,12 +2,13 @@
 
 use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Caja\CierresIndex;
+use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\CierreMensual;
 use App\Models\Paciente;
+use App\Models\Pago;
 use App\Models\Permiso;
 use App\Models\Proforma;
-use App\Models\ProformaPago;
 use App\Models\ProformaServicio;
 use App\Models\Rol;
 use App\Models\Servicio;
@@ -90,6 +91,15 @@ beforeEach(function () {
         'precio_tentativo' => 100.00,
         'estado' => true,
     ]);
+
+    // Caja abierta por defecto para el cajero
+    $this->caja = Caja::create([
+        'sucursal_id' => $this->sucursal->id,
+        'user_id' => $this->cajero->id,
+        'monto_apertura' => 100.00,
+        'fecha_apertura' => now(),
+        'estado' => 'Abierta',
+    ]);
 });
 
 test('un usuario con permiso 10 puede acceder a la bandeja de caja', function () {
@@ -97,7 +107,7 @@ test('un usuario con permiso 10 puede acceder a la bandeja de caja', function ()
 
     $this->get(route('caja.index'))
         ->assertOk()
-        ->assertSee('Cobro y Liquidación de Pagos')
+        ->assertSee('Cobro y Gestión de Caja')
         ->assertSee('Cuentas por Cobrar (Pendientes)');
 });
 
@@ -106,6 +116,46 @@ test('un usuario sin permiso 10 no puede acceder a caja', function () {
 
     $this->get(route('caja.index'))
         ->assertForbidden();
+});
+
+test('bloquea cobros si el cajero no tiene una caja abierta', function () {
+    // Cerrar la caja activa
+    $this->caja->update(['estado' => 'Cerrada', 'fecha_cierre' => now()]);
+
+    $this->actingAs($this->cajero);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $this->paciente->id,
+        'tipo_atencion' => 'Ambulatoria',
+        'fecha_ingreso' => now(),
+        'estado' => 'Confirmada',
+        'costo_total' => 150.00,
+    ]);
+
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalCobro', $proforma->id)
+        ->assertSet('modalCobroOpen', false)
+        ->assertDispatched('swal');
+});
+
+test('puede aperturar una caja con fondo inicial y observaciones', function () {
+    $this->caja->delete(); // Eliminar caja existente
+
+    $this->actingAs($this->cajero);
+
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalApertura')
+        ->assertSet('modalAperturaOpen', true)
+        ->set('monto_apertura', '50.00')
+        ->set('observaciones_apertura', 'Fondo entregado por supervisión')
+        ->call('aperturarCaja')
+        ->assertSet('modalAperturaOpen', false);
+
+    $nuevaCaja = Caja::where('user_id', $this->cajero->id)->where('estado', 'Abierta')->first();
+    expect($nuevaCaja)->not->toBeNull()
+        ->and((float) $nuevaCaja->monto_apertura)->toBe(50.00)
+        ->and($nuevaCaja->observaciones_apertura)->toBe('Fondo entregado por supervisión');
 });
 
 test('puede liquidar una proforma con un solo metodo de pago (Efectivo) cambiando su estado a Pagada', function () {
@@ -143,7 +193,10 @@ test('puede liquidar una proforma con un solo metodo de pago (Efectivo) cambiand
         ->and($proforma->totalPagado())->toBe(150.0)
         ->and($proforma->saldoPendiente())->toBe(0.0);
 
-    expect(ProformaPago::where('proforma_id', $proforma->id)->count())->toBe(1);
+    expect(Pago::where('proforma_id', $proforma->id)->count())->toBe(1);
+    $pago = Pago::where('proforma_id', $proforma->id)->first();
+    expect($pago->categoria)->toBe('Proforma')
+        ->and($pago->caja_id)->toBe($this->caja->id);
 });
 
 test('puede liquidar una proforma con pagos divididos (Efectivo + Transferencia) requiriendo numero de referencia para Transferencia', function () {
@@ -194,9 +247,9 @@ test('puede liquidar una proforma con pagos divididos (Efectivo + Transferencia)
     $proforma->refresh();
     expect($proforma->estado)->toBe('Pagada')
         ->and($proforma->totalPagado())->toBe(200.0)
-        ->and(ProformaPago::where('proforma_id', $proforma->id)->count())->toBe(2);
+        ->and(Pago::where('proforma_id', $proforma->id)->count())->toBe(2);
 
-    $pagoTrans = ProformaPago::where('proforma_id', $proforma->id)->where('tipo_pago', 'Transferencia')->first();
+    $pagoTrans = Pago::where('proforma_id', $proforma->id)->where('tipo_pago', 'Transferencia')->first();
     expect($pagoTrans->numero_referencia)->toBe('BCP-TRANS-987654');
 });
 
@@ -229,7 +282,113 @@ test('valida que la suma de pagos no supere el saldo pendiente', function () {
 
     $proforma->refresh();
     expect($proforma->estado)->toBe('Confirmada')
-        ->and(ProformaPago::where('proforma_id', $proforma->id)->count())->toBe(0);
+        ->and(Pago::where('proforma_id', $proforma->id)->count())->toBe(0);
+});
+
+test('puede registrar ingresos extras y egresos de caja con categoria y concepto', function () {
+    $this->actingAs($this->cajero);
+
+    // 1. Registrar Ingreso Extra
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalMovimiento', 'Ingreso Extra')
+        ->assertSet('modalMovimientoOpen', true)
+        ->set('mov_categoria', 'Certificados')
+        ->set('mov_tipo_pago', 'Efectivo')
+        ->set('mov_concepto', 'Emisión Certificado Médico prenupcial')
+        ->set('mov_monto', '50.00')
+        ->call('guardarMovimiento')
+        ->assertSet('modalMovimientoOpen', false);
+
+    $ingresoExtra = Pago::where('caja_id', $this->caja->id)->where('tipo_movimiento', 'Ingreso Extra')->first();
+    expect($ingresoExtra)->not->toBeNull()
+        ->and($ingresoExtra->categoria)->toBe('Certificados')
+        ->and((float) $ingresoExtra->monto)->toBe(50.00)
+        ->and($ingresoExtra->proforma_id)->toBeNull();
+
+    // 2. Registrar Salida de Caja (Egreso)
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalMovimiento', 'Egreso Caja')
+        ->assertSet('modalMovimientoOpen', true)
+        ->set('mov_categoria', 'Insumos')
+        ->set('mov_tipo_pago', 'Efectivo')
+        ->set('mov_concepto', 'Compra de alcohol y bolsas de residuos')
+        ->set('mov_monto', '30.00')
+        ->call('guardarMovimiento')
+        ->assertSet('modalMovimientoOpen', false);
+
+    $egreso = Pago::where('caja_id', $this->caja->id)->where('tipo_movimiento', 'Egreso Caja')->first();
+    expect($egreso)->not->toBeNull()
+        ->and($egreso->categoria)->toBe('Insumos')
+        ->and((float) $egreso->monto)->toBe(30.00);
+
+    // Saldo esperado en efectivo: 100 (apertura) + 50 (extra) - 30 (salida) = 120
+    expect($this->caja->saldoEsperadoEfectivo())->toBe(120.00);
+});
+
+test('valida saldo suficiente al registrar egresos de efectivo de caja', function () {
+    $this->actingAs($this->cajero);
+
+    // Saldo inicial es 100. Intentar sacar 500 debe fallar por saldo insuficiente
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalMovimiento', 'Egreso Caja')
+        ->set('mov_categoria', 'Gasto Operativo')
+        ->set('mov_tipo_pago', 'Efectivo')
+        ->set('mov_concepto', 'Reparación de aire acondicionado')
+        ->set('mov_monto', '500.00')
+        ->call('guardarMovimiento')
+        ->assertDispatched('swal');
+
+    expect(Pago::where('caja_id', $this->caja->id)->where('tipo_movimiento', 'Egreso Caja')->count())->toBe(0);
+});
+
+test('puede realizar el cierre de caja y arqueo calculando diferencias y emitiendo el acta pdf', function () {
+    $this->actingAs($this->cajero);
+
+    // Generar un ingreso en efectivo de 50 y un ingreso QR de 80
+    Pago::create([
+        'caja_id' => $this->caja->id,
+        'tipo_movimiento' => 'Ingreso Extra',
+        'categoria' => 'Extra',
+        'tipo_pago' => 'Efectivo',
+        'concepto' => 'Cobro directo',
+        'monto' => 50.00,
+        'user_id' => $this->cajero->id,
+    ]);
+
+    Pago::create([
+        'caja_id' => $this->caja->id,
+        'tipo_movimiento' => 'Ingreso Extra',
+        'categoria' => 'Extra',
+        'tipo_pago' => 'QR',
+        'concepto' => 'Cobro QR',
+        'monto' => 80.00,
+        'numero_referencia' => 'QR-12345',
+        'user_id' => $this->cajero->id,
+    ]);
+
+    // Saldo esperado en efectivo: 100 (apertura) + 50 = 150
+    // Realizamos el cierre declarando exactamente 150 en efectivo y 80 en QR
+    Livewire::test(CajaIndex::class)
+        ->call('abrirModalCierre')
+        ->assertSet('modalCierreOpen', true)
+        ->set('cierre_efectivo', '150.00')
+        ->set('cierre_qr', '80.00')
+        ->set('cierre_transferencia', '0.00')
+        ->set('cierre_observaciones', 'Cierre de turno normal sin incidencias')
+        ->call('ejecutarCierreCaja')
+        ->assertSet('modalCierreOpen', false);
+
+    $this->caja->refresh();
+    expect($this->caja->estado)->toBe('Cerrada')
+        ->and($this->caja->fecha_cierre)->not->toBeNull()
+        ->and((float) $this->caja->monto_cierre_efectivo)->toBe(150.00)
+        ->and((float) $this->caja->monto_cierre_qr)->toBe(80.00)
+        ->and((float) $this->caja->diferencia_efectivo)->toBe(0.00);
+
+    // Comprobar la generación del Acta de Arqueo en PDF
+    $response = $this->get(route('caja.pdf.arqueo', $this->caja->id));
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/pdf');
 });
 
 test('puede generar y descargar el pdf de detalle de proforma con los servicios correctos', function () {
@@ -257,7 +416,6 @@ test('puede generar y descargar el pdf de detalle de proforma con los servicios 
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
 
-    // Validar el contenido HTML de la plantilla del PDF
     $proforma->load('servicios.servicio.categoria');
     $html = view('pdf.proforma-detalle', [
         'proforma' => $proforma,
@@ -284,8 +442,12 @@ test('puede generar y descargar el pdf del recibo de caja', function () {
         'fecha_salida' => now(),
     ]);
 
-    ProformaPago::create([
+    Pago::create([
+        'caja_id' => $this->caja->id,
         'proforma_id' => $proforma->id,
+        'tipo_movimiento' => 'Ingreso Proforma',
+        'categoria' => 'Proforma',
+        'concepto' => "Cobro Proforma #{$proforma->id}",
         'tipo_pago' => 'Efectivo',
         'monto' => 100.00,
         'user_id' => $this->cajero->id,
@@ -323,7 +485,6 @@ test('puede generar y descargar el pdf del resumen de proforma con costos finale
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
 
-    // Validar renderizado de la plantilla del PDF de resumen
     $proforma->load('servicios.servicio.categoria', 'movimientosInventario', 'consumosExtras');
     $html = view('pdf.proforma-resumen', [
         'proforma' => $proforma,

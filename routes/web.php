@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CajaPdfController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProformaPdfController;
 use App\Http\Controllers\ReportePdfController;
@@ -135,6 +136,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/cierres', CierresIndex::class)
             ->middleware('permiso:10')
             ->name('cierres');
+
+        Route::get('/cajas/{caja}/pdf/arqueo', [CajaPdfController::class, 'actaCierre'])
+            ->middleware('permiso:10')
+            ->name('pdf.arqueo');
     });
 
     // Rutas de Documentos e Impresión PDF

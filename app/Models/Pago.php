@@ -8,15 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ProformaPago extends Model
+class Pago extends Model
 {
     use Auditable, HasFactory, SoftDeletes;
 
-    protected $table = 'proforma_pagos';
+    protected $table = 'pagos';
 
     protected $fillable = [
+        'caja_id',
         'proforma_id',
+        'tipo_movimiento',
+        'categoria',
         'tipo_pago',
+        'concepto',
         'monto',
         'numero_referencia',
         'user_id',
@@ -32,6 +36,11 @@ class ProformaPago extends Model
         ];
     }
 
+    public function caja(): BelongsTo
+    {
+        return $this->belongsTo(Caja::class, 'caja_id');
+    }
+
     public function proforma(): BelongsTo
     {
         return $this->belongsTo(Proforma::class, 'proforma_id');
@@ -40,5 +49,15 @@ class ProformaPago extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function isIngreso(): bool
+    {
+        return in_array($this->tipo_movimiento, ['Ingreso Proforma', 'Ingreso Extra'], true);
+    }
+
+    public function isEgreso(): bool
+    {
+        return $this->tipo_movimiento === 'Egreso Caja';
     }
 }

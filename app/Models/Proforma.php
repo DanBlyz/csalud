@@ -91,7 +91,7 @@ class Proforma extends Model
 
     public function pagos(): HasMany
     {
-        return $this->hasMany(ProformaPago::class, 'proforma_id');
+        return $this->hasMany(Pago::class, 'proforma_id');
     }
 
     public function pagosMedicos(): HasMany
@@ -117,7 +117,9 @@ class Proforma extends Model
      */
     public function totalPagado(): float
     {
-        return (float) $this->pagos()->sum('monto');
+        return (float) $this->pagos()
+            ->where('tipo_movimiento', '!=', 'Egreso Caja')
+            ->sum('monto');
     }
 
     /**
