@@ -273,6 +273,33 @@
             </div>
         </div>
 
+        <!-- Resumen Consolidado de Stock por Sección -->
+        @if (!empty($datosReporte['resumen_general']['stock_por_seccion']))
+            <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 me-1">
+                        <i class="fas fa-warehouse text-blue-600 dark:text-blue-400"></i>
+                        <span>Stock Global en Secciones:</span>
+                    </span>
+                    @foreach ($datosReporte['resumen_general']['stock_por_seccion'] as $secNom => $cantSec)
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium {{ $cantSec > 0 ? 'bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800' : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700' }}">
+                            <span>{{ $secNom }}:</span>
+                            <strong class="font-bold font-mono {{ $cantSec > 0 ? 'text-sky-900 dark:text-sky-100' : 'text-slate-400' }}">
+                                {{ number_format($cantSec) }}
+                            </strong>
+                        </span>
+                    @endforeach
+                </div>
+                <div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs">
+                        <i class="fas fa-boxes text-[11px]"></i>
+                        <span>Total Físico:</span>
+                        <span class="font-mono">{{ number_format(array_sum($datosReporte['resumen_general']['stock_por_seccion'])) }} unids.</span>
+                    </span>
+                </div>
+            </div>
+        @endif
+
         <!-- Lista Detallada por Producto -->
         @if (empty($datosReporte['items']))
             <div class="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500">
@@ -318,6 +345,7 @@
                                         <th class="py-2 px-3">Fecha/Hora</th>
                                         <th class="py-2 px-3">Lote / Vto.</th>
                                         <th class="py-2 px-3">Concepto / Movimiento</th>
+                                        <th class="py-2 px-3">Área / Sección</th>
                                         <th class="py-2 px-3">Referencia / Origen</th>
                                         <th class="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">Entrada</th>
                                         <th class="py-2 px-3 text-right text-red-500 dark:text-red-400">Salida</th>
@@ -330,7 +358,7 @@
                                     <tr class="bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold font-sans">
                                         <td class="py-2 px-3">{{ \Carbon\Carbon::parse($datosReporte['fecha_inicio'])->format('d/m/Y') }} 00:00</td>
                                         <td class="py-2 px-3 text-slate-400">-</td>
-                                        <td class="py-2 px-3" colspan="2">
+                                        <td class="py-2 px-3" colspan="3">
                                             <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 font-bold">
                                                 <i class="fas fa-play-circle text-[9px]"></i> Saldo Inicial Previo
                                             </span>
@@ -365,6 +393,12 @@
                                                     </span>
                                                 @endif
                                             </td>
+                                            <td class="py-2 px-3 font-sans">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800">
+                                                    <i class="fas fa-map-marker-alt text-[9px]"></i>
+                                                    {{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}
+                                                </span>
+                                            </td>
                                             <td class="py-2 px-3 font-sans text-slate-600 dark:text-slate-400">{{ $mov['referencia'] }}</td>
                                             <td class="py-2 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
                                                 {{ $mov['cantidad_entrada'] > 0 ? '+'.number_format($mov['cantidad_entrada']) : '-' }}
@@ -379,7 +413,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8" class="py-3 px-3 text-center text-slate-400 font-sans text-xs italic">
+                                            <td colspan="9" class="py-3 px-3 text-center text-slate-400 font-sans text-xs italic">
                                                 Sin movimientos en el rango de fechas seleccionado.
                                             </td>
                                         </tr>
@@ -393,7 +427,7 @@
                             <div class="flex items-center gap-4 text-slate-600 dark:text-slate-300">
                                 <span>Entradas: <strong class="text-emerald-600 dark:text-emerald-400 font-mono">+{{ number_format($item['total_entradas']) }}</strong></span>
                                 <span>Salidas: <strong class="text-red-500 dark:text-red-400 font-mono">-{{ number_format($item['total_salidas']) }}</strong></span>
-                                <span>Stock Final: <strong class="text-blue-600 dark:text-blue-400 font-mono font-bold">{{ number_format($item['saldo_final']) }} {{ $item['unidad_medida'] }}</strong></span>
+                                <span>Stock Final: <strong class="text-blue-600 dark:text-blue-400 font-mono font-bold">{{ number_format($item['saldo_final']) }}</strong></span>
                             </div>
 
                             <div class="flex items-center gap-4 text-xs font-mono">
@@ -407,6 +441,36 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Desglose de Existencias por Sección y Total General -->
+                        @if (!empty($item['secciones_stock']))
+                            <div class="px-3 py-2 bg-slate-100/80 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 me-1">
+                                        <i class="fas fa-hospital-alt text-sky-500"></i>
+                                        <span>Existencias por Sección:</span>
+                                    </span>
+                                    @foreach ($item['secciones_stock'] as $sec)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium {{ $sec['cantidad'] > 0 ? 'bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800' : 'bg-slate-200/50 text-slate-400 border border-slate-200 dark:bg-slate-800/40 dark:text-slate-500 dark:border-slate-700' }}">
+                                            <span>{{ $sec['seccion_nombre'] }}:</span>
+                                            <strong class="font-bold font-mono {{ $sec['cantidad'] > 0 ? 'text-sky-900 dark:text-sky-100' : 'text-slate-400 dark:text-slate-500' }}">
+                                                {{ number_format($sec['cantidad']) }}
+                                            </strong>
+                                        </span>
+                                    @endforeach
+                                </div>
+
+                                <div class="shrink-0">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200 dark:bg-indigo-950/70 dark:text-indigo-200 dark:border-indigo-800">
+                                        <i class="fas fa-boxes text-[10px] text-indigo-500"></i>
+                                        <span>Total Producto:</span>
+                                        <strong class="font-black font-mono text-indigo-900 dark:text-indigo-100">
+                                            {{ number_format($item['total_stock_secciones']) }} unids.
+                                        </strong>
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

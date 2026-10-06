@@ -2,10 +2,12 @@
 
 use App\Livewire\Administracion\ReportesIndex;
 use App\Models\Lote;
+use App\Models\LoteSeccion;
 use App\Models\Marca;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Rol;
+use App\Models\Seccion;
 use App\Models\Sucursal;
 use App\Models\User;
 use App\Services\ReporteMovimientosService;
@@ -219,4 +221,118 @@ test('puede generar y descargar el pdf del kardex de movimientos', function () {
 
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('reporte de movimientos incluye la columna de seccion de origen en el servicio, en la vista y en el pdf', function () {
+    $this->actingAs($this->admin);
+
+    $seccionQuirofano = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Quirófano Central',
+        'activo' => true,
+    ]);
+
+    MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'lote_id' => $this->lote->id,
+        'cantidad' => 5,
+        'tipo_movimiento' => 'Salida Receta',
+        'seccion_origen_id' => $seccionQuirofano->id,
+        'user_id' => $this->admin->id,
+        'created_at' => Carbon::now(),
+    ]);
+
+    $service = new ReporteMovimientosService;
+    $reporte = $service->generar(
+        fechaInicio: Carbon::now()->startOfMonth()->toDateString(),
+        fechaFin: Carbon::now()->toDateString(),
+        productoId: $this->producto->id,
+        sucursalId: $this->sucursal->id
+    );
+
+    expect($reporte['items'][0]['movimientos'][0]['seccion_nombre'])->toBe('Quirófano Central');
+
+    Livewire::test(ReportesIndex::class)
+        ->set('fecha_inicio', Carbon::now()->startOfMonth()->toDateString())
+        ->set('fecha_fin', Carbon::now()->toDateString())
+        ->set('producto_id', $this->producto->id)
+        ->call('previsualizarReporte')
+        ->assertSee('Área / Sección')
+        ->assertSee('Quirófano Central');
+
+    $response = $this->get(route('administracion.reportes.movimientos.pdf', [
+        'fecha_inicio' => Carbon::now()->startOfMonth()->toDateString(),
+        'fecha_fin' => Carbon::now()->toDateString(),
+        'producto_id' => $this->producto->id,
+    ]));
+
+    $response->assertOk();
+});
+
+test('reporte de movimientos muestra el desglose de existencias por seccion y el total general tanto por producto como consolidado', function () {
+    $this->actingAs($this->admin);
+
+    $farmaciaCentral = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Farmacia Central',
+        'es_almacen_principal' => true,
+        'activo' => true,
+    ]);
+
+    $quirofano = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Quirófano',
+        'es_almacen_principal' => false,
+        'activo' => true,
+    ]);
+
+    // Asignar existencias al lote en lote_secciones: 25 en Farmacia Central y 15 en Quirófano = 40 total
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $farmaciaCentral->id,
+        'cantidad_actual' => 25,
+    ]);
+
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $quirofano->id,
+        'cantidad_actual' => 15,
+    ]);
+
+    $service = new ReporteMovimientosService;
+    $reporte = $service->generar(
+        fechaInicio: Carbon::now()->startOfMonth()->toDateString(),
+        fechaFin: Carbon::now()->toDateString(),
+        productoId: $this->producto->id,
+        sucursalId: $this->sucursal->id
+    );
+
+    $item = $reporte['items'][0];
+    expect($item['total_stock_secciones'])->toBe(40);
+
+    $seccionesNombres = collect($item['secciones_stock'])->pluck('cantidad', 'seccion_nombre');
+    expect($seccionesNombres['Farmacia Central'])->toBe(25)
+        ->and($seccionesNombres['Quirófano'])->toBe(15);
+
+    expect($reporte['resumen_general']['stock_por_seccion']['Farmacia Central'])->toBe(25)
+        ->and($reporte['resumen_general']['stock_por_seccion']['Quirófano'])->toBe(15);
+
+    Livewire::test(ReportesIndex::class)
+        ->set('fecha_inicio', Carbon::now()->startOfMonth()->toDateString())
+        ->set('fecha_fin', Carbon::now()->toDateString())
+        ->set('producto_id', $this->producto->id)
+        ->call('previsualizarReporte')
+        ->assertSee('Existencias por Sección')
+        ->assertSee('Farmacia Central')
+        ->assertSee('Quirófano')
+        ->assertSee('Total Producto:');
+
+    $response = $this->get(route('administracion.reportes.movimientos.pdf', [
+        'fecha_inicio' => Carbon::now()->startOfMonth()->toDateString(),
+        'fecha_fin' => Carbon::now()->toDateString(),
+        'producto_id' => $this->producto->id,
+    ]));
+
+    $response->assertOk();
 });

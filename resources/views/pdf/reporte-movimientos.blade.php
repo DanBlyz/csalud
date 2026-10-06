@@ -132,6 +132,51 @@
             color: #1e40af;
         }
 
+        .section-badge {
+            display: inline-block;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            border-radius: 3px;
+            padding: 1.5px 5px;
+            font-size: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-sec-stock {
+            display: inline-block;
+            padding: 1.5px 5px;
+            font-size: 8px;
+            border-radius: 3px;
+            margin-right: 4px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+        .badge-sec-active {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #7dd3fc;
+        }
+        .badge-sec-zero {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+        }
+        .badge-sec-total {
+            display: inline-block;
+            background-color: #e0e7ff;
+            color: #3730a3;
+            border: 1px solid #a5b4fc;
+            padding: 1.5px 6px;
+            font-size: 8px;
+            font-weight: bold;
+            border-radius: 3px;
+            margin-left: 4px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+
         /* Footer de Producto / Resumen */
         .product-summary-table {
             width: 100%;
@@ -266,10 +311,11 @@
                 <table class="mov-table">
                     <thead>
                         <tr>
-                            <th style="width: 14%;">Fecha/Hora</th>
-                            <th style="width: 15%;">Lote / Vto.</th>
-                            <th style="width: 22%;">Concepto / Movimiento</th>
-                            <th style="width: 25%;">Referencia / Proforma</th>
+                            <th style="width: 12%;">Fecha/Hora</th>
+                            <th style="width: 13%;">Lote / Vto.</th>
+                            <th style="width: 17%;">Concepto / Movimiento</th>
+                            <th style="width: 14%;">Área / Sección</th>
+                            <th style="width: 20%;">Referencia / Proforma</th>
                             <th style="width: 8%; text-align: right;">Entrada</th>
                             <th style="width: 8%; text-align: right;">Salida</th>
                             <th style="width: 8%; text-align: right;">Saldo</th>
@@ -280,7 +326,7 @@
                         <tr class="row-saldo-inicial">
                             <td>{{ $fechaInicioFormato }} 00:00</td>
                             <td class="text-center">-</td>
-                            <td colspan="2">
+                            <td colspan="3">
                                 <strong>SALDO INICIAL AL CORTE</strong>
                                 <span class="text-muted" style="font-size: 8px;">(Cálculo acumulado previo a la fecha inicial)</span>
                             </td>
@@ -291,7 +337,7 @@
 
                         @if(empty($item['movimientos']))
                             <tr>
-                                <td colspan="7" class="text-center text-muted" style="padding: 6px;">
+                                <td colspan="8" class="text-center text-muted" style="padding: 6px;">
                                     Sin movimientos en el rango de fechas seleccionado.
                                 </td>
                             </tr>
@@ -311,6 +357,9 @@
                                         @else
                                             <span class="text-danger font-bold">- {{ $mov['tipo_movimiento'] }}</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        <span class="section-badge">{{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}</span>
                                     </td>
                                     <td>{{ $mov['referencia'] }}</td>
                                     <td class="text-right font-bold text-success">
@@ -339,7 +388,7 @@
                         </td>
                         <td style="width: 25%;">
                             <span class="param-label">Stock Final al {{ $fechaFinFormato }}:</span> 
-                            <strong style="color: #0369a1; font-size: 10px;">{{ number_format($item['saldo_final']) }} {{ $item['unidad_medida'] }}</strong>
+                            <strong style="color: #0369a1; font-size: 10px;">{{ number_format($item['saldo_final']) }}</strong>
                         </td>
                         <td style="width: 23%; text-align: right;">
                             <span class="param-label">Val. Compra:</span> 
@@ -350,6 +399,23 @@
                             <strong style="color: #0f172a;">Bs. {{ number_format($item['valor_total_venta'], 2) }}</strong>
                         </td>
                     </tr>
+                    @if(!empty($item['secciones_stock']))
+                        <tr>
+                            <td colspan="4" style="background-color: #f8fafc; border-top: 1px solid #cbd5e1; padding: 4px 8px;">
+                                <span style="font-weight: bold; color: #475569; font-size: 8px; text-transform: uppercase; margin-right: 6px;">
+                                    Existencias por Sección:
+                                </span>
+                                @foreach($item['secciones_stock'] as $sec)
+                                    <span class="badge-sec-stock {{ $sec['cantidad'] > 0 ? 'badge-sec-active' : 'badge-sec-zero' }}">
+                                        {{ $sec['seccion_nombre'] }}: <strong>{{ number_format($sec['cantidad']) }}</strong>
+                                    </span>
+                                @endforeach
+                                <span class="badge-sec-total">
+                                    Total Producto: <strong>{{ number_format($item['total_stock_secciones']) }} unids.</strong>
+                                </span>
+                            </td>
+                        </tr>
+                    @endif
                 </table>
             </div>
         @endforeach
@@ -398,6 +464,23 @@
                         </div>
                     </td>
                 </tr>
+                @if(!empty($reporte['resumen_general']['stock_por_seccion']))
+                    <tr>
+                        <td colspan="4" style="border-top: 1px solid #cbd5e1; padding-top: 6px;">
+                            <span class="param-label" style="text-transform: uppercase; font-size: 8.5px; margin-right: 6px;">
+                                Distribución Total de Existencias por Sección:
+                            </span>
+                            @foreach($reporte['resumen_general']['stock_por_seccion'] as $secNom => $cantSec)
+                                <span class="badge-sec-stock {{ $cantSec > 0 ? 'badge-sec-active' : 'badge-sec-zero' }}">
+                                    {{ $secNom }}: <strong>{{ number_format($cantSec) }} unids.</strong>
+                                </span>
+                            @endforeach
+                            <span class="badge-sec-total">
+                                Total Global: <strong>{{ number_format(array_sum($reporte['resumen_general']['stock_por_seccion'])) }} unids.</strong>
+                            </span>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     @endif

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('tipo_movimiento'); // Entrada Compra, Salida Receta, Consumo Extra, Ajuste, Merma
             $table->foreignId('receta_id')->nullable()->constrained('recetas')->nullOnDelete();
             $table->foreignId('proforma_id')->nullable()->constrained('proformas')->nullOnDelete();
+            $table->foreignId('seccion_origen_id')->nullable()->constrained('secciones')->nullOnDelete();
+            $table->foreignId('seccion_destino_id')->nullable()->constrained('secciones')->nullOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
             // Auditoría y SoftDeletes

@@ -351,6 +351,11 @@
                                             Receta médica vinculada #{{ $mov->receta_id }}
                                         </div>
                                     @endif
+                                    @if ($mov->seccionOrigen)
+                                        <div class="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                                            <i class="fas fa-map-marker-alt text-[9px] me-0.5"></i> Área: <strong>{{ $mov->seccionOrigen->nombre }}</strong>
+                                        </div>
+                                    @endif
                                 @else
                                     @if ($mov->seccionDestino)
                                         <div class="text-[11px]">
