@@ -14,7 +14,7 @@
                 <span>Centro de Reportes del Sistema</span>
             </h1>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Consolidación analítica de movimientos de inventario, auditorías de stock, valorizaciones financieras y reportes administrativos.
+                Consolidación analítica de admisiones de pacientes, ocupación de habitaciones, movimientos de inventario y balances clínicos.
             </p>
         </div>
     </div>
@@ -23,18 +23,21 @@
     <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
         <button 
             type="button" 
-            wire:click="$set('reporteActivo', 'kardex')" 
+            wire:click="cambiarTipoReporte('kardex')" 
             class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer {{ $reporteActivo === 'kardex' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' }}"
         >
             <i class="fas fa-boxes"></i>
             <span>Kardex y Movimientos de Inventario</span>
         </button>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
-            <i class="fas fa-chart-line text-[11px]"></i>
-            <span>Ventas y Recaudación Clínica</span>
-            <span class="text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">Próx.</span>
-        </div>
+        <button 
+            type="button" 
+            wire:click="cambiarTipoReporte('pacientes')" 
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer {{ $reporteActivo === 'pacientes' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' }}"
+        >
+            <i class="fas fa-procedures"></i>
+            <span>Ingresos, Salidas y Habitaciones de Pacientes</span>
+        </button>
 
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
             <i class="fas fa-user-md text-[11px]"></i>
@@ -43,378 +46,303 @@
         </div>
     </div>
 
-    <!-- Panel de Configuración y Parámetros del Reporte (Kardex) -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
-        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    <i class="fas fa-filter text-blue-600 dark:text-blue-400"></i>
-                    <span>Criterios del Reporte de Kardex y Movimientos</span>
-                </h2>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Establezca el rango de fechas para calcular el saldo inicial, los movimientos cronológicos de entrada/salida y el balance final valorizado.
-                </p>
+    <!-- ========================================================================= -->
+    <!-- 1. REPORTE KARDEX DE INVENTARIO                                          -->
+    <!-- ========================================================================= -->
+    @if ($reporteActivo === 'kardex')
+        <!-- Panel de Configuración y Parámetros del Reporte (Kardex) -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-filter text-blue-600 dark:text-blue-400"></i>
+                        <span>Criterios del Reporte de Kardex y Movimientos</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Establezca el rango de fechas para calcular el saldo inicial, los movimientos cronológicos de entrada/salida y el balance final valorizado.
+                    </p>
+                </div>
+
+                <!-- Accesos Rápidos de Rango -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400 me-1">Rango:</span>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRango('mes_actual')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Mes Actual
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRango('mes_anterior')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Mes Anterior
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRango('ultimos_30')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Últimos 30 días
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRango('anio_actual')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Año Actual
+                    </button>
+                </div>
             </div>
 
-            <!-- Accesos Rápidos de Rango -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[11px] text-slate-500 dark:text-slate-400 me-1">Rango:</span>
-                <button 
-                    type="button" 
-                    wire:click="aplicarRango('mes_actual')" 
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                    Mes Actual
-                </button>
-                <button 
-                    type="button" 
-                    wire:click="aplicarRango('mes_anterior')" 
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                    Mes Anterior
-                </button>
-                <button 
-                    type="button" 
-                    wire:click="aplicarRango('ultimos_30')" 
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                    Últimos 30 días
-                </button>
-                <button 
-                    type="button" 
-                    wire:click="aplicarRango('anio_actual')" 
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                    Año Actual
-                </button>
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Fecha Inicio -->
+                    <div>
+                        <label for="repFechaIni" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-calendar-alt text-slate-400 me-1"></i> Fecha Inicio:
+                        </label>
+                        <input 
+                            type="date" 
+                            id="repFechaIni" 
+                            wire:model.live="fecha_inicio" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        />
+                        @error('fecha_inicio')
+                            <span class="text-[11px] text-red-500 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Fecha Fin -->
+                    <div>
+                        <label for="repFechaFin" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-calendar-alt text-slate-400 me-1"></i> Fecha Fin:
+                        </label>
+                        <input 
+                            type="date" 
+                            id="repFechaFin" 
+                            wire:model.live="fecha_fin" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        />
+                        @error('fecha_fin')
+                            <span class="text-[11px] text-red-500 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Sucursal -->
+                    <div>
+                        <label for="repSucursal" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-hospital text-slate-400 me-1"></i> Sucursal:
+                        </label>
+                        <select 
+                            id="repSucursal" 
+                            wire:model.live="sucursal_id" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        >
+                            <option value="">Todas las Sucursales</option>
+                            @foreach ($sucursales as $suc)
+                                <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Producto Filtro -->
+                    <div>
+                        <label for="repProducto" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-pills text-slate-400 me-1"></i> Filtrar Producto:
+                        </label>
+                        <select 
+                            id="repProducto" 
+                            wire:model.live="producto_id" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        >
+                            <option value="">Todos los Productos (Consolidado)</option>
+                            @foreach ($productos as $prod)
+                                <option value="{{ $prod->id }}">{{ $prod->nombre }} ({{ $prod->marca?->nombre ?? 'S/M' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Opciones Secundarias y Botones de Acción -->
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <input 
+                            type="checkbox" 
+                            id="chkSoloActivos" 
+                            wire:model.live="solo_con_actividad" 
+                            class="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                        />
+                        <label for="chkSoloActivos" class="text-xs text-slate-600 dark:text-slate-400 select-none cursor-pointer">
+                            Solo incluir productos que registren movimientos o saldo en el período
+                        </label>
+                    </div>
+
+                    <div class="flex items-center gap-2.5">
+                        <button 
+                            type="button" 
+                            wire:click="limpiarFiltros" 
+                            class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                            <i class="fas fa-undo me-1"></i> Limpiar
+                        </button>
+
+                        <button 
+                            type="button" 
+                            wire:click="previsualizarReporte" 
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                        >
+                            <i class="fas fa-eye" wire:loading.remove wire:target="previsualizarReporte"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="previsualizarReporte"></i>
+                            <span>Previsualizar Reporte</span>
+                        </button>
+
+                        <!-- Botón para Abrir/Descargar PDF -->
+                        @php
+                            $pdfUrl = route('administracion.reportes.movimientos.pdf', [
+                                'fecha_inicio' => $fecha_inicio,
+                                'fecha_fin' => $fecha_fin,
+                                'producto_id' => $producto_id,
+                                'sucursal_id' => $sucursal_id,
+                                'solo_con_actividad' => $solo_con_actividad ? 1 : 0,
+                            ]);
+                        @endphp
+                        <a 
+                            href="{{ $pdfUrl }}" 
+                            target="_blank" 
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
+                        >
+                            <i class="fas fa-file-pdf text-sm"></i>
+                            <span>Generar PDF</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="p-4 sm:p-5">
+        <!-- Previsualización del Reporte Kardex en Pantalla -->
+        @if ($reporteGenerado && $datosReporte)
+            <!-- Resumen General en Tarjetas Métricas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Fecha Inicio -->
-                <div>
-                    <label for="repFechaIni" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        <i class="fas fa-calendar-alt text-slate-400 me-1"></i> Fecha Inicio:
-                    </label>
-                    <input 
-                        type="date" 
-                        id="repFechaIni" 
-                        wire:model.live="fecha_inicio" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
-                    />
-                    @error('fecha_inicio')
-                        <span class="text-[11px] text-red-500 font-medium mt-0.5 block">{{ $message }}</span>
-                    @enderror
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-lg">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Productos Evaluados</span>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 font-mono">
+                            {{ number_format($datosReporte['resumen_general']['total_productos']) }}
+                        </h3>
+                    </div>
                 </div>
 
-                <!-- Fecha Fin -->
-                <div>
-                    <label for="repFechaFin" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        <i class="fas fa-calendar-check text-slate-400 me-1"></i> Fecha Fin:
-                    </label>
-                    <input 
-                        type="date" 
-                        id="repFechaFin" 
-                        wire:model.live="fecha_fin" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
-                    />
-                    @error('fecha_fin')
-                        <span class="text-[11px] text-red-500 font-medium mt-0.5 block">{{ $message }}</span>
-                    @enderror
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-lg">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Entradas vs Salidas</span>
+                        <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 font-mono mt-1">
+                            <span class="text-emerald-600 dark:text-emerald-400">+{{ number_format($datosReporte['resumen_general']['gran_total_entradas']) }}</span> / 
+                            <span class="text-red-500 dark:text-red-400">-{{ number_format($datosReporte['resumen_general']['gran_total_salidas']) }}</span>
+                        </h3>
+                    </div>
                 </div>
 
-                <!-- Sucursal -->
-                <div>
-                    <label for="repSucursal" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        <i class="fas fa-hospital text-slate-400 me-1"></i> Sucursal:
-                    </label>
-                    <select 
-                        id="repSucursal" 
-                        wire:model.live="sucursal_id" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
-                    >
-                        <option value="">Todas las Sucursales</option>
-                        @foreach ($sucursales as $suc)
-                            <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
-                        @endforeach
-                    </select>
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-lg">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Stock Físico Final</span>
+                        <h3 class="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                            {{ number_format($datosReporte['resumen_general']['gran_total_saldo_final']) }} unids.
+                        </h3>
+                    </div>
                 </div>
 
-                <!-- Filtro Producto -->
-                <div>
-                    <label for="repProducto" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        <i class="fas fa-pills text-slate-400 me-1"></i> Producto:
-                    </label>
-                    <select 
-                        id="repProducto" 
-                        wire:model.live="producto_id" 
-                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
-                    >
-                        <option value="">Todos los Productos (Consolidado)</option>
-                        @foreach ($productos as $prod)
-                            <option value="{{ $prod->id }}">{{ $prod->nombre }} ({{ $prod->marca?->nombre ?? 'S/M' }})</option>
-                        @endforeach
-                    </select>
+                <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 text-lg">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Valorización (Venta)</span>
+                        <h3 class="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono">
+                            Bs. {{ number_format($datosReporte['resumen_general']['gran_total_valor_venta'], 2) }}
+                        </h3>
+                    </div>
                 </div>
             </div>
 
-            <!-- Opciones Secundarias y Botones de Acción -->
-            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <input 
-                        type="checkbox" 
-                        id="chkSoloActivos" 
-                        wire:model.live="solo_con_actividad" 
-                        class="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                    />
-                    <label for="chkSoloActivos" class="text-xs text-slate-600 dark:text-slate-400 select-none cursor-pointer">
-                        Solo incluir productos que registren movimientos o saldo en el período
-                    </label>
-                </div>
-
-                <div class="flex items-center gap-2.5">
-                    <button 
-                        type="button" 
-                        wire:click="limpiarFiltros" 
-                        class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                    >
-                        <i class="fas fa-undo me-1"></i> Limpiar
-                    </button>
-
-                    <button 
-                        type="button" 
-                        wire:click="previsualizarReporte" 
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
-                    >
-                        <i class="fas fa-eye" wire:loading.remove wire:target="previsualizarReporte"></i>
-                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="previsualizarReporte"></i>
-                        <span>Previsualizar Reporte</span>
-                    </button>
-
-                    <!-- Botón para Abrir/Descargar PDF -->
-                    @php
-                        $pdfUrl = route('administracion.reportes.movimientos.pdf', [
-                            'fecha_inicio' => $fecha_inicio,
-                            'fecha_fin' => $fecha_fin,
-                            'producto_id' => $producto_id,
-                            'sucursal_id' => $sucursal_id,
-                            'solo_con_actividad' => $solo_con_actividad ? 1 : 0,
-                        ]);
-                    @endphp
-                    <a 
-                        href="{{ $pdfUrl }}" 
-                        target="_blank" 
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
-                    >
-                        <i class="fas fa-file-pdf text-sm"></i>
-                        <span>Generar PDF</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Previsualización del Reporte en Pantalla -->
-    @if ($reporteGenerado && $datosReporte)
-        <!-- Resumen General en Tarjetas Métricas -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-lg">
-                    <i class="fas fa-pills"></i>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Productos Evaluados</span>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 font-mono">
-                        {{ number_format($datosReporte['resumen_general']['total_productos']) }}
-                    </h3>
-                </div>
-            </div>
-
-            <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-lg">
-                    <i class="fas fa-exchange-alt"></i>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Entradas vs Salidas</span>
-                    <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 font-mono mt-1">
-                        <span class="text-emerald-600 dark:text-emerald-400">+{{ number_format($datosReporte['resumen_general']['gran_total_entradas']) }}</span> / 
-                        <span class="text-red-500 dark:text-red-400">-{{ number_format($datosReporte['resumen_general']['gran_total_salidas']) }}</span>
-                    </h3>
-                </div>
-            </div>
-
-            <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-lg">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Stock Total al Corte</span>
-                    <h3 class="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
-                        {{ number_format($datosReporte['resumen_general']['gran_total_saldo_final']) }} unids.
-                    </h3>
-                </div>
-            </div>
-
-            <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center gap-3.5">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 text-lg">
-                    <i class="fas fa-coins"></i>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Valorización Venta Total</span>
-                    <h3 class="text-sm font-bold text-teal-600 dark:text-teal-400 font-mono">
-                        Bs. {{ number_format($datosReporte['resumen_general']['gran_total_valor_venta'], 2) }}
-                    </h3>
-                    <span class="text-[10px] text-slate-400">
-                        Compra: Bs. {{ number_format($datosReporte['resumen_general']['gran_total_valor_compra'], 2) }}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Resumen Consolidado de Stock por Sección -->
-        @if (!empty($datosReporte['resumen_general']['stock_por_seccion']))
-            <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 me-1">
-                        <i class="fas fa-warehouse text-blue-600 dark:text-blue-400"></i>
-                        <span>Stock Global en Secciones:</span>
-                    </span>
-                    @foreach ($datosReporte['resumen_general']['stock_por_seccion'] as $secNom => $cantSec)
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium {{ $cantSec > 0 ? 'bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800' : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700' }}">
-                            <span>{{ $secNom }}:</span>
-                            <strong class="font-bold font-mono {{ $cantSec > 0 ? 'text-sky-900 dark:text-sky-100' : 'text-slate-400' }}">
-                                {{ number_format($cantSec) }}
-                            </strong>
-                        </span>
-                    @endforeach
-                </div>
-                <div>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs">
-                        <i class="fas fa-boxes text-[11px]"></i>
-                        <span>Total Físico:</span>
-                        <span class="font-mono">{{ number_format(array_sum($datosReporte['resumen_general']['stock_por_seccion'])) }} unids.</span>
-                    </span>
-                </div>
-            </div>
-        @endif
-
-        <!-- Lista Detallada por Producto -->
-        @if (empty($datosReporte['items']))
-            <div class="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500">
-                <i class="fas fa-info-circle text-2xl text-blue-500 mb-2"></i>
-                <p class="text-sm font-semibold">No se encontraron productos con movimientos o stock en este período.</p>
-                <p class="text-xs text-slate-400 mt-1">Pruebe desmarcando la opción de "Solo productos con movimientos" o amplíe el rango de fechas.</p>
-            </div>
-        @else
+            <!-- Listado Detallado por Producto -->
             <div class="space-y-4">
                 @foreach ($datosReporte['items'] as $item)
                     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-                        <!-- Cabecera de Producto -->
-                        <div class="p-3 sm:p-4 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-2">
-                            <div>
-                                <h3 class="text-sm font-bold text-sky-400 flex items-center gap-2">
-                                    <i class="fas fa-capsules"></i>
-                                    <span>{{ $item['producto_nombre'] }}</span>
-                                    <span class="text-[11px] font-normal text-slate-300">({{ $item['marca_nombre'] }})</span>
-                                </h3>
-                                <div class="text-[11px] text-slate-400 flex items-center gap-3 mt-0.5">
-                                    <span>Presentación: <strong class="text-slate-200">{{ $item['unidad_medida'] }}</strong></span>
-                                    <span>Stock Mínimo: <strong class="text-slate-200">{{ $item['stock_minimo'] }}</strong></span>
-                                </div>
+                        <!-- Header del Producto -->
+                        <div class="p-3 sm:px-4 bg-slate-50/75 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 dark:text-white text-xs">
+                                    {{ $item['producto_nombre'] }}
+                                </span>
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    ({{ $item['marca_nombre'] }} &bull; {{ $item['unidad_medida'] }})
+                                </span>
                             </div>
-
-                            <div class="flex items-center gap-4 text-xs font-mono">
-                                <div>
-                                    <span class="text-slate-400 text-[10px] block">Último P. Compra</span>
-                                    <span class="font-bold text-slate-200">Bs. {{ number_format($item['ultimo_precio_compra'], 2) }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-400 text-[10px] block">Último P. Venta</span>
-                                    <span class="font-bold text-emerald-400">Bs. {{ number_format($item['ultimo_precio_venta'], 2) }}</span>
-                                </div>
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="text-slate-500">Saldo Inicial: <strong class="text-slate-800 dark:text-slate-200 font-mono">{{ number_format($item['saldo_inicial']) }}</strong></span>
+                                <span class="text-slate-500">Saldo Final: <strong class="text-blue-600 dark:text-blue-400 font-mono font-bold">{{ number_format($item['saldo_final']) }}</strong></span>
                             </div>
                         </div>
 
-                        <!-- Tabla de Movimientos del Kardex -->
+                        <!-- Tabla de Movimientos del Producto -->
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-bold border-b border-slate-200 dark:border-slate-800">
-                                    <tr>
-                                        <th class="py-2 px-3">Fecha/Hora</th>
-                                        <th class="py-2 px-3">Lote / Vto.</th>
-                                        <th class="py-2 px-3">Concepto / Movimiento</th>
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        <th class="py-2 px-3">Fecha / Hora</th>
+                                        <th class="py-2 px-3">Tipo Movimiento</th>
+                                        <th class="py-2 px-3">Lote / Vence</th>
                                         <th class="py-2 px-3">Área / Sección</th>
-                                        <th class="py-2 px-3">Referencia / Origen</th>
-                                        <th class="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">Entrada</th>
-                                        <th class="py-2 px-3 text-right text-red-500 dark:text-red-400">Salida</th>
-                                        <th class="py-2 px-3 text-right font-black">Saldo</th>
-                                        <th class="py-2 px-3">Responsable</th>
+                                        <th class="py-2 px-3">Detalle / Ref</th>
+                                        <th class="py-2 px-3 text-right">Entrada</th>
+                                        <th class="py-2 px-3 text-right">Salida</th>
+                                        <th class="py-2 px-3 text-right font-bold text-blue-600 dark:text-blue-400">Saldo</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-[11px]">
-                                    <!-- Fila Saldo Inicial al corte de fecha_inicio -->
-                                    <tr class="bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 font-bold font-sans">
-                                        <td class="py-2 px-3">{{ \Carbon\Carbon::parse($datosReporte['fecha_inicio'])->format('d/m/Y') }} 00:00</td>
-                                        <td class="py-2 px-3 text-slate-400">-</td>
-                                        <td class="py-2 px-3" colspan="3">
-                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 font-bold">
-                                                <i class="fas fa-play-circle text-[9px]"></i> Saldo Inicial Previo
-                                            </span>
-                                            <span class="text-[10px] text-slate-500 dark:text-slate-400 ms-1 font-normal">(Cálculo consolidado antes de {{ \Carbon\Carbon::parse($datosReporte['fecha_inicio'])->format('d/m/Y') }})</span>
-                                        </td>
-                                        <td class="py-2 px-3 text-right text-slate-400">-</td>
-                                        <td class="py-2 px-3 text-right text-slate-400">-</td>
-                                        <td class="py-2 px-3 text-right font-black font-mono text-sm text-blue-700 dark:text-blue-300">
-                                            {{ number_format($item['saldo_inicial']) }}
-                                        </td>
-                                        <td class="py-2 px-3 text-slate-400">-</td>
-                                    </tr>
-
-                                    <!-- Movimientos dentro del período -->
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                                     @forelse ($item['movimientos'] as $mov)
-                                        <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                                            <td class="py-2 px-3 font-sans text-slate-600 dark:text-slate-400">{{ $mov['fecha'] }}</td>
-                                            <td class="py-2 px-3 font-sans">
-                                                <span class="font-bold text-slate-800 dark:text-slate-200">{{ $mov['lote_codigo'] }}</span>
-                                                @if ($mov['lote_vencimiento'])
-                                                    <span class="text-[10px] text-slate-400 block font-normal">Vto: {{ $mov['lote_vencimiento'] }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="py-2 px-3 font-sans">
-                                                @if ($mov['es_entrada'])
-                                                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                                                        <i class="fas fa-arrow-down text-[9px]"></i> {{ $mov['tipo_movimiento'] }}
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center gap-1 text-red-500 dark:text-red-400 font-bold">
-                                                        <i class="fas fa-arrow-up text-[9px]"></i> {{ $mov['tipo_movimiento'] }}
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="py-2 px-3 font-sans">
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800">
-                                                    <i class="fas fa-map-marker-alt text-[9px]"></i>
-                                                    {{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                                            <td class="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">{{ $mov['fecha'] }}</td>
+                                            <td class="py-2 px-3">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold {{ $mov['es_entrada'] ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' }}">
+                                                    {{ $mov['tipo_movimiento'] }}
                                                 </span>
                                             </td>
-                                            <td class="py-2 px-3 font-sans text-slate-600 dark:text-slate-400">{{ $mov['referencia'] }}</td>
-                                            <td class="py-2 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                            <td class="py-2 px-3 font-mono text-[11px]">
+                                                {{ $mov['lote_codigo'] }}
+                                                @if($mov['lote_vencimiento'])
+                                                    <span class="text-[10px] text-slate-400 block">{{ $mov['lote_vencimiento'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="py-2 px-3 text-slate-600 dark:text-slate-400">{{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}</td>
+                                            <td class="py-2 px-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">{{ $mov['referencia'] }}</td>
+                                            <td class="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                                 {{ $mov['cantidad_entrada'] > 0 ? '+'.number_format($mov['cantidad_entrada']) : '-' }}
                                             </td>
-                                            <td class="py-2 px-3 text-right font-bold text-red-500 dark:text-red-400">
+                                            <td class="py-2 px-3 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
                                                 {{ $mov['cantidad_salida'] > 0 ? '-'.number_format($mov['cantidad_salida']) : '-' }}
                                             </td>
-                                            <td class="py-2 px-3 text-right font-black text-slate-800 dark:text-slate-100">
+                                            <td class="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">
                                                 {{ number_format($mov['saldo_acumulado']) }}
                                             </td>
-                                            <td class="py-2 px-3 font-sans text-[10px] text-slate-500 dark:text-slate-400">{{ $mov['usuario'] }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="9" class="py-3 px-3 text-center text-slate-400 font-sans text-xs italic">
-                                                Sin movimientos en el rango de fechas seleccionado.
+                                            <td colspan="8" class="text-center py-4 text-slate-400 text-xs italic">
+                                                Sin movimientos en el período seleccionado. Saldo inicial conservado.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -473,6 +401,367 @@
                         @endif
                     </div>
                 @endforeach
+            </div>
+        @endif
+
+    <!-- ========================================================================= -->
+    <!-- 2. REPORTE DE INGRESOS, SALIDAS Y HABITACIONES DE PACIENTES               -->
+    <!-- ========================================================================= -->
+    @else
+        <!-- Panel de Filtros para Reporte de Pacientes -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-filter text-blue-600 dark:text-blue-400"></i>
+                        <span>Criterios del Reporte de Ingresos, Salidas y Habitaciones</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Consolide admisiones y altas de pacientes filtrando por rango de fechas, institución/convenio, habitación asignada y tipo de atención.
+                    </p>
+                </div>
+
+                <!-- Accesos Rápidos de Rango -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400 me-1">Rango:</span>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRangoPacientes('mes_actual')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Mes Actual
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRangoPacientes('mes_anterior')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Mes Anterior
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRangoPacientes('ultimos_30')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Últimos 30 días
+                    </button>
+                    <button 
+                        type="button" 
+                        wire:click="aplicarRangoPacientes('anio_actual')" 
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    >
+                        Año Actual
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Fecha Inicio -->
+                    <div>
+                        <label for="pacFechaIni" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-calendar-alt text-slate-400 me-1"></i> Fecha Inicio:
+                        </label>
+                        <input 
+                            type="date" 
+                            id="pacFechaIni" 
+                            wire:model.live="pac_fecha_inicio" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        />
+                        @error('pac_fecha_inicio')
+                            <span class="text-[11px] text-red-500 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Fecha Fin -->
+                    <div>
+                        <label for="pacFechaFin" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-calendar-alt text-slate-400 me-1"></i> Fecha Fin:
+                        </label>
+                        <input 
+                            type="date" 
+                            id="pacFechaFin" 
+                            wire:model.live="pac_fecha_fin" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        />
+                        @error('pac_fecha_fin')
+                            <span class="text-[11px] text-red-500 mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Institución / Convenio (Seleccionable solicitado) -->
+                    <div>
+                        <label for="pacInstitucion" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-landmark text-slate-400 me-1"></i> Institución / Seguro:
+                        </label>
+                        <select 
+                            id="pacInstitucion" 
+                            wire:model.live="pac_institucion_id" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3 font-medium"
+                        >
+                            <option value="">Todas las Instituciones (Incluye Particulares)</option>
+                            <option value="-1">Solo Pacientes Particulares (Sin Convenio)</option>
+                            @foreach ($instituciones as $inst)
+                                <option value="{{ $inst->id }}">{{ $inst->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Criterio de Movimiento / Evento -->
+                    <div>
+                        <label for="pacTipoFiltro" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-stream text-slate-400 me-1"></i> Criterio de Búsqueda:
+                        </label>
+                        <select 
+                            id="pacTipoFiltro" 
+                            wire:model.live="pac_tipo_filtro" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        >
+                            <option value="todos">Todos (Ingresos, Altas y Estancias activas)</option>
+                            <option value="ingresos">Solo Ingresos / Admisiones en el período</option>
+                            <option value="salidas">Solo Altas / Salidas en el período</option>
+                            <option value="internados">Pacientes Actualmente Internados (En piso)</option>
+                        </select>
+                    </div>
+
+                    <!-- Tipo de Atención -->
+                    <div>
+                        <label for="pacTipoAtencion" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-stethoscope text-slate-400 me-1"></i> Tipo de Atención:
+                        </label>
+                        <select 
+                            id="pacTipoAtencion" 
+                            wire:model.live="pac_tipo_atencion" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        >
+                            <option value="">Todas las Modalidades</option>
+                            <option value="Internacion">Solo Internación / Hospitalaria</option>
+                            <option value="Ambulatoria">Solo Ambulatoria</option>
+                        </select>
+                    </div>
+
+                    <!-- Sucursal -->
+                    <div>
+                        <label for="pacSucursal" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <i class="fas fa-hospital text-slate-400 me-1"></i> Sucursal:
+                        </label>
+                        <select 
+                            id="pacSucursal" 
+                            wire:model.live="pac_sucursal_id" 
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 shadow-2xs py-2 px-3"
+                        >
+                            <option value="">Todas las Sucursales</option>
+                            @foreach ($sucursales as $suc)
+                                <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-end gap-2.5">
+                    <button 
+                        type="button" 
+                        wire:click="limpiarFiltrosPacientes" 
+                        class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                        <i class="fas fa-undo me-1"></i> Limpiar Filtros
+                    </button>
+
+                    <button 
+                        type="button" 
+                        wire:click="previsualizarReportePacientes" 
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                        <i class="fas fa-search" wire:loading.remove wire:target="previsualizarReportePacientes"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="previsualizarReportePacientes"></i>
+                        <span>Generar Reporte</span>
+                    </button>
+
+                    <!-- Botón Exportar PDF -->
+                    @php
+                        $pdfUrlPacientes = route('administracion.reportes.pacientes.pdf', [
+                            'fecha_inicio' => $pac_fecha_inicio,
+                            'fecha_fin' => $pac_fecha_fin,
+                            'institucion_id' => $pac_institucion_id,
+                            'sucursal_id' => $pac_sucursal_id,
+                            'tipo_filtro' => $pac_tipo_filtro,
+                            'tipo_atencion' => $pac_tipo_atencion,
+                        ]);
+                    @endphp
+                    <a 
+                        href="{{ $pdfUrlPacientes }}" 
+                        target="_blank" 
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
+                    >
+                        <i class="fas fa-file-pdf text-sm"></i>
+                        <span>Descargar PDF</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Previsualización de Pacientes en Pantalla -->
+        @if ($pac_reporteGenerado && $pac_datosReporte)
+            <!-- Tarjetas Métricas KPI -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs text-center">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Total Atenciones</span>
+                    <h3 class="text-xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['total_registros']) }}
+                    </h3>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs text-center">
+                    <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase block">Ingresos Período</span>
+                    <h3 class="text-xl font-black font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['ingresos_periodo']) }}
+                    </h3>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-xs text-center">
+                    <span class="text-[10px] text-indigo-700 dark:text-indigo-400 font-bold uppercase block">Altas / Salidas</span>
+                    <h3 class="text-xl font-black font-mono text-indigo-700 dark:text-indigo-400 mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['salidas_periodo']) }}
+                    </h3>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 shadow-xs text-center">
+                    <span class="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase block">Internados Activos</span>
+                    <h3 class="text-xl font-black font-mono text-amber-700 dark:text-amber-400 mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['internados_activos']) }}
+                    </h3>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs text-center">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Hospitalarios</span>
+                    <h3 class="text-xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['hospitalarios']) }}
+                    </h3>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs text-center">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase block">Ambulatorios</span>
+                    <h3 class="text-xl font-black font-mono text-slate-800 dark:text-slate-200 mt-0.5">
+                        {{ number_format($pac_datosReporte['totales']['ambulatorios']) }}
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Tabla de Datos de Pacientes -->
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+                <div class="p-3 sm:px-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="text-xs text-slate-700 dark:text-slate-300 font-bold flex items-center gap-2">
+                        <i class="fas fa-list-alt text-blue-500"></i>
+                        <span>Listado Detallado de Pacientes ({{ count($pac_datosReporte['items']) }} registros)</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                        <strong>Filtro:</strong> {{ $pac_datosReporte['institucion_nombre'] }} &bull; {{ $pac_datosReporte['sucursal_nombre'] }}
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <th class="py-2.5 px-3">Proforma</th>
+                                <th class="py-2.5 px-3">Paciente / Identificación</th>
+                                <th class="py-2.5 px-3">Institución / Convenio</th>
+                                <th class="py-2.5 px-3">Habitación / Pieza</th>
+                                <th class="py-2.5 px-3">Modalidad</th>
+                                <th class="py-2.5 px-3">Fecha Ingreso</th>
+                                <th class="py-2.5 px-3">Fecha Salida / Alta</th>
+                                <th class="py-2.5 px-3">Diagnóstico</th>
+                                <th class="py-2.5 px-3 text-center">Estado</th>
+                                <th class="py-2.5 px-3 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                            @forelse ($pac_datosReporte['items'] as $item)
+                                <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                                    <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                                        #{{ str_pad($item['proforma_id'], 5, '0', STR_PAD_LEFT) }}
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <div class="font-bold text-slate-900 dark:text-white">
+                                            {{ $item['paciente_nombre'] }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            CI: {{ $item['paciente_cedula'] }} 
+                                            @if($item['paciente_edad']) &bull; {{ $item['paciente_edad'] }} años @endif
+                                            @if($item['paciente_celular']) &bull; Cel: {{ $item['paciente_celular'] }} @endif
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                            {{ $item['institucion_nombre'] }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        @if($item['pieza'] && $item['pieza'] !== 'Ambulatorio' && $item['pieza'] !== 'Sin asignar')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs">
+                                                <i class="fas fa-bed text-amber-600 dark:text-amber-400 text-[10px]"></i>
+                                                {{ $item['pieza'] }}
+                                            </span>
+                                        @else
+                                            <span class="text-slate-400 text-[11px] italic">{{ $item['pieza'] }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <span class="text-[11px] font-semibold {{ $item['tipo_atencion'] === 'Internacion' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                                            {{ $item['tipo_atencion'] }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono text-[11px]">
+                                        {{ $item['fecha_ingreso'] }}
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono text-[11px]">
+                                        @if($item['fecha_salida'])
+                                            <span>{{ $item['fecha_salida'] }}</span>
+                                            <span class="text-[10px] text-slate-400 block font-normal">({{ $item['dias_estancia'] }} día{{ $item['dias_estancia'] > 1 ? 's' : '' }})</span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                En Curso
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 px-3 max-w-xs">
+                                        <div class="truncate font-medium text-slate-800 dark:text-slate-200" title="{{ $item['diagnostico'] }}">
+                                            {{ $item['diagnostico'] ?: 'Sin diagnóstico' }}
+                                        </div>
+                                        @if($item['motivo_consulta'])
+                                            <div class="truncate text-[10px] text-slate-400" title="{{ $item['motivo_consulta'] }}">
+                                                {{ $item['motivo_consulta'] }}
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 px-3 text-center">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold {{ $item['estado'] === 'Pagada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' }}">
+                                            {{ $item['estado'] }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right">
+                                        <a 
+                                            href="{{ route('proformas.show', $item['proforma_id']) }}" 
+                                            class="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-block"
+                                            title="Ver Proforma"
+                                        >
+                                            <i class="fas fa-eye text-xs"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-center py-8 text-slate-400 italic">
+                                        No se encontraron registros de pacientes para los filtros y fechas seleccionadas.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         @endif
     @endif

@@ -68,6 +68,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/reportes/movimientos/pdf', [ReportePdfController::class, 'movimientos'])
             ->middleware('permiso:1')
             ->name('reportes.movimientos.pdf');
+
+        Route::get('/reportes/pacientes/pdf', [ReportePdfController::class, 'pacientes'])
+            ->middleware('permiso:1')
+            ->name('reportes.pacientes.pdf');
     });
 
     // Módulo Pacientes e Instituciones

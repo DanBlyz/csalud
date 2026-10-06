@@ -4,9 +4,9 @@ use App\Models\CierreDetalle;
 use App\Models\CierreMensual;
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\Proforma;
-use App\Models\ProformaPago;
 use App\Models\ProformaServicio;
 use App\Models\Receta;
 use App\Models\Servicio;
@@ -75,7 +75,7 @@ test('proforma recalculates total with servicios and consumos extras', function 
 
     expect((float) $proforma->fresh()->costo_total)->toEqual(200.00);
 
-    ProformaPago::factory()->create([
+    Pago::factory()->create([
         'proforma_id' => $proforma->id,
         'monto' => 120.00,
     ]);

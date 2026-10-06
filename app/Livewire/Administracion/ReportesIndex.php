@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Administracion;
 
+use App\Models\Institucion;
 use App\Models\Producto;
 use App\Models\Sucursal;
 use App\Services\ReporteMovimientosService;
+use App\Services\ReportePacientesService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -14,10 +16,12 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class ReportesIndex extends Component
 {
-    // Pestaña o tipo de reporte activo en el Centro de Reportes
-    public string $reporteActivo = 'kardex'; // 'kardex', etc.
+    // Pestaña o tipo de reporte activo: 'kardex', 'pacientes'
+    public string $reporteActivo = 'kardex';
 
-    // Filtros para Reporte Kardex de Movimientos
+    // =========================================================================
+    // FILTROS: REPORTE KARDEX DE MOVIMIENTOS DE INVENTARIO
+    // =========================================================================
     public string $fecha_inicio = '';
 
     public string $fecha_fin = '';
@@ -30,7 +34,6 @@ class ReportesIndex extends Component
 
     public bool $solo_con_actividad = true;
 
-    // Estado de la previsualización
     public bool $reporteGenerado = false;
 
     /**
@@ -38,16 +41,56 @@ class ReportesIndex extends Component
      */
     public ?array $datosReporte = null;
 
-    public function mount(): void
-    {
-        $this->fecha_inicio = Carbon::now()->startOfMonth()->toDateString();
-        $this->fecha_fin = Carbon::now()->toDateString();
-        $this->sucursal_id = Auth::user()->sucursal_id;
-    }
+    // =========================================================================
+    // FILTROS: REPORTE DE INGRESOS Y SALIDAS DE PACIENTES
+    // =========================================================================
+    public string $pac_fecha_inicio = '';
+
+    public string $pac_fecha_fin = '';
+
+    public ?int $pac_institucion_id = null; // null = Todas, -1 = Solo Particulares, >0 = ID Institución
+
+    public ?int $pac_sucursal_id = null;
+
+    public string $pac_tipo_filtro = 'todos'; // 'todos', 'ingresos', 'salidas', 'internados'
+
+    public string $pac_tipo_atencion = ''; // '' = Todas, 'Ambulatoria', 'Internacion'
+
+    public bool $pac_reporteGenerado = false;
 
     /**
-     * Presets rápidos para rango de fechas.
+     * @var array<string, mixed>|null
      */
+    public ?array $pac_datosReporte = null;
+
+    protected $queryString = [
+        'reporteActivo' => ['except' => 'kardex'],
+    ];
+
+    public function mount(): void
+    {
+        $now = Carbon::now();
+
+        // Inicializar Kardex
+        $this->fecha_inicio = $now->copy()->startOfMonth()->toDateString();
+        $this->fecha_fin = $now->toDateString();
+        $this->sucursal_id = Auth::user()->sucursal_id;
+
+        // Inicializar Reporte Pacientes
+        $this->pac_fecha_inicio = $now->copy()->startOfMonth()->toDateString();
+        $this->pac_fecha_fin = $now->toDateString();
+        $this->pac_sucursal_id = Auth::user()->sucursal_id;
+    }
+
+    public function cambiarTipoReporte(string $tipo): void
+    {
+        $this->reporteActivo = $tipo;
+    }
+
+    // =========================================================================
+    // ACCIONES: KARDEX DE INVENTARIO
+    // =========================================================================
+
     public function aplicarRango(string $preset): void
     {
         $now = Carbon::now();
@@ -135,9 +178,110 @@ class ReportesIndex extends Component
         $this->datosReporte = null;
     }
 
+    // =========================================================================
+    // ACCIONES: REPORTE DE INGRESOS Y SALIDAS DE PACIENTES
+    // =========================================================================
+
+    public function aplicarRangoPacientes(string $preset): void
+    {
+        $now = Carbon::now();
+
+        switch ($preset) {
+            case 'mes_actual':
+                $this->pac_fecha_inicio = $now->copy()->startOfMonth()->toDateString();
+                $this->pac_fecha_fin = $now->toDateString();
+                break;
+            case 'mes_anterior':
+                $this->pac_fecha_inicio = $now->copy()->subMonth()->startOfMonth()->toDateString();
+                $this->pac_fecha_fin = $now->copy()->subMonth()->endOfMonth()->toDateString();
+                break;
+            case 'ultimos_30':
+                $this->pac_fecha_inicio = $now->copy()->subDays(30)->toDateString();
+                $this->pac_fecha_fin = $now->toDateString();
+                break;
+            case 'anio_actual':
+                $this->pac_fecha_inicio = $now->copy()->startOfYear()->toDateString();
+                $this->pac_fecha_fin = $now->toDateString();
+                break;
+        }
+
+        $this->pac_reporteGenerado = false;
+        $this->pac_datosReporte = null;
+    }
+
+    public function updatedPacFechaInicio(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function updatedPacFechaFin(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function updatedPacInstitucionId(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function updatedPacSucursalId(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function updatedPacTipoFiltro(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function updatedPacTipoAtencion(): void
+    {
+        $this->pac_reporteGenerado = false;
+    }
+
+    public function previsualizarReportePacientes(ReportePacientesService $service): void
+    {
+        $this->validate([
+            'pac_fecha_inicio' => ['required', 'date'],
+            'pac_fecha_fin' => ['required', 'date', 'after_or_equal:pac_fecha_inicio'],
+            'pac_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+            'pac_tipo_filtro' => ['required', 'in:todos,ingresos,salidas,internados'],
+            'pac_tipo_atencion' => ['nullable', 'in:Ambulatoria,Internacion'],
+        ], [
+            'pac_fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
+            'pac_fecha_fin.required' => 'La fecha de fin es obligatoria.',
+            'pac_fecha_fin.after_or_equal' => 'La fecha de fin debe ser posterior o igual a la de inicio.',
+        ]);
+
+        $this->pac_datosReporte = $service->generar(
+            fechaInicio: $this->pac_fecha_inicio,
+            fechaFin: $this->pac_fecha_fin,
+            institucionId: $this->pac_institucion_id,
+            sucursalId: $this->pac_sucursal_id,
+            tipoFiltro: $this->pac_tipo_filtro,
+            tipoAtencion: ! empty($this->pac_tipo_atencion) ? $this->pac_tipo_atencion : null
+        );
+
+        $this->pac_reporteGenerado = true;
+    }
+
+    public function limpiarFiltrosPacientes(): void
+    {
+        $now = Carbon::now();
+        $this->pac_fecha_inicio = $now->copy()->startOfMonth()->toDateString();
+        $this->pac_fecha_fin = $now->toDateString();
+        $this->pac_institucion_id = null;
+        $this->pac_sucursal_id = Auth::user()->sucursal_id;
+        $this->pac_tipo_filtro = 'todos';
+        $this->pac_tipo_atencion = '';
+        $this->pac_reporteGenerado = false;
+        $this->pac_datosReporte = null;
+    }
+
     public function render(): View
     {
         $sucursales = Sucursal::orderBy('nombre')->get();
+        $instituciones = Institucion::orderBy('nombre')->get();
 
         $productosQuery = Producto::query()
             ->with('marca')
@@ -153,6 +297,7 @@ class ReportesIndex extends Component
 
         return view('livewire.administracion.reportes-index', [
             'sucursales' => $sucursales,
+            'instituciones' => $instituciones,
             'productos' => $productos,
         ]);
     }
