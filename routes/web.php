@@ -3,6 +3,7 @@
 use App\Http\Controllers\CajaPdfController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProformaPdfController;
+use App\Http\Controllers\ReporteExcelController;
 use App\Http\Controllers\ReportePdfController;
 use App\Livewire\Administracion\EspecialidadesIndex;
 use App\Livewire\Administracion\ReportesIndex;
@@ -72,6 +73,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/reportes/pacientes/pdf', [ReportePdfController::class, 'pacientes'])
             ->middleware('permiso:1')
             ->name('reportes.pacientes.pdf');
+
+        Route::get('/reportes/convenios/excel', [ReporteExcelController::class, 'planillaConvenios'])
+            ->middleware('permiso:1')
+            ->name('reportes.convenios.excel');
     });
 
     // Módulo Pacientes e Instituciones

@@ -7,16 +7,18 @@ use App\Models\Producto;
 use App\Models\Sucursal;
 use App\Services\ReporteMovimientosService;
 use App\Services\ReportePacientesService;
+use App\Services\ReportePlanillaConvenioService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 #[Layout('layouts.app')]
 class ReportesIndex extends Component
 {
-    // Pestaña o tipo de reporte activo: 'kardex', 'pacientes'
+    // Pestaña o tipo de reporte activo: 'kardex', 'pacientes', 'convenios'
     public string $reporteActivo = 'kardex';
 
     // =========================================================================
@@ -63,6 +65,26 @@ class ReportesIndex extends Component
      */
     public ?array $pac_datosReporte = null;
 
+    // =========================================================================
+    // FILTROS: PLANILLA DE PACIENTES POR CONVENIO / INSTITUCIÓN (EXCEL)
+    // =========================================================================
+    public ?int $conv_institucion_id = null;
+
+    public int $conv_mes = 1;
+
+    public int $conv_anio = 2026;
+
+    public ?int $conv_sucursal_id = null;
+
+    public bool $conv_solo_atendidos = true;
+
+    public bool $conv_reporteGenerado = false;
+
+    /**
+     * @var array<string, mixed>|null
+     */
+    public ?array $conv_datosReporte = null;
+
     protected $queryString = [
         'reporteActivo' => ['except' => 'kardex'],
     ];
@@ -80,6 +102,15 @@ class ReportesIndex extends Component
         $this->pac_fecha_inicio = $now->copy()->startOfMonth()->toDateString();
         $this->pac_fecha_fin = $now->toDateString();
         $this->pac_sucursal_id = Auth::user()->sucursal_id;
+
+        // Inicializar Planilla de Convenios
+        $this->conv_mes = (int) $now->month;
+        $this->conv_anio = (int) $now->year;
+        $this->conv_sucursal_id = Auth::user()->sucursal_id;
+        $primeraInstitucion = Institucion::where('estado', 'Activo')->orWhere('estado', 1)->first();
+        if ($primeraInstitucion) {
+            $this->conv_institucion_id = $primeraInstitucion->id;
+        }
     }
 
     public function cambiarTipoReporte(string $tipo): void
@@ -276,6 +307,106 @@ class ReportesIndex extends Component
         $this->pac_tipo_atencion = '';
         $this->pac_reporteGenerado = false;
         $this->pac_datosReporte = null;
+    }
+
+    // =========================================================================
+    // ACCIONES: PLANILLA DE PACIENTES POR CONVENIO / INSTITUCIÓN (EXCEL)
+    // =========================================================================
+
+    public function updatedConvInstitucionId(): void
+    {
+        $this->conv_reporteGenerado = false;
+    }
+
+    public function updatedConvMes(): void
+    {
+        $this->conv_reporteGenerado = false;
+    }
+
+    public function updatedConvAnio(): void
+    {
+        $this->conv_reporteGenerado = false;
+    }
+
+    public function updatedConvSucursalId(): void
+    {
+        $this->conv_reporteGenerado = false;
+    }
+
+    public function updatedConvSoloAtendidos(): void
+    {
+        $this->conv_reporteGenerado = false;
+    }
+
+    public function previsualizarReporteConvenio(ReportePlanillaConvenioService $service): void
+    {
+        $this->validate([
+            'conv_institucion_id' => ['required', 'exists:instituciones,id'],
+            'conv_mes' => ['required', 'integer', 'min:1', 'max:12'],
+            'conv_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'conv_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'conv_institucion_id.required' => 'Debe seleccionar una institución o convenio.',
+            'conv_mes.required' => 'El mes es requerido.',
+            'conv_anio.required' => 'El año es requerido.',
+        ]);
+
+        $this->conv_datosReporte = $service->generar(
+            institucionId: (int) $this->conv_institucion_id,
+            mes: (int) $this->conv_mes,
+            anio: (int) $this->conv_anio,
+            sucursalId: $this->conv_sucursal_id,
+            soloAtendidos: $this->conv_solo_atendidos
+        );
+
+        $this->conv_reporteGenerado = true;
+    }
+
+    public function descargarExcelConvenio(ReportePlanillaConvenioService $service)
+    {
+        $this->validate([
+            'conv_institucion_id' => ['required', 'exists:instituciones,id'],
+            'conv_mes' => ['required', 'integer', 'min:1', 'max:12'],
+            'conv_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'conv_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'conv_institucion_id.required' => 'Debe seleccionar una institución o convenio.',
+            'conv_mes.required' => 'El mes es requerido.',
+            'conv_anio.required' => 'El año es requerido.',
+        ]);
+
+        $datos = $service->generar(
+            institucionId: (int) $this->conv_institucion_id,
+            mes: (int) $this->conv_mes,
+            anio: (int) $this->conv_anio,
+            sucursalId: $this->conv_sucursal_id,
+            soloAtendidos: $this->conv_solo_atendidos
+        );
+
+        $spreadsheet = $service->exportarExcel($datos);
+        $institucion = Institucion::find($this->conv_institucion_id);
+        $slugInstitucion = $institucion ? str_replace(' ', '_', strtolower($institucion->nombre)) : 'convenio';
+        $mesNombre = ReportePlanillaConvenioService::MESES[(int) $this->conv_mes] ?? (string) $this->conv_mes;
+        $filename = "Planilla_Pacientes_{$slugInstitucion}_{$mesNombre}_{$this->conv_anio}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    public function limpiarFiltrosConvenio(): void
+    {
+        $now = Carbon::now();
+        $this->conv_mes = (int) $now->month;
+        $this->conv_anio = (int) $now->year;
+        $this->conv_sucursal_id = Auth::user()->sucursal_id;
+        $this->conv_solo_atendidos = true;
+        $this->conv_reporteGenerado = false;
+        $this->conv_datosReporte = null;
     }
 
     public function render(): View

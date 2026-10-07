@@ -39,6 +39,15 @@
             <span>Ingresos, Salidas y Habitaciones de Pacientes</span>
         </button>
 
+        <button 
+            type="button" 
+            wire:click="cambiarTipoReporte('convenios')" 
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer {{ $reporteActivo === 'convenios' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' }}"
+        >
+            <i class="fas fa-file-excel {{ $reporteActivo === 'convenios' ? 'text-white' : 'text-emerald-500' }}"></i>
+            <span>Planilla de Pacientes por Convenio (Excel)</span>
+        </button>
+
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
             <i class="fas fa-user-md text-[11px]"></i>
             <span>Honorarios y Producción Médica</span>
@@ -403,11 +412,12 @@
                 @endforeach
             </div>
         @endif
+    @endif
 
     <!-- ========================================================================= -->
     <!-- 2. REPORTE DE INGRESOS, SALIDAS Y HABITACIONES DE PACIENTES               -->
     <!-- ========================================================================= -->
-    @else
+    @if ($reporteActivo === 'pacientes')
         <!-- Panel de Filtros para Reporte de Pacientes -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
             <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -761,6 +771,363 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        @endif
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- 3. PLANILLA DE PACIENTES POR CONVENIO / INSTITUCIÓN (EXCEL)              -->
+    <!-- ========================================================================= -->
+    @if ($reporteActivo === 'convenios')
+        <!-- Panel de Configuración y Parámetros del Reporte de Convenios -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Criterios de la Planilla Mensual por Institución / Convenio</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Genera y consolida la sábana mensual de servicios médicos e insumos de farmacia, quirófano y enfermería por paciente para liquidación con empresas e instituciones aseguradoras.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        wire:click="limpiarFiltrosConvenio"
+                        class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    >
+                        <i class="fas fa-undo text-[10px]"></i>
+                        <span>Limpiar</span>
+                    </button>
+                    @if ($conv_institucion_id)
+                        <a 
+                            href="{{ route('administracion.reportes.convenios.excel', ['institucion_id' => $conv_institucion_id, 'mes' => $conv_mes, 'anio' => $conv_anio, 'sucursal_id' => $conv_sucursal_id, 'solo_atendidos' => $conv_solo_atendidos ? 1 : 0]) }}"
+                            target="_blank"
+                            class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <i class="fas fa-file-download text-xs"></i>
+                            <span>Descargar Excel (.xlsx)</span>
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Institución o Convenio (Obligatorio) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Institución / Convenio <span class="text-rose-500">*</span>
+                        </label>
+                        <select 
+                            wire:model.live="conv_institucion_id"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="">-- Seleccionar Institución --</option>
+                            @foreach ($instituciones as $inst)
+                                <option value="{{ $inst->id }}">{{ $inst->nombre }}</option>
+                            @endforeach
+                        </select>
+                        @error('conv_institucion_id')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Mes de la Planilla -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Mes del Reporte <span class="text-rose-500">*</span>
+                        </label>
+                        <select 
+                            wire:model.live="conv_mes"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                        @error('conv_mes')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Año del Reporte -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Año <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            wire:model.live="conv_anio"
+                            min="2020"
+                            max="2050"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                        @error('conv_anio')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Sucursal (Opcional) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Sucursal
+                        </label>
+                        <select 
+                            wire:model.live="conv_sucursal_id"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="">Todas las Sucursales</option>
+                            @foreach ($sucursales as $suc)
+                                <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Criterio de Selección de Pacientes -->
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <label class="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                        <input 
+                            type="checkbox" 
+                            wire:model.live="conv_solo_atendidos" 
+                            class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                        >
+                        <span class="font-medium">
+                            Solo incluir pacientes con atenciones registradas en el mes
+                            <span class="text-slate-400 dark:text-slate-500 text-[11px] block sm:inline">(Desmarcar para listar a todos los pacientes afiliados al convenio)</span>
+                        </span>
+                    </label>
+
+                    <button 
+                        type="button" 
+                        wire:click="previsualizarReporteConvenio" 
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <i class="fas fa-table text-xs"></i>
+                        <span>Generar Vista Previa</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Previa de la Planilla tipo Hoja de Cálculo -->
+        @if ($conv_reporteGenerado && $conv_datosReporte)
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+                <!-- Barra de Título y Descarga -->
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-block mb-1">
+                            Sábana de Facturación por Convenio
+                        </span>
+                        <h3 class="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            PLANILLA PACIENTES ATENDIDOS {{ $conv_datosReporte['institucion']->nombre }} MES DE {{ $conv_datosReporte['mes_nombre'] }} {{ $conv_datosReporte['anio'] }}
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {{ count($conv_datosReporte['columnas_pacientes']) }} atenciones registradas • Gran Total: Bs. {{ number_format($conv_datosReporte['gran_total'], 2) }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button 
+                            type="button" 
+                            wire:click="descargarExcelConvenio" 
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                        >
+                            <i class="fas fa-file-excel text-sm"></i>
+                            <span>Exportar a Excel (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla Matricial Estructurada -->
+                <div class="overflow-x-auto max-h-[700px] border-b border-slate-200 dark:border-slate-800">
+                    <table class="w-full text-xs border-collapse">
+                        <!-- Cabeceras Superiores del Paciente -->
+                        <thead class="sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-xs">
+                            <!-- Fila 4: Correlativos -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60">
+                                <th class="py-1 px-3 w-10 text-center font-bold text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-800">#</th>
+                                <th class="py-1 px-3 min-w-[280px] text-left font-bold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">Concepto / Servicio</th>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <th class="py-1 px-2 min-w-[130px] text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['index'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1 px-3 min-w-[120px] text-center font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700/80">TOTALES</th>
+                            </tr>
+
+                            <!-- Fila 5: NO. PROF. (Verde) -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                <th class="py-1 px-3 border-r border-slate-200 dark:border-slate-800"></th>
+                                <th class="py-1.5 px-3 text-left font-bold text-slate-800 dark:text-slate-200 uppercase border-r border-slate-200 dark:border-slate-800">
+                                    NO. PROF.
+                                </th>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <th class="py-1.5 px-2 text-center font-extrabold bg-emerald-200 text-emerald-950 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['proforma_numero'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center font-bold bg-slate-100 dark:bg-slate-800 text-slate-500"></th>
+                            </tr>
+
+                            <!-- Fila 6: NOMBRE PACIENTE -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                                <th class="py-1 px-3 border-r border-slate-200 dark:border-slate-800"></th>
+                                <th class="py-2 px-3 text-left font-bold text-slate-800 dark:text-slate-200 uppercase border-r border-slate-200 dark:border-slate-800">
+                                    NOMBRE PACIENTE
+                                </th>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <th class="py-2 px-2 text-center font-bold text-slate-900 dark:text-slate-100 text-[11px] leading-tight border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['paciente_nombre'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-2 px-3 text-center font-black text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-800 text-[11px]">
+                                    TOTALES
+                                </th>
+                            </tr>
+
+                            <!-- Fila 7: NUMERO DE FOLEADO (Amarillo) -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                <th class="py-1 px-3 border-r border-slate-200 dark:border-slate-800"></th>
+                                <th class="py-1.5 px-3 text-left font-bold text-slate-800 dark:text-slate-200 uppercase border-r border-slate-200 dark:border-slate-800">
+                                    NUMERO DE FOLEADO
+                                </th>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <th class="py-1.5 px-2 text-center font-semibold bg-yellow-200 text-yellow-950 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['foleado'] ?: '-' }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center bg-slate-100 dark:bg-slate-800 text-slate-500"></th>
+                            </tr>
+
+                            <!-- Fila 8: DATOS GENERALES -->
+                            <tr class="border-b border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                                <th class="py-1 px-3 font-bold text-slate-600 dark:text-slate-400 text-center border-r border-slate-200 dark:border-slate-800">DET.</th>
+                                <th class="py-1.5 px-3 text-left font-extrabold text-slate-900 dark:text-white uppercase border-r border-slate-200 dark:border-slate-800">
+                                    DATOS GENERALES
+                                </th>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <th class="py-1.5 px-2 text-center font-medium text-slate-600 dark:text-slate-400 text-[10px] leading-tight border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['datos_generales'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center bg-slate-200 dark:bg-slate-800 text-slate-500"></th>
+                            </tr>
+                        </thead>
+
+                        <!-- Cuerpo: Filas de Servicios e Insumos por Sección -->
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            @foreach ($conv_datosReporte['filas_conceptos'] as $concepto)
+                                @php
+                                    $esSec = $concepto['es_seccion'];
+                                    $rowBg = $esSec 
+                                        ? 'bg-emerald-50/70 dark:bg-emerald-950/25 font-bold text-emerald-950 dark:text-emerald-200' 
+                                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300';
+                                @endphp
+                                <tr class="{{ $rowBg }} transition-colors">
+                                    <td class="py-1.5 px-3 text-center text-slate-400 text-[10px] border-r border-slate-200 dark:border-slate-800">
+                                        @if ($esSec)
+                                            <i class="fas fa-boxes text-[9px] text-emerald-600"></i>
+                                        @else
+                                            <i class="fas fa-stethoscope text-[9px] text-slate-400"></i>
+                                        @endif
+                                    </td>
+                                    <td class="py-1.5 px-3 font-semibold uppercase text-[11px] border-r border-slate-200 dark:border-slate-800">
+                                        {{ $concepto['nombre'] }}
+                                    </td>
+                                    @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                        @php
+                                            $val = (float) ($col['valores'][$concepto['clave']] ?? 0.00);
+                                        @endphp
+                                        <td class="py-1.5 px-2 text-right tabular-nums text-[11px] border-r border-slate-200 dark:border-slate-800 {{ $val > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-600' }}">
+                                            {{ $val > 0 ? number_format($val, 2) : '0.00' }}
+                                        </td>
+                                    @endforeach
+                                    <td class="py-1.5 px-3 text-right font-bold tabular-nums text-[11px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white">
+                                        {{ number_format($concepto['total_fila'], 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+
+                        <!-- Pies de Página: TOTAL, DESCUENTOS, TOTAL A CANCELAR -->
+                        <tfoot class="sticky bottom-0 z-10 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 shadow-md">
+                            <!-- Fila TOTAL -->
+                            <tr class="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 font-bold">
+                                <td class="py-2 px-3 text-center border-r border-slate-200 dark:border-slate-800">Σ</td>
+                                <td class="py-2 px-3 text-left font-black uppercase text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                    TOTAL
+                                </td>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <td class="py-2 px-2 text-right font-black tabular-nums text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                        {{ number_format($col['total'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2 px-3 text-right font-black tabular-nums text-xs bg-slate-200 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400">
+                                    {{ number_format($conv_datosReporte['gran_total'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Fila DESCUENTOS -->
+                            <tr class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500">
+                                <td class="py-1.5 px-3 text-center border-r border-slate-200 dark:border-slate-800">-</td>
+                                <td class="py-1.5 px-3 text-left font-semibold uppercase text-xs border-r border-slate-200 dark:border-slate-800">
+                                    DESCUENTOS
+                                </td>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <td class="py-1.5 px-2 text-right tabular-nums text-xs border-r border-slate-200 dark:border-slate-800">
+                                        {{ number_format($col['descuento'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-1.5 px-3 text-right font-semibold tabular-nums text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                    {{ number_format($conv_datosReporte['gran_descuento'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Fila TOTAL A CANCELAR -->
+                            <tr class="bg-emerald-100/70 dark:bg-emerald-950/60 font-black text-emerald-950 dark:text-emerald-200">
+                                <td class="py-2.5 px-3 text-center border-r border-emerald-200 dark:border-emerald-800/60">
+                                    <i class="fas fa-check-double text-emerald-600"></i>
+                                </td>
+                                <td class="py-2.5 px-3 text-left font-black uppercase text-xs tracking-wider border-r border-emerald-200 dark:border-emerald-800/60">
+                                    TOTAL A CANCELAR
+                                </td>
+                                @foreach ($conv_datosReporte['columnas_pacientes'] as $col)
+                                    <td class="py-2.5 px-2 text-right font-black tabular-nums text-xs border-r border-emerald-200 dark:border-emerald-800/60">
+                                        {{ number_format($col['total_a_cancelar'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2.5 px-3 text-right font-black tabular-nums text-sm bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100">
+                                    Bs. {{ number_format($conv_datosReporte['gran_total_a_cancelar'], 2) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Resumen de Totales al Pie -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="text-slate-500 dark:text-slate-400">
+                        Mostrando <strong class="text-slate-800 dark:text-slate-200">{{ count($conv_datosReporte['columnas_pacientes']) }}</strong> atenciones y <strong class="text-slate-800 dark:text-slate-200">{{ count($conv_datosReporte['filas_conceptos']) }}</strong> conceptos de servicio e insumos.
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-slate-600 dark:text-slate-300">
+                            Total Facturado Convenio: <strong class="text-base text-emerald-600 dark:text-emerald-400">Bs. {{ number_format($conv_datosReporte['gran_total_a_cancelar'], 2) }}</strong>
+                        </span>
+                    </div>
                 </div>
             </div>
         @endif
