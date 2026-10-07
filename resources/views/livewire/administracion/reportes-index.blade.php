@@ -220,7 +220,7 @@
                             type="button" 
                             wire:click="previsualizarReporte" 
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                             <i class="fas fa-eye" wire:loading.remove wire:target="previsualizarReporte"></i>
                             <i class="fas fa-spinner fa-spin" wire:loading wire:target="previsualizarReporte"></i>
@@ -600,7 +600,7 @@
                         type="button" 
                         wire:click="previsualizarReportePacientes" 
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                         <i class="fas fa-search" wire:loading.remove wire:target="previsualizarReportePacientes"></i>
                         <i class="fas fa-spinner fa-spin" wire:loading wire:target="previsualizarReportePacientes"></i>
@@ -932,10 +932,13 @@
                     <button 
                         type="button" 
                         wire:click="previsualizarReporteConvenio" 
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                        wire:loading.attr="disabled"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <i class="fas fa-table text-xs"></i>
-                        <span>Generar Vista Previa</span>
+                        <i class="fas fa-table text-xs" wire:loading.remove wire:target="previsualizarReporteConvenio"></i>
+                        <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="previsualizarReporteConvenio"></i>
+                        <span wire:loading.remove wire:target="previsualizarReporteConvenio">Generar Vista Previa</span>
+                        <span wire:loading wire:target="previsualizarReporteConvenio">Generando...</span>
                     </button>
                 </div>
             </div>
@@ -962,10 +965,13 @@
                         <button 
                             type="button" 
                             wire:click="descargarExcelConvenio" 
-                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <i class="fas fa-file-excel text-sm"></i>
-                            <span>Exportar a Excel (.xlsx)</span>
+                            <i class="fas fa-file-excel text-sm" wire:loading.remove wire:target="descargarExcelConvenio"></i>
+                            <i class="fas fa-spinner fa-spin text-sm" wire:loading wire:target="descargarExcelConvenio"></i>
+                            <span wire:loading.remove wire:target="descargarExcelConvenio">Exportar a Excel (.xlsx)</span>
+                            <span wire:loading wire:target="descargarExcelConvenio">Exportando...</span>
                         </button>
                     </div>
                 </div>
@@ -1255,10 +1261,13 @@
                     <button 
                         type="button" 
                         wire:click="previsualizarReporteFlujoCaja" 
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                        wire:loading.attr="disabled"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <i class="fas fa-table text-xs"></i>
-                        <span>Generar Vista Previa</span>
+                        <i class="fas fa-table text-xs" wire:loading.remove wire:target="previsualizarReporteFlujoCaja"></i>
+                        <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="previsualizarReporteFlujoCaja"></i>
+                        <span wire:loading.remove wire:target="previsualizarReporteFlujoCaja">Generar Vista Previa</span>
+                        <span wire:loading wire:target="previsualizarReporteFlujoCaja">Generando...</span>
                     </button>
                 </div>
             </div>
@@ -1285,10 +1294,13 @@
                         <button 
                             type="button" 
                             wire:click="descargarExcelFlujoCaja" 
-                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <i class="fas fa-file-excel text-sm"></i>
-                            <span>Exportar a Excel (.xlsx)</span>
+                            <i class="fas fa-file-excel text-sm" wire:loading.remove wire:target="descargarExcelFlujoCaja"></i>
+                            <i class="fas fa-spinner fa-spin text-sm" wire:loading wire:target="descargarExcelFlujoCaja"></i>
+                            <span wire:loading.remove wire:target="descargarExcelFlujoCaja">Exportar a Excel (.xlsx)</span>
+                            <span wire:loading wire:target="descargarExcelFlujoCaja">Exportando...</span>
                         </button>
                     </div>
                 </div>
@@ -1537,10 +1549,13 @@
                     <button 
                         type="button" 
                         wire:click="previsualizarReporteAnual" 
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                        wire:loading.attr="disabled"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <i class="fas fa-table text-xs"></i>
-                        <span>Generar Vista Previa</span>
+                        <i class="fas fa-table text-xs" wire:loading.remove wire:target="previsualizarReporteAnual"></i>
+                        <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="previsualizarReporteAnual"></i>
+                        <span wire:loading.remove wire:target="previsualizarReporteAnual">Generar Vista Previa</span>
+                        <span wire:loading wire:target="previsualizarReporteAnual">Generando...</span>
                     </button>
                 </div>
             </div>
@@ -1567,10 +1582,13 @@
                         <button 
                             type="button" 
                             wire:click="descargarExcelAnual" 
-                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <i class="fas fa-file-excel text-sm"></i>
-                            <span>Exportar a Excel (.xlsx)</span>
+                            <i class="fas fa-file-excel text-sm" wire:loading.remove wire:target="descargarExcelAnual"></i>
+                            <i class="fas fa-spinner fa-spin text-sm" wire:loading wire:target="descargarExcelAnual"></i>
+                            <span wire:loading.remove wire:target="descargarExcelAnual">Exportar a Excel (.xlsx)</span>
+                            <span wire:loading wire:target="descargarExcelAnual">Exportando...</span>
                         </button>
                     </div>
                 </div>

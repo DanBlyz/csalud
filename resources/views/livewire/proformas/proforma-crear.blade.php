@@ -293,7 +293,8 @@
                             <button 
                                 type="button" 
                                 wire:click="eliminarMedico({{ $med->id }})" 
-                                class="text-blue-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded transition-colors"
+                                wire:loading.attr="disabled"
+                                class="text-blue-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 title="Quitar médico"
                             >
                                 <i class="fas fa-times text-xs"></i>
@@ -450,10 +451,12 @@
                                         <button 
                                             type="button" 
                                             wire:click="eliminarServicioDeLista({{ $idx }})" 
-                                            class="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                                            wire:loading.attr="disabled"
+                                            class="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             title="Eliminar de la lista"
                                         >
-                                            <i class="fas fa-trash-alt text-xs"></i>
+                                            <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarServicioDeLista({{ $idx }})"></i>
+                                            <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarServicioDeLista({{ $idx }})"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -545,8 +548,15 @@
                                     </span>
                                 </div>
                             </div>
-                            <button type="button" wire:click="eliminarSolicitudDeLista({{ $idx }})" class="text-slate-400 hover:text-rose-600 p-1">
-                                <i class="fas fa-trash-alt text-xs"></i>
+                            <button 
+                                type="button" 
+                                wire:click="eliminarSolicitudDeLista({{ $idx }})" 
+                                wire:loading.attr="disabled"
+                                class="text-slate-400 hover:text-rose-600 p-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Eliminar solicitud"
+                            >
+                                <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarSolicitudDeLista({{ $idx }})"></i>
+                                <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarSolicitudDeLista({{ $idx }})"></i>
                             </button>
                         </div>
                     @endforeach
@@ -598,10 +608,13 @@
                     <button 
                         type="button" 
                         wire:click="agregarEventoALista" 
-                        class="w-full py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                        wire:loading.attr="disabled"
+                        wire:target="agregarEventoALista"
+                        class="w-full py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Programar actividad"
                     >
-                        <i class="fas fa-plus"></i>
+                        <i class="fas fa-plus" wire:loading.remove wire:target="agregarEventoALista"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="agregarEventoALista"></i>
                     </button>
                 </div>
             </div>
@@ -618,8 +631,15 @@
                                 </span>
                                 <span class="text-slate-700 dark:text-slate-200 font-medium">{{ $ev['descripcion'] }}</span>
                             </div>
-                            <button type="button" wire:click="eliminarEventoDeLista({{ $idx }})" class="text-slate-400 hover:text-rose-600 p-1">
-                                <i class="fas fa-times text-xs"></i>
+                            <button 
+                                type="button" 
+                                wire:click="eliminarEventoDeLista({{ $idx }})" 
+                                wire:loading.attr="disabled"
+                                class="text-slate-400 hover:text-rose-600 p-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                title="Eliminar actividad"
+                            >
+                                <i class="fas fa-times text-xs" wire:loading.remove wire:target="eliminarEventoDeLista({{ $idx }})"></i>
+                                <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarEventoDeLista({{ $idx }})"></i>
                             </button>
                         </div>
                     @endforeach
@@ -746,8 +766,15 @@
                                             Bs. {{ number_format($med['precio'] * $med['cantidad'], 2) }}
                                         </td>
                                         <td class="py-2 px-3 text-center">
-                                            <button type="button" wire:click="eliminarMedicamentoDeLista({{ $idx }})" class="text-slate-400 hover:text-rose-600 p-1">
-                                                <i class="fas fa-trash-alt text-xs"></i>
+                                            <button 
+                                                type="button" 
+                                                wire:click="eliminarMedicamentoDeLista({{ $idx }})" 
+                                                wire:loading.attr="disabled"
+                                                class="text-slate-400 hover:text-rose-600 p-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                title="Eliminar medicamento"
+                                            >
+                                                <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarMedicamentoDeLista({{ $idx }})"></i>
+                                                <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarMedicamentoDeLista({{ $idx }})"></i>
                                             </button>
                                         </td>
                                     </tr>

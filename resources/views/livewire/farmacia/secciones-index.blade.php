@@ -370,7 +370,7 @@
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer disabled:opacity-50"
+                            class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span wire:loading.remove><i class="fas fa-save me-1"></i> Guardar</span>
                             <span wire:loading><i class="fas fa-spinner fa-spin me-1"></i> Guardando...</span>

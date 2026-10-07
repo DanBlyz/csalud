@@ -306,11 +306,13 @@
                                     <button 
                                         wire:click="eliminarProducto({{ $prod->id }})" 
                                         wire:confirm="¿Está seguro de que desea eliminar este artículo del catálogo? Esta acción no se puede deshacer si tiene existencias."
+                                        wire:loading.attr="disabled"
                                         type="button" 
-                                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                         title="Eliminar del catálogo"
                                     >
-                                        <i class="fas fa-trash-alt"></i>
+                                        <i class="fas fa-trash-alt" wire:loading.remove wire:target="eliminarProducto({{ $prod->id }})"></i>
+                                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="eliminarProducto({{ $prod->id }})"></i>
                                     </button>
                                 </div>
                             </td>

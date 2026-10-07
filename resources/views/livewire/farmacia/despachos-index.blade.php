@@ -657,11 +657,13 @@
                                                     <td class="py-2 px-3 text-center">
                                                         <button 
                                                             wire:click="eliminarItemExtra({{ $idx }})" 
+                                                            wire:loading.attr="disabled"
                                                             type="button" 
-                                                            class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                                                            class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                                             title="Quitar este insumo extra"
                                                         >
-                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                            <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarItemExtra({{ $idx }})"></i>
+                                                            <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarItemExtra({{ $idx }})"></i>
                                                         </button>
                                                     </td>
                                                 </tr>

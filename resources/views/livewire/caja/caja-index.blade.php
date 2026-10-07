@@ -784,7 +784,7 @@
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span wire:loading.remove wire:target="aperturarCaja">
                                 <i class="fas fa-check-circle text-xs"></i> Confirmar Apertura
@@ -960,7 +960,7 @@
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl {{ $mov_tipo_movimiento === 'Ingreso Extra' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700' }} text-white font-bold text-xs shadow-md transition cursor-pointer"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl {{ $mov_tipo_movimiento === 'Ingreso Extra' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700' }} text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span wire:loading.remove wire:target="guardarMovimiento">
                                 <i class="fas fa-save text-xs"></i> Guardar Asiento
@@ -1249,7 +1249,7 @@
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span wire:loading.remove wire:target="ejecutarCierreCaja">
                                 <i class="fas fa-lock text-xs"></i> Finalizar y Cerrar Turno
@@ -1407,7 +1407,8 @@
                                                 <button 
                                                     type="button" 
                                                     wire:click="eliminarLineaPago({{ $index }})" 
-                                                    class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition cursor-pointer"
+                                                    wire:loading.attr="disabled"
+                                                    class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                     title="Eliminar método"
                                                 >
                                                     <i class="fas fa-trash-alt text-xs"></i>

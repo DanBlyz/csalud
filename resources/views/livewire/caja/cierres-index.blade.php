@@ -235,8 +235,9 @@
                                         <button 
                                             type="button" 
                                             wire:click="eliminarCierre({{ $cierre->id }})" 
+                                            wire:loading.attr="disabled"
                                             wire:confirm="¿Está seguro de eliminar este cierre mensual? Se removerán todas las partidas asociadas."
-                                            class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
+                                            class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             title="Eliminar Cierre"
                                         >
                                             <i class="fas fa-trash-alt text-xs"></i>
@@ -697,10 +698,12 @@
                                                             type="button" 
                                                             wire:click="eliminarPartida({{ $det->id }})" 
                                                             wire:confirm="¿Desea eliminar esta partida del balance?"
-                                                            class="p-1 rounded text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                                                            wire:loading.attr="disabled"
+                                                            class="p-1 rounded text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                             title="Eliminar Partida"
                                                         >
-                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                            <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarPartida({{ $det->id }})"></i>
+                                                            <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarPartida({{ $det->id }})"></i>
                                                         </button>
                                                     </div>
                                                 @else
@@ -876,9 +879,15 @@
                             <button 
                                 type="submit" 
                                 wire:loading.attr="disabled"
+                                wire:target="guardarPartida"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                                <i class="fas fa-save me-1"></i> Guardar Partida
+                                <span wire:loading.remove wire:target="guardarPartida">
+                                    <i class="fas fa-save me-1"></i> Guardar Partida
+                                </span>
+                                <span wire:loading wire:target="guardarPartida">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
                             </button>
                         </div>
                     </form>

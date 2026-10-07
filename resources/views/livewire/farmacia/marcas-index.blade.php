@@ -270,7 +270,7 @@
                             <button 
                                 type="submit" 
                                 wire:loading.attr="disabled"
-                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md shadow-teal-600/20 hover:shadow-lg transition transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md shadow-teal-600/20 hover:shadow-lg transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <span wire:loading.remove wire:target="guardar">
                                     <i class="fas fa-save text-xs"></i>
