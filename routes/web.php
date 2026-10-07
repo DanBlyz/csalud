@@ -77,6 +77,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/reportes/convenios/excel', [ReporteExcelController::class, 'planillaConvenios'])
             ->middleware('permiso:1')
             ->name('reportes.convenios.excel');
+
+        Route::get('/reportes/flujo-caja/excel', [ReporteExcelController::class, 'flujoCaja'])
+            ->middleware('permiso:1')
+            ->name('reportes.flujo_caja.excel');
+
+        Route::get('/reportes/resumen-anual/excel', [ReporteExcelController::class, 'resumenAnual'])
+            ->middleware('permiso:1')
+            ->name('reportes.resumen_anual.excel');
     });
 
     // Módulo Pacientes e Instituciones

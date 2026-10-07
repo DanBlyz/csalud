@@ -5,6 +5,7 @@ namespace App\Livewire\Administracion;
 use App\Models\Institucion;
 use App\Models\Producto;
 use App\Models\Sucursal;
+use App\Services\ReporteFlujoCajaService;
 use App\Services\ReporteMovimientosService;
 use App\Services\ReportePacientesService;
 use App\Services\ReportePlanillaConvenioService;
@@ -18,7 +19,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 #[Layout('layouts.app')]
 class ReportesIndex extends Component
 {
-    // Pestaña o tipo de reporte activo: 'kardex', 'pacientes', 'convenios'
+    // Pestaña o tipo de reporte activo: 'kardex', 'pacientes', 'convenios', 'flujo_caja'
     public string $reporteActivo = 'kardex';
 
     // =========================================================================
@@ -85,6 +86,36 @@ class ReportesIndex extends Component
      */
     public ?array $conv_datosReporte = null;
 
+    // =========================================================================
+    // FILTROS: REPORTE MENSUAL DE FLUJO DE CAJA, INGRESOS Y EGRESOS (EXCEL)
+    // =========================================================================
+    public int $flujo_mes = 1;
+
+    public int $flujo_anio = 2026;
+
+    public ?int $flujo_sucursal_id = null;
+
+    public bool $flujo_reporteGenerado = false;
+
+    /**
+     * @var array<string, mixed>|null
+     */
+    public ?array $flujo_datosReporte = null;
+
+    // =========================================================================
+    // FILTROS: RESUMEN ANUAL DE INGRESOS Y GASTOS (EXCEL)
+    // =========================================================================
+    public int $anual_anio = 2026;
+
+    public ?int $anual_sucursal_id = null;
+
+    public bool $anual_reporteGenerado = false;
+
+    /**
+     * @var array<string, mixed>|null
+     */
+    public ?array $anual_datosReporte = null;
+
     protected $queryString = [
         'reporteActivo' => ['except' => 'kardex'],
     ];
@@ -111,6 +142,15 @@ class ReportesIndex extends Component
         if ($primeraInstitucion) {
             $this->conv_institucion_id = $primeraInstitucion->id;
         }
+
+        // Inicializar Flujo de Caja
+        $this->flujo_mes = (int) $now->month;
+        $this->flujo_anio = (int) $now->year;
+        $this->flujo_sucursal_id = Auth::user()->sucursal_id;
+
+        // Inicializar Resumen Anual
+        $this->anual_anio = (int) $now->year;
+        $this->anual_sucursal_id = Auth::user()->sucursal_id;
     }
 
     public function cambiarTipoReporte(string $tipo): void
@@ -407,6 +447,141 @@ class ReportesIndex extends Component
         $this->conv_solo_atendidos = true;
         $this->conv_reporteGenerado = false;
         $this->conv_datosReporte = null;
+    }
+
+    // =========================================================================
+    // ACCIONES: REPORTE MENSUAL DE FLUJO DE CAJA, INGRESOS Y EGRESOS (EXCEL)
+    // =========================================================================
+
+    public function updatedFlujoMes(): void
+    {
+        $this->flujo_reporteGenerado = false;
+    }
+
+    public function updatedFlujoAnio(): void
+    {
+        $this->flujo_reporteGenerado = false;
+    }
+
+    public function updatedFlujoSucursalId(): void
+    {
+        $this->flujo_reporteGenerado = false;
+    }
+
+    public function previsualizarReporteFlujoCaja(ReporteFlujoCajaService $service): void
+    {
+        $this->validate([
+            'flujo_mes' => ['required', 'integer', 'min:1', 'max:12'],
+            'flujo_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'flujo_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'flujo_mes.required' => 'El mes es requerido.',
+            'flujo_anio.required' => 'El año es requerido.',
+        ]);
+
+        $this->flujo_datosReporte = $service->generar(
+            mes: (int) $this->flujo_mes,
+            anio: (int) $this->flujo_anio,
+            sucursalId: $this->flujo_sucursal_id
+        );
+
+        $this->flujo_reporteGenerado = true;
+    }
+
+    public function descargarExcelFlujoCaja(ReporteFlujoCajaService $service)
+    {
+        $this->validate([
+            'flujo_mes' => ['required', 'integer', 'min:1', 'max:12'],
+            'flujo_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'flujo_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'flujo_mes.required' => 'El mes es requerido.',
+            'flujo_anio.required' => 'El año es requerido.',
+        ]);
+
+        $datos = $service->generar(
+            mes: (int) $this->flujo_mes,
+            anio: (int) $this->flujo_anio,
+            sucursalId: $this->flujo_sucursal_id
+        );
+
+        $spreadsheet = $service->exportarExcel($datos);
+        $mesNombre = ReporteFlujoCajaService::MESES[(int) $this->flujo_mes] ?? (string) $this->flujo_mes;
+        $filename = "Flujo_Caja_Ingresos_Egresos_{$mesNombre}_{$this->flujo_anio}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    public function limpiarFiltrosFlujoCaja(): void
+    {
+        $now = Carbon::now();
+        $this->flujo_mes = (int) $now->month;
+        $this->flujo_anio = (int) $now->year;
+        $this->flujo_sucursal_id = Auth::user()->sucursal_id;
+        $this->flujo_reporteGenerado = false;
+        $this->flujo_datosReporte = null;
+    }
+
+    // =========================================================================
+    // ACCIONES: RESUMEN ANUAL DE INGRESOS Y GASTOS (EXCEL)
+    // =========================================================================
+
+    public function previsualizarReporteAnual(ReporteFlujoCajaService $service): void
+    {
+        $this->validate([
+            'anual_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'anual_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'anual_anio.required' => 'El año de gestión es requerido.',
+        ]);
+
+        $this->anual_datosReporte = $service->generarAnual(
+            anio: (int) $this->anual_anio,
+            sucursalId: $this->anual_sucursal_id
+        );
+
+        $this->anual_reporteGenerado = true;
+    }
+
+    public function descargarExcelAnual(ReporteFlujoCajaService $service)
+    {
+        $this->validate([
+            'anual_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'anual_sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ], [
+            'anual_anio.required' => 'El año de gestión es requerido.',
+        ]);
+
+        $datos = $service->generarAnual(
+            anio: (int) $this->anual_anio,
+            sucursalId: $this->anual_sucursal_id
+        );
+
+        $spreadsheet = $service->exportarExcelAnual($datos);
+        $filename = "Resumen_Ingresos_y_Gastos_Gestion_{$this->anual_anio}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    public function limpiarFiltrosAnual(): void
+    {
+        $now = Carbon::now();
+        $this->anual_anio = (int) $now->year;
+        $this->anual_sucursal_id = Auth::user()->sucursal_id;
+        $this->anual_reporteGenerado = false;
+        $this->anual_datosReporte = null;
     }
 
     public function render(): View

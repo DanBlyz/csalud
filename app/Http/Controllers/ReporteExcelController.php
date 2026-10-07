@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Institucion;
+use App\Services\ReporteFlujoCajaService;
 use App\Services\ReportePlanillaConvenioService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -43,6 +44,70 @@ class ReporteExcelController extends Controller
         $slugInstitucion = $institucion ? str_replace(' ', '_', strtolower($institucion->nombre)) : 'convenio';
         $mesNombre = ReportePlanillaConvenioService::MESES[$mes] ?? (string) $mes;
         $filename = "Planilla_Pacientes_{$slugInstitucion}_{$mesNombre}_{$anio}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Descarga el reporte mensual consolidado de flujo de caja, ingresos y egresos en formato Excel (.xlsx).
+     */
+    public function flujoCaja(Request $request, ReporteFlujoCajaService $service): StreamedResponse
+    {
+        $request->validate([
+            'mes' => ['required', 'integer', 'min:1', 'max:12'],
+            'anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ]);
+
+        $mes = (int) $request->query('mes', Carbon::now()->month);
+        $anio = (int) $request->query('anio', Carbon::now()->year);
+        $sucursalId = $request->filled('sucursal_id') ? (int) $request->query('sucursal_id') : null;
+
+        $datos = $service->generar(
+            mes: $mes,
+            anio: $anio,
+            sucursalId: $sucursalId
+        );
+
+        $spreadsheet = $service->exportarExcel($datos);
+        $mesNombre = ReporteFlujoCajaService::MESES[$mes] ?? (string) $mes;
+        $filename = "Flujo_Caja_Ingresos_Egresos_{$mesNombre}_{$anio}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
+     * Exporta el Resumen Anual de Ingresos y Gastos en formato Microsoft Excel (.xlsx).
+     */
+    public function resumenAnual(Request $request, ReporteFlujoCajaService $service): StreamedResponse
+    {
+        $request->validate([
+            'anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
+        ]);
+
+        $anio = (int) $request->query('anio', Carbon::now()->year);
+        $sucursalId = $request->filled('sucursal_id') ? (int) $request->query('sucursal_id') : null;
+
+        $datos = $service->generarAnual(
+            anio: $anio,
+            sucursalId: $sucursalId
+        );
+
+        $spreadsheet = $service->exportarExcelAnual($datos);
+        $filename = "Resumen_Ingresos_y_Gastos_Gestion_{$anio}.xlsx";
 
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);

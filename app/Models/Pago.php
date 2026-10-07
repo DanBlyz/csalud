@@ -58,6 +58,6 @@ class Pago extends Model
 
     public function isEgreso(): bool
     {
-        return $this->tipo_movimiento === 'Egreso Caja';
+        return in_array($this->tipo_movimiento, ['Egreso Caja', 'Egreso'], true);
     }
 }

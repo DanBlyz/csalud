@@ -48,6 +48,24 @@
             <span>Planilla de Pacientes por Convenio (Excel)</span>
         </button>
 
+        <button 
+            type="button" 
+            wire:click="cambiarTipoReporte('flujo_caja')" 
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer {{ $reporteActivo === 'flujo_caja' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' }}"
+        >
+            <i class="fas fa-file-excel {{ $reporteActivo === 'flujo_caja' ? 'text-white' : 'text-emerald-500' }}"></i>
+            <span>Flujo Mensual de Caja (Excel)</span>
+        </button>
+
+        <button 
+            type="button" 
+            wire:click="cambiarTipoReporte('resumen_anual')" 
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer {{ $reporteActivo === 'resumen_anual' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' }}"
+        >
+            <i class="fas fa-file-excel {{ $reporteActivo === 'resumen_anual' ? 'text-white' : 'text-emerald-500' }}"></i>
+            <span>Resumen Anual de Ingresos y Gastos (Excel)</span>
+        </button>
+
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
             <i class="fas fa-user-md text-[11px]"></i>
             <span>Honorarios y Producción Médica</span>
@@ -1126,6 +1144,584 @@
                     <div class="flex items-center gap-4">
                         <span class="text-slate-600 dark:text-slate-300">
                             Total Facturado Convenio: <strong class="text-base text-emerald-600 dark:text-emerald-400">Bs. {{ number_format($conv_datosReporte['gran_total_a_cancelar'], 2) }}</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- 4. REPORTE MENSUAL DE FLUJO DE CAJA, INGRESOS Y EGRESOS (EXCEL)           -->
+    <!-- ========================================================================= -->
+    @if ($reporteActivo === 'flujo_caja')
+        <!-- Panel de Configuración y Parámetros del Reporte de Flujo de Caja -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Criterios del Flujo Mensual de Caja, Ingresos y Egresos</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Consolida el flujo diario de caja distinguiendo ingresos de proformas (medicamentos y servicios), ingresos extraordinarios y egresos operativos con liquidación de saldos por jornada.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        wire:click="limpiarFiltrosFlujoCaja"
+                        class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    >
+                        <i class="fas fa-undo text-[10px]"></i>
+                        <span>Limpiar</span>
+                    </button>
+                    <a 
+                        href="{{ route('administracion.reportes.flujo_caja.excel', ['mes' => $flujo_mes, 'anio' => $flujo_anio, 'sucursal_id' => $flujo_sucursal_id]) }}"
+                        target="_blank"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <i class="fas fa-file-download text-xs"></i>
+                        <span>Descargar Excel (.xlsx)</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Mes del Reporte -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Mes del Reporte <span class="text-rose-500">*</span>
+                        </label>
+                        <select 
+                            wire:model.live="flujo_mes"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                        @error('flujo_mes')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Año del Reporte -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Año <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            wire:model.live="flujo_anio"
+                            min="2020"
+                            max="2050"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                        @error('flujo_anio')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Sucursal (Opcional) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Sucursal
+                        </label>
+                        <select 
+                            wire:model.live="flujo_sucursal_id"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="">Todas las Sucursales</option>
+                            @foreach ($sucursales as $suc)
+                                <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+                    <button 
+                        type="button" 
+                        wire:click="previsualizarReporteFlujoCaja" 
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <i class="fas fa-table text-xs"></i>
+                        <span>Generar Vista Previa</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Previa de Flujo de Caja e Ingresos/Egresos -->
+        @if ($flujo_reporteGenerado && $flujo_datosReporte)
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+                <!-- Barra de Título y Descarga -->
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-block mb-1">
+                            Balance Operativo Diario
+                        </span>
+                        <h3 class="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            FLUJO MENSUAL DE CAJA - MES DE {{ $flujo_datosReporte['mes_nombre'] }} {{ $flujo_datosReporte['anio'] }}
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {{ count($flujo_datosReporte['columnas_cajas']) }} sesiones de caja • Ingresos: Bs. {{ number_format($flujo_datosReporte['gran_total_ingresos'], 2) }} • Egresos: Bs. {{ number_format($flujo_datosReporte['gran_total_egresos'], 2) }} • Saldo Neto: <strong class="{{ $flujo_datosReporte['gran_saldo_neto'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">Bs. {{ number_format($flujo_datosReporte['gran_saldo_neto'], 2) }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button 
+                            type="button" 
+                            wire:click="descargarExcelFlujoCaja" 
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                        >
+                            <i class="fas fa-file-excel text-sm"></i>
+                            <span>Exportar a Excel (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla Matricial de Ingresos, Egresos y Saldos -->
+                <div class="overflow-x-auto max-h-[750px] border-b border-slate-200 dark:border-slate-800">
+                    <table class="w-full text-xs border-collapse">
+                        <!-- ================= TABLA 1: INGRESOS ================= -->
+                        <thead class="sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-xs">
+                            <tr class="bg-slate-800 text-white text-left font-black">
+                                <th colspan="{{ count($flujo_datosReporte['columnas_cajas']) + 2 }}" class="py-1.5 px-3 uppercase tracking-wider text-xs bg-slate-900">
+                                    INGRESOS
+                                </th>
+                            </tr>
+                            <!-- Fila: TIPO DE INGRESOS y FECHAS -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60">
+                                <th class="py-1.5 px-3 min-w-[280px] text-left font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
+                                    TIPO DE INGRESOS
+                                </th>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <th class="py-1.5 px-2 min-w-[100px] text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['fecha'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 min-w-[120px] text-center font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700">TOTALES</th>
+                            </tr>
+                            <!-- Fila: Nro.Reporte Caja (Fondo amarillo) -->
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                                <th class="py-1.5 px-3 text-left font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
+                                    Nro.Reporte Caja
+                                </th>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <th class="py-1.5 px-2 text-center font-extrabold bg-amber-100 text-amber-950 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['nro_reporte'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center bg-slate-100 dark:bg-slate-800 text-slate-400"></th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            @foreach ($flujo_datosReporte['filas_ingresos'] as $ing)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-1.5 px-3 font-semibold uppercase text-[11px] border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                                        {{ $ing['nombre'] }}
+                                    </td>
+                                    @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                        @php
+                                            $val = (float) ($col['valores_ingresos'][$ing['clave']] ?? 0.00);
+                                        @endphp
+                                        <td class="py-1.5 px-2 text-right tabular-nums text-[11px] border-r border-slate-200 dark:border-slate-800 {{ $val > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-600' }}">
+                                            {{ $val > 0 ? number_format($val, 2) : '0.00' }}
+                                        </td>
+                                    @endforeach
+                                    <td class="py-1.5 px-3 text-right font-bold tabular-nums text-[11px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white">
+                                        {{ number_format($ing['total_fila'], 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <!-- Fila TOTALES INGRESOS -->
+                            <tr class="bg-slate-100 dark:bg-slate-800/80 font-black border-y-2 border-slate-300 dark:border-slate-700">
+                                <td class="py-2 px-3 text-left uppercase text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                    TOTALES INGRESOS
+                                </td>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <td class="py-2 px-2 text-right font-black tabular-nums text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                        {{ number_format($col['total_ingresos'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2 px-3 text-right font-black tabular-nums text-xs bg-slate-200 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400">
+                                    {{ number_format($flujo_datosReporte['gran_total_ingresos'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Espacio separador -->
+                            <tr class="h-6 bg-slate-200/40 dark:bg-slate-950/60">
+                                <td colspan="{{ count($flujo_datosReporte['columnas_cajas']) + 2 }}" class="py-2 px-3"></td>
+                            </tr>
+
+                            <!-- ================= TABLA 2: EGRESOS ================= -->
+                            <tr class="bg-rose-900 text-white text-left font-black">
+                                <th colspan="{{ count($flujo_datosReporte['columnas_cajas']) + 2 }}" class="py-1.5 px-3 uppercase tracking-wider text-xs">
+                                    EGRESOS
+                                </th>
+                            </tr>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60">
+                                <th class="py-1.5 px-3 text-left font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
+                                    TIPO DE EGRESOS
+                                </th>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <th class="py-1.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $col['fecha'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700">TOTALES</th>
+                            </tr>
+
+                            @foreach ($flujo_datosReporte['filas_egresos'] as $egr)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-1.5 px-3 font-semibold uppercase text-[11px] border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                                        {{ $egr['nombre'] }}
+                                    </td>
+                                    @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                        @php
+                                            $valEgr = (float) ($col['valores_egresos'][$egr['clave']] ?? 0.00);
+                                        @endphp
+                                        <td class="py-1.5 px-2 text-right tabular-nums text-[11px] border-r border-slate-200 dark:border-slate-800 {{ $valEgr > 0 ? 'font-bold text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-600' }}">
+                                            {{ $valEgr > 0 ? number_format($valEgr, 2) : '0.00' }}
+                                        </td>
+                                    @endforeach
+                                    <td class="py-1.5 px-3 text-right font-bold tabular-nums text-[11px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white">
+                                        {{ number_format($egr['total_fila'], 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <!-- Fila TOTALES EGRESOS -->
+                            <tr class="bg-rose-50 dark:bg-rose-950/30 font-black border-y-2 border-slate-300 dark:border-slate-700">
+                                <td class="py-2 px-3 text-left uppercase text-xs border-r border-slate-200 dark:border-slate-800 text-rose-900 dark:text-rose-200">
+                                    TOTALES EGRESOS
+                                </td>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <td class="py-2 px-2 text-right font-black tabular-nums text-xs border-r border-slate-200 dark:border-slate-800 text-rose-900 dark:text-rose-200">
+                                        {{ number_format($col['total_egresos'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2 px-3 text-right font-black tabular-nums text-xs bg-rose-100 dark:bg-rose-900/60 text-rose-950 dark:text-rose-100">
+                                    {{ number_format($flujo_datosReporte['gran_total_egresos'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Espacio separador -->
+                            <tr class="h-4 bg-transparent">
+                                <td colspan="{{ count($flujo_datosReporte['columnas_cajas']) + 2 }}"></td>
+                            </tr>
+
+                            <!-- ================= FILA ESPECIAL: SALDOS ================= -->
+                            <tr class="bg-indigo-100/80 dark:bg-indigo-950/60 font-black text-indigo-950 dark:text-indigo-200 border-2 border-indigo-300 dark:border-indigo-800">
+                                <td class="py-2.5 px-3 text-left font-black uppercase text-xs tracking-wider border-r border-indigo-200 dark:border-indigo-800">
+                                    <i class="fas fa-coins me-1 text-indigo-600 dark:text-indigo-400"></i>
+                                    SALDOS (INGRESOS - EGRESOS)
+                                </td>
+                                @foreach ($flujo_datosReporte['columnas_cajas'] as $col)
+                                    <td class="py-2.5 px-2 text-right font-black tabular-nums text-xs border-r border-indigo-200 dark:border-indigo-800 {{ $col['saldo_neto'] >= 0 ? 'text-indigo-950 dark:text-indigo-100' : 'text-rose-600 dark:text-rose-400' }}">
+                                        {{ number_format($col['saldo_neto'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2.5 px-3 text-right font-black tabular-nums text-sm bg-indigo-200 dark:bg-indigo-900 text-indigo-950 dark:text-indigo-100">
+                                    Bs. {{ number_format($flujo_datosReporte['gran_saldo_neto'], 2) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen inferior -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="text-slate-500 dark:text-slate-400">
+                        Consolidando <strong class="text-slate-800 dark:text-slate-200">{{ count($flujo_datosReporte['columnas_cajas']) }}</strong> reportes/sesiones de caja del período.
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-slate-600 dark:text-slate-300">
+                            Saldo Neto Consolidado: <strong class="text-base {{ $flujo_datosReporte['gran_saldo_neto'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">Bs. {{ number_format($flujo_datosReporte['gran_saldo_neto'], 2) }}</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- 5. RESUMEN ANUAL DE INGRESOS Y GASTOS (EXCEL)                            -->
+    <!-- ========================================================================= -->
+    @if ($reporteActivo === 'resumen_anual')
+        <!-- Panel de Configuración y Parámetros del Resumen Anual -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+            <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fas fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Criterios del Resumen Anual de Ingresos y Gastos</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Consolida las 12 gestiones mensuales del año calendario (Enero a Diciembre) distinguiendo ingresos clínicos y extraordinarios, egresos operativos y liquidación de saldo en caja.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        wire:click="limpiarFiltrosAnual"
+                        class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                    >
+                        <i class="fas fa-undo text-[10px]"></i>
+                        <span>Limpiar</span>
+                    </button>
+                    <a 
+                        href="{{ route('administracion.reportes.resumen_anual.excel', ['anio' => $anual_anio, 'sucursal_id' => $anual_sucursal_id]) }}"
+                        target="_blank"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <i class="fas fa-file-download text-xs"></i>
+                        <span>Descargar Excel (.xlsx)</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                    <!-- Año del Reporte -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Gestión / Año <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            wire:model.live="anual_anio"
+                            min="2020"
+                            max="2050"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                        @error('anual_anio')
+                            <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Sucursal (Opcional) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Sucursal
+                        </label>
+                        <select 
+                            wire:model.live="anual_sucursal_id"
+                            class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                            <option value="">Todas las Sucursales</option>
+                            @foreach ($sucursales as $suc)
+                                <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
+                    <button 
+                        type="button" 
+                        wire:click="previsualizarReporteAnual" 
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <i class="fas fa-table text-xs"></i>
+                        <span>Generar Vista Previa</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Previa de Resumen Anual de Ingresos y Gastos -->
+        @if ($anual_reporteGenerado && $anual_datosReporte)
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-colors duration-200">
+                <!-- Barra de Título y Descarga -->
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 inline-block mb-1">
+                            Resumen Económico Anual
+                        </span>
+                        <h3 class="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            RESUMEN INGRESOS Y GASTOS GESTIÓN {{ $anual_datosReporte['anio'] }}
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            12 Meses Calendario • Ingresos Anuales: Bs. {{ number_format($anual_datosReporte['gran_total_ingresos'], 2) }} • Gastos Anuales: Bs. {{ number_format($anual_datosReporte['gran_total_egresos'], 2) }} • Saldo Anual: <strong class="{{ $anual_datosReporte['gran_saldo_neto'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">Bs. {{ number_format($anual_datosReporte['gran_saldo_neto'], 2) }}</strong>
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button 
+                            type="button" 
+                            wire:click="descargarExcelAnual" 
+                            class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
+                        >
+                            <i class="fas fa-file-excel text-sm"></i>
+                            <span>Exportar a Excel (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla Matricial Anual (12 Meses) -->
+                <div class="overflow-x-auto max-h-[750px] border-b border-slate-200 dark:border-slate-800">
+                    <table class="w-full text-xs border-collapse">
+                        <!-- ================= TABLA 1: INGRESOS ================= -->
+                        <thead class="sticky top-0 z-10 bg-white dark:bg-slate-900 shadow-xs">
+                            <tr class="bg-slate-800 text-white text-left font-black">
+                                <th colspan="14" class="py-1.5 px-3 uppercase tracking-wider text-xs bg-slate-900">
+                                    INGRESOS
+                                </th>
+                            </tr>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60">
+                                <th class="py-1.5 px-3 min-w-[280px] text-left font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
+                                    TIPO DE INGRESOS
+                                </th>
+                                @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                    <th class="py-1.5 px-2 min-w-[95px] text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $mInfo['mes_nombre'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 min-w-[120px] text-center font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700">TOTALES ANUAL</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            @foreach ($anual_datosReporte['filas_ingresos'] as $ing)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-1.5 px-3 font-semibold uppercase text-[11px] border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                                        {{ $ing['nombre'] }}
+                                    </td>
+                                    @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                        @php
+                                            $val = (float) ($mInfo['valores_ingresos'][$ing['clave']] ?? 0.00);
+                                        @endphp
+                                        <td class="py-1.5 px-2 text-right tabular-nums text-[11px] border-r border-slate-200 dark:border-slate-800 {{ $val > 0 ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-600' }}">
+                                            {{ $val > 0 ? number_format($val, 2) : '0.00' }}
+                                        </td>
+                                    @endforeach
+                                    <td class="py-1.5 px-3 text-right font-bold tabular-nums text-[11px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white">
+                                        {{ number_format($ing['total_fila'], 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <!-- Fila TOTALES INGRESOS -->
+                            <tr class="bg-slate-100 dark:bg-slate-800/80 font-black border-y-2 border-slate-300 dark:border-slate-700">
+                                <td class="py-2 px-3 text-left uppercase text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                    TOTALES INGRESOS
+                                </td>
+                                @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                    <td class="py-2 px-2 text-right font-black tabular-nums text-xs border-r border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white">
+                                        {{ number_format($mInfo['total_ingresos'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2 px-3 text-right font-black tabular-nums text-xs bg-slate-200 dark:bg-slate-700 text-emerald-700 dark:text-emerald-400">
+                                    {{ number_format($anual_datosReporte['gran_total_ingresos'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Espacio separador -->
+                            <tr class="h-6 bg-slate-200/40 dark:bg-slate-950/60">
+                                <td colspan="14" class="py-2 px-3"></td>
+                            </tr>
+
+                            <!-- ================= TABLA 2: EGRESOS ================= -->
+                            <tr class="bg-rose-900 text-white text-left font-black">
+                                <th colspan="14" class="py-1.5 px-3 uppercase tracking-wider text-xs">
+                                    EGRESOS
+                                </th>
+                            </tr>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/60">
+                                <th class="py-1.5 px-3 text-left font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
+                                    TIPO DE EGRESOS
+                                </th>
+                                @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                    <th class="py-1.5 px-2 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                                        {{ $mInfo['mes_nombre'] }}
+                                    </th>
+                                @endforeach
+                                <th class="py-1.5 px-3 text-center font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700">TOTALES ANUAL</th>
+                            </tr>
+
+                            @foreach ($anual_datosReporte['filas_egresos'] as $egr)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-1.5 px-3 font-semibold uppercase text-[11px] border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                                        {{ $egr['nombre'] }}
+                                    </td>
+                                    @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                        @php
+                                            $valEgr = (float) ($mInfo['valores_egresos'][$egr['clave']] ?? 0.00);
+                                        @endphp
+                                        <td class="py-1.5 px-2 text-right tabular-nums text-[11px] border-r border-slate-200 dark:border-slate-800 {{ $valEgr > 0 ? 'font-bold text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-600' }}">
+                                            {{ $valEgr > 0 ? number_format($valEgr, 2) : '0.00' }}
+                                        </td>
+                                    @endforeach
+                                    <td class="py-1.5 px-3 text-right font-bold tabular-nums text-[11px] bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white">
+                                        {{ number_format($egr['total_fila'], 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <!-- Fila TOTALES EGRESOS -->
+                            <tr class="bg-rose-50 dark:bg-rose-950/30 font-black border-y-2 border-slate-300 dark:border-slate-700">
+                                <td class="py-2 px-3 text-left uppercase text-xs border-r border-slate-200 dark:border-slate-800 text-rose-900 dark:text-rose-200">
+                                    TOTALES EGRESOS
+                                </td>
+                                @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                    <td class="py-2 px-2 text-right font-black tabular-nums text-xs border-r border-slate-200 dark:border-slate-800 text-rose-900 dark:text-rose-200">
+                                        {{ number_format($mInfo['total_egresos'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2 px-3 text-right font-black tabular-nums text-xs bg-rose-100 dark:bg-rose-900/60 text-rose-950 dark:text-rose-100">
+                                    {{ number_format($anual_datosReporte['gran_total_egresos'], 2) }}
+                                </td>
+                            </tr>
+
+                            <!-- Espacio separador -->
+                            <tr class="h-4 bg-transparent">
+                                <td colspan="14"></td>
+                            </tr>
+
+                            <!-- ================= FILA ESPECIAL: SALDO EN CAJA ================= -->
+                            <tr class="bg-blue-100/90 dark:bg-blue-950/70 font-black text-blue-950 dark:text-blue-100 border-2 border-blue-300 dark:border-blue-800">
+                                <td class="py-2.5 px-3 text-left font-black uppercase text-xs tracking-wider border-r border-blue-200 dark:border-blue-800">
+                                    <i class="fas fa-coins me-1 text-blue-600 dark:text-blue-400"></i>
+                                    SALDO EN CAJA (INGRESOS - EGRESOS)
+                                </td>
+                                @foreach ($anual_datosReporte['meses'] as $mInfo)
+                                    <td class="py-2.5 px-2 text-right font-black tabular-nums text-xs border-r border-blue-200 dark:border-blue-800 {{ $mInfo['saldo_neto'] >= 0 ? 'text-blue-950 dark:text-blue-100' : 'text-rose-600 dark:text-rose-400' }}">
+                                        {{ number_format($mInfo['saldo_neto'], 2) }}
+                                    </td>
+                                @endforeach
+                                <td class="py-2.5 px-3 text-right font-black tabular-nums text-sm bg-blue-200 dark:bg-blue-900 text-blue-950 dark:text-blue-100">
+                                    Bs. {{ number_format($anual_datosReporte['gran_saldo_neto'], 2) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen inferior -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="text-slate-500 dark:text-slate-400">
+                        Consolidación anual de los 12 meses de la gestión <strong class="text-slate-800 dark:text-slate-200">{{ $anual_datosReporte['anio'] }}</strong>.
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-slate-600 dark:text-slate-300">
+                            Saldo Anual Consolidado: <strong class="text-base {{ $anual_datosReporte['gran_saldo_neto'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">Bs. {{ number_format($anual_datosReporte['gran_saldo_neto'], 2) }}</strong>
                         </span>
                     </div>
                 </div>
