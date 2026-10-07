@@ -440,13 +440,35 @@ class CierresIndex extends Component
         $this->resetValidation();
         $this->editando_partida_id = null;
         $this->partida_tipo = $tipo;
-        $this->partida_categoria = $tipo === 'Ingreso' ? 'Otro' : 'Servicio Básico';
+        $this->partida_categoria = $tipo === 'Ingreso' ? 'Extra' : 'Servicio Básico';
         $this->partida_concepto = '';
         $this->partida_monto = '';
         $this->partida_fecha = now()->toDateString();
         $this->partida_referencia = '';
         $this->partida_observaciones = '';
+
+        // Ocultar modal principal de cierre mensual mientras se registra la partida
+        $this->modalDetalleOpen = false;
         $this->modalPartidaOpen = true;
+    }
+
+    public function setPartidaTipo(string $tipo): void
+    {
+        $this->partida_tipo = $tipo;
+        if ($tipo === 'Ingreso') {
+            if (! in_array($this->partida_categoria, ['Extra', 'Certificados', 'Fotocopias/Trámites', 'Donación', 'Cobro Proforma', 'Otro'])) {
+                $this->partida_categoria = 'Extra';
+            }
+        } else {
+            if (! in_array($this->partida_categoria, ['Servicio Básico', 'Sueldo', 'Gasto Operativo', 'Insumos', 'Transporte', 'Honorario Médico', 'Compra Farmacia', 'Otro'])) {
+                $this->partida_categoria = 'Servicio Básico';
+            }
+        }
+    }
+
+    public function updatedPartidaTipo(string $value): void
+    {
+        $this->setPartidaTipo($value);
     }
 
     public function cerrarModalPartida(): void
@@ -461,6 +483,11 @@ class CierresIndex extends Component
             'partida_referencia',
             'partida_observaciones',
         ]);
+
+        // Restaurar la visualización del modal principal del cierre mensual
+        if ($this->cierreSeleccionadoId) {
+            $this->modalDetalleOpen = true;
+        }
     }
 
     public function editarPartida(int $partidaId): void
@@ -477,6 +504,8 @@ class CierresIndex extends Component
         $this->partida_referencia = $partida->comprobante_referencia ?? '';
         $this->partida_observaciones = $partida->observaciones ?? '';
 
+        // Ocultar modal principal de cierre mensual mientras se edita la partida
+        $this->modalDetalleOpen = false;
         $this->modalPartidaOpen = true;
     }
 

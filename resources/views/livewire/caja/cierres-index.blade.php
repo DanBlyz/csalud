@@ -478,7 +478,8 @@
                                 <button 
                                     type="button" 
                                     wire:click="abrirModalPartida('Egreso')" 
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-2xs transition"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-2xs transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <i class="fas fa-minus-circle text-xs"></i>
                                     <span>Agregar Gasto Extra</span>
@@ -487,7 +488,8 @@
                                 <button 
                                     type="button" 
                                     wire:click="abrirModalPartida('Ingreso')" 
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer shadow-2xs transition"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer shadow-2xs transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <i class="fas fa-plus-circle text-xs"></i>
                                     <span>Agregar Ingreso Extra</span>
@@ -728,170 +730,199 @@
     @endif
 
     <!-- ======================================================================= -->
-    <!-- MODAL 3: AGREGAR / EDITAR PARTIDA (GASTO EXTRA / INGRESO) -->
+    <!-- MODAL 3: AGREGAR / EDITAR PARTIDA (INGRESO EXTRA / SALIDA DE CAJA)       -->
     <!-- ======================================================================= -->
     @if ($modalPartidaOpen)
-        <div class="fixed inset-0 z-60 overflow-y-auto" role="dialog" aria-modal="true">
-            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-md">
-                    <!-- Header -->
-                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <i class="fas {{ $partida_tipo === 'Ingreso' ? 'fa-plus-circle text-emerald-600' : 'fa-minus-circle text-rose-600' }}"></i>
-                            <span>{{ $editando_partida_id ? 'Modificar Partida' : ($partida_tipo === 'Ingreso' ? 'Registrar Ingreso Extra' : 'Registrar Gasto Extra') }}</span>
-                        </h3>
-                        <button wire:click="cerrarModalPartida" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
-                            <i class="fas fa-times text-base"></i>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity" role="dialog" aria-modal="true">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <!-- Header Estilo Cobros y Liquidaciones -->
+                <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between {{ $partida_tipo === 'Ingreso' ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'bg-rose-50/50 dark:bg-rose-950/20' }}">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl {{ $partida_tipo === 'Ingreso' ? 'bg-blue-600' : 'bg-rose-600' }} text-white shadow-sm">
+                            <i class="fas {{ $partida_tipo === 'Ingreso' ? 'fa-plus-circle' : 'fa-arrow-circle-up' }} text-base"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white">
+                                {{ $editando_partida_id ? 'Modificar Partida' : ($partida_tipo === 'Ingreso' ? 'Registrar Ingreso Extra' : 'Registrar Salida / Gasto de Caja') }}
+                            </h2>
+                            <p class="text-[11px] text-slate-500">
+                                Asiento manual para el balance {{ $cierreSeleccionado ? '(' . $cierreSeleccionado->nombre_mes . ' ' . $cierreSeleccionado->anio . ')' : '' }}
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        type="button" 
+                        wire:click="cerrarModalPartida" 
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition cursor-pointer"
+                    >
+                        <i class="fas fa-times text-base"></i>
+                    </button>
+                </div>
+
+                <!-- Formulario -->
+                <form wire:submit="guardarPartida" class="p-6 space-y-4">
+                    <!-- Selector de Tipo Interactivo -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button 
+                            type="button" 
+                            wire:click="setPartidaTipo('Ingreso')" 
+                            class="p-3 rounded-xl border text-center transition font-bold text-xs flex flex-col items-center gap-1.5 cursor-pointer {{ $partida_tipo === 'Ingreso' ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-xs' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' }}"
+                        >
+                            <i class="fas fa-arrow-down text-sm text-blue-500"></i>
+                            <span>Ingreso Extra</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            wire:click="setPartidaTipo('Egreso')" 
+                            class="p-3 rounded-xl border text-center transition font-bold text-xs flex flex-col items-center gap-1.5 cursor-pointer {{ $partida_tipo === 'Egreso' ? 'border-rose-600 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 shadow-xs' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' }}"
+                        >
+                            <i class="fas fa-arrow-up text-sm text-rose-500"></i>
+                            <span>Salida de Caja</span>
                         </button>
                     </div>
 
-                    <!-- Form -->
-                    <form wire:submit="guardarPartida" class="p-6 space-y-4">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label for="partida_tipo" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Tipo <span class="text-rose-500">*</span>
-                                </label>
-                                <select 
-                                    id="partida_tipo" 
-                                    wire:model.live="partida_tipo" 
-                                    class="w-full text-xs font-semibold rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
-                                >
-                                    <option value="Egreso">Egreso (Salida)</option>
-                                    <option value="Ingreso">Ingreso (Entrada)</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="partida_categoria" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Categoría <span class="text-rose-500">*</span>
-                                </label>
-                                <select 
-                                    id="partida_categoria" 
-                                    wire:model="partida_categoria" 
-                                    class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
-                                >
-                                    @if ($partida_tipo === 'Egreso')
-                                        <option value="Servicio Básico">Servicio Básico (Luz, Agua, Internet)</option>
-                                        <option value="Sueldo">Sueldo / Planilla Personal</option>
-                                        <option value="Gasto Operativo">Gasto Operativo / Insumos Oficina</option>
-                                        <option value="Honorario Médico">Honorario Médico Extra</option>
-                                        <option value="Compra Farmacia">Compra Farmacia Extra</option>
-                                        <option value="Otro">Otro Egreso</option>
-                                    @else
-                                        <option value="Cobro Proforma">Cobro Proforma</option>
-                                        <option value="Otro">Otro Ingreso Extra</option>
-                                    @endif
-                                </select>
-                            </div>
+                    <!-- Categoría y Fecha -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                                Categoría <span class="text-rose-500">*</span>
+                            </label>
+                            <select 
+                                wire:model="partida_categoria" 
+                                class="w-full text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 py-2.5 px-3 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }}"
+                            >
+                                @if($partida_tipo === 'Ingreso')
+                                    <option value="Extra">Extra General</option>
+                                    <option value="Certificados">Certificados Médicos</option>
+                                    <option value="Fotocopias/Trámites">Fotocopias / Trámites</option>
+                                    <option value="Donación">Donación</option>
+                                    <option value="Cobro Proforma">Cobro Proforma</option>
+                                    <option value="Otro">Otro Ingreso</option>
+                                @else
+                                    <option value="Servicio Básico">Servicio Básico</option>
+                                    <option value="Sueldo">Sueldo / Planilla Personal</option>
+                                    <option value="Gasto Operativo">Gasto Operativo</option>
+                                    <option value="Insumos">Insumos de Limpieza/Aseo</option>
+                                    <option value="Transporte">Transporte / Encomienda</option>
+                                    <option value="Honorario Médico">Honorario Médico</option>
+                                    <option value="Compra Farmacia">Compra Farmacia</option>
+                                    <option value="Otro">Otro Gasto</option>
+                                @endif
+                            </select>
+                            @error('partida_categoria')
+                                <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <!-- Concepto -->
                         <div>
-                            <label for="partida_concepto" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                Concepto / Detalle <span class="text-rose-500">*</span>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                                Fecha de Asiento <span class="text-rose-500">*</span>
                             </label>
                             <input 
-                                type="text" 
-                                id="partida_concepto" 
-                                wire:model="partida_concepto" 
-                                placeholder="Ej. Pago de luz eléctrica - ENDE, Sueldo recepcionista..."
-                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                                type="date" 
+                                wire:model="partida_fecha" 
+                                class="w-full text-xs font-mono font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 py-2 px-3 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }}"
                             >
-                            @error('partida_concepto') <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p> @enderror
+                            @error('partida_fecha')
+                                <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
+                    </div>
 
-                        <!-- Monto y Fecha -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label for="partida_monto" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Monto (Bs.) <span class="text-rose-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs font-mono font-bold text-slate-400">
-                                        Bs.
-                                    </span>
-                                    <input 
-                                        type="number" 
-                                        id="partida_monto" 
-                                        wire:model="partida_monto" 
-                                        step="0.01" 
-                                        min="0.01" 
-                                        placeholder="0.00" 
-                                        class="w-full pl-9 pr-3 text-xs font-mono font-bold rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
-                                    >
-                                </div>
-                                @error('partida_monto') <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div>
-                                <label for="partida_fecha" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                    Fecha <span class="text-rose-500">*</span>
-                                </label>
+                    <!-- Monto y Referencia -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                                Monto (Bs.) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center font-bold text-slate-400">Bs.</span>
                                 <input 
-                                    type="date" 
-                                    id="partida_fecha" 
-                                    wire:model="partida_fecha" 
-                                    class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                                    type="number" 
+                                    step="0.01" 
+                                    min="0.01" 
+                                    wire:model="partida_monto" 
+                                    placeholder="0.00"
+                                    class="w-full text-sm font-mono font-bold rounded-xl pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }}"
                                 >
-                                @error('partida_fecha') <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                             </div>
+                            @error('partida_monto')
+                                <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <!-- Referencia / Factura -->
                         <div>
-                            <label for="partida_referencia" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                N° Comprobante / Factura / Recibo
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                                N° Referencia / Comprobante
                             </label>
                             <input 
                                 type="text" 
-                                id="partida_referencia" 
                                 wire:model="partida_referencia" 
-                                placeholder="Ej. Factura 8923, Recibo 401..."
-                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs"
+                                placeholder="Opcional (Ej. FAC-1204)"
+                                class="w-full text-xs rounded-xl px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }}"
                             >
+                            @error('partida_referencia')
+                                <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                            @enderror
                         </div>
+                    </div>
 
-                        <!-- Observaciones -->
-                        <div>
-                            <label for="partida_observaciones" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                                Observaciones Adicionales
-                            </label>
-                            <textarea 
-                                id="partida_observaciones" 
-                                wire:model="partida_observaciones" 
-                                rows="2" 
-                                placeholder="Notas opcionales..."
-                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2.5 shadow-2xs resize-none"
-                            ></textarea>
-                        </div>
+                    <!-- Concepto -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                            Concepto / Motivo Detallado <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            wire:model="partida_concepto" 
+                            placeholder="Ej. Pago de luz eléctrica ENDE, Sueldo personal..."
+                            class="w-full text-xs rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }}"
+                        >
+                        @error('partida_concepto')
+                            <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
 
-                        <!-- Footer -->
-                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
-                            <button 
-                                type="button" 
-                                wire:click="cerrarModalPartida" 
-                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            >
-                                Cancelar
-                            </button>
-                            <button 
-                                type="submit" 
-                                wire:loading.attr="disabled"
-                                wire:target="guardarPartida"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                                <span wire:loading.remove wire:target="guardarPartida">
-                                    <i class="fas fa-save me-1"></i> Guardar Partida
-                                </span>
-                                <span wire:loading wire:target="guardarPartida">
-                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
-                                </span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Observaciones Adicionales -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                            Observaciones Adicionales
+                        </label>
+                        <textarea 
+                            wire:model="partida_observaciones" 
+                            rows="2" 
+                            placeholder="Notas o justificación adicional opcional..."
+                            class="w-full text-xs rounded-xl px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 {{ $partida_tipo === 'Ingreso' ? 'focus:ring-blue-500' : 'focus:ring-rose-500' }} resize-none"
+                        ></textarea>
+                        @error('partida_observaciones')
+                            <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Modal Actions Footer -->
+                    <div class="pt-2 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
+                        <button 
+                            type="button" 
+                            wire:click="cerrarModalPartida" 
+                            class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            wire:target="guardarPartida"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl {{ $partida_tipo === 'Ingreso' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700' }} text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span wire:loading.remove wire:target="guardarPartida">
+                                <i class="fas fa-save text-xs"></i> {{ $editando_partida_id ? 'Actualizar Partida' : 'Guardar Asiento' }}
+                            </span>
+                            <span wire:loading wire:target="guardarPartida" class="inline-flex items-center gap-1.5">
+                                <i class="fas fa-circle-notch fa-spin text-xs"></i> Guardando...
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     @endif
