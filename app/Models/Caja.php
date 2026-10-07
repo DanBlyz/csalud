@@ -30,8 +30,14 @@ class Caja extends Model
         'total_ingresos_qr',
         'total_ingresos_transferencia',
         'total_egresos_efectivo',
+        'total_egresos_qr',
+        'total_egresos_transferencia',
         'saldo_esperado_efectivo',
+        'saldo_esperado_qr',
+        'saldo_esperado_transferencia',
         'diferencia_efectivo',
+        'diferencia_qr',
+        'diferencia_transferencia',
         'observaciones_apertura',
         'observaciones_cierre',
         'usuario_creador_id',
@@ -52,8 +58,14 @@ class Caja extends Model
             'total_ingresos_qr' => 'decimal:2',
             'total_ingresos_transferencia' => 'decimal:2',
             'total_egresos_efectivo' => 'decimal:2',
+            'total_egresos_qr' => 'decimal:2',
+            'total_egresos_transferencia' => 'decimal:2',
             'saldo_esperado_efectivo' => 'decimal:2',
+            'saldo_esperado_qr' => 'decimal:2',
+            'saldo_esperado_transferencia' => 'decimal:2',
             'diferencia_efectivo' => 'decimal:2',
+            'diferencia_qr' => 'decimal:2',
+            'diferencia_transferencia' => 'decimal:2',
         ];
     }
 
@@ -130,6 +142,39 @@ class Caja extends Model
     {
         return (float) $this->pagos()
             ->where('tipo_movimiento', 'Egreso Caja')
+            ->where('tipo_pago', 'Efectivo')
+            ->sum('monto');
+    }
+
+    /**
+     * Total de salidas/egresos por QR de la caja.
+     */
+    public function totalEgresosQr(): float
+    {
+        return (float) $this->pagos()
+            ->where('tipo_movimiento', 'Egreso Caja')
+            ->where('tipo_pago', 'QR')
+            ->sum('monto');
+    }
+
+    /**
+     * Total de salidas/egresos por transferencia bancaria de la caja.
+     */
+    public function totalEgresosTransferencia(): float
+    {
+        return (float) $this->pagos()
+            ->where('tipo_movimiento', 'Egreso Caja')
+            ->where('tipo_pago', 'Transferencia')
+            ->sum('monto');
+    }
+
+    /**
+     * Total global de egresos de la caja.
+     */
+    public function totalEgresos(): float
+    {
+        return (float) $this->pagos()
+            ->where('tipo_movimiento', 'Egreso Caja')
             ->sum('monto');
     }
 
@@ -143,7 +188,87 @@ class Caja extends Model
     }
 
     /**
-     * Cierra formalmente la caja calculando arqueo y discrepancias.
+     * Saldo que debería haber en cobros QR bancarios:
+     * Ingresos QR - Egresos QR.
+     */
+    public function saldoEsperadoQr(): float
+    {
+        return $this->totalIngresosQr() - $this->totalEgresosQr();
+    }
+
+    /**
+     * Saldo que debería haber en transferencias bancarias:
+     * Ingresos Transferencia - Egresos Transferencia.
+     */
+    public function saldoEsperadoTransferencia(): float
+    {
+        return $this->totalIngresosTransferencia() - $this->totalEgresosTransferencia();
+    }
+
+    /**
+     * Saldo esperado consolidado total (Efectivo + QR + Transferencias).
+     */
+    public function saldoEsperadoTotal(): float
+    {
+        return $this->saldoEsperadoEfectivo() + $this->saldoEsperadoQr() + $this->saldoEsperadoTransferencia();
+    }
+
+    /**
+     * Diferencia en efectivo calculada de forma segura.
+     */
+    public function diferenciaEfectivoCalculada(): float
+    {
+        if (! $this->isCerrada()) {
+            return 0.00;
+        }
+
+        if ($this->diferencia_efectivo !== null) {
+            return (float) $this->diferencia_efectivo;
+        }
+
+        $esperado = (float) ($this->saldo_esperado_efectivo ?? $this->saldoEsperadoEfectivo());
+
+        return (float) ($this->monto_cierre_efectivo ?? 0) - $esperado;
+    }
+
+    /**
+     * Diferencia en QR calculada de forma segura.
+     */
+    public function diferenciaQrCalculada(): float
+    {
+        if (! $this->isCerrada()) {
+            return 0.00;
+        }
+
+        if ($this->diferencia_qr !== null) {
+            return (float) $this->diferencia_qr;
+        }
+
+        $esperado = (float) ($this->saldo_esperado_qr ?? $this->saldoEsperadoQr());
+
+        return (float) ($this->monto_cierre_qr ?? 0) - $esperado;
+    }
+
+    /**
+     * Diferencia en Transferencia bancaria calculada de forma segura.
+     */
+    public function diferenciaTransferenciaCalculada(): float
+    {
+        if (! $this->isCerrada()) {
+            return 0.00;
+        }
+
+        if ($this->diferencia_transferencia !== null) {
+            return (float) $this->diferencia_transferencia;
+        }
+
+        $esperado = (float) ($this->saldo_esperado_transferencia ?? $this->saldoEsperadoTransferencia());
+
+        return (float) ($this->monto_cierre_transferencia ?? 0) - $esperado;
+    }
+
+    /**
+     * Cierra formalmente la caja calculando arqueo y discrepancias en los tres canales.
      */
     public function cerrar(
         float $conteoEfectivo,
@@ -154,9 +279,19 @@ class Caja extends Model
         $ingresosEf = $this->totalIngresosEfectivo();
         $ingresosQr = $this->totalIngresosQr();
         $ingresosTr = $this->totalIngresosTransferencia();
+
         $egresosEf = $this->totalEgresosEfectivo();
-        $saldoEsperado = (float) $this->monto_apertura + $ingresosEf - $egresosEf;
-        $diferencia = $conteoEfectivo - $saldoEsperado;
+        $egresosQr = $this->totalEgresosQr();
+        $egresosTr = $this->totalEgresosTransferencia();
+
+        $saldoEsperadoEf = (float) $this->monto_apertura + $ingresosEf - $egresosEf;
+        $diferenciaEf = $conteoEfectivo - $saldoEsperadoEf;
+
+        $saldoEsperadoQr = $ingresosQr - $egresosQr;
+        $diferenciaQr = $conteoQr - $saldoEsperadoQr;
+
+        $saldoEsperadoTr = $ingresosTr - $egresosTr;
+        $diferenciaTr = $conteoTransferencia - $saldoEsperadoTr;
 
         $this->update([
             'estado' => 'Cerrada',
@@ -168,8 +303,14 @@ class Caja extends Model
             'total_ingresos_qr' => $ingresosQr,
             'total_ingresos_transferencia' => $ingresosTr,
             'total_egresos_efectivo' => $egresosEf,
-            'saldo_esperado_efectivo' => $saldoEsperado,
-            'diferencia_efectivo' => $diferencia,
+            'total_egresos_qr' => $egresosQr,
+            'total_egresos_transferencia' => $egresosTr,
+            'saldo_esperado_efectivo' => $saldoEsperadoEf,
+            'saldo_esperado_qr' => $saldoEsperadoQr,
+            'saldo_esperado_transferencia' => $saldoEsperadoTr,
+            'diferencia_efectivo' => $diferenciaEf,
+            'diferencia_qr' => $diferenciaQr,
+            'diferencia_transferencia' => $diferenciaTr,
             'observaciones_cierre' => $observaciones ? trim($observaciones) : null,
         ]);
     }

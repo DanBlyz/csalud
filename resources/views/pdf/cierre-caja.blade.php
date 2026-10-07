@@ -241,29 +241,78 @@
             <td class="text-right font-mono font-bold">Bs. {{ number_format($caja->monto_cierre_efectivo ?? 0, 2) }}</td>
         </tr>
         <tr>
-            <td>Ingresos Código QR (Bancos)</td>
-            <td class="text-right font-mono">Bs. {{ number_format($caja->total_ingresos_qr ?? $caja->totalIngresosQr(), 2) }}</td>
+            <td>Ingresos / Saldo Código QR</td>
+            <td class="text-right font-mono">Bs. {{ number_format($caja->saldo_esperado_qr ?? $caja->saldoEsperadoQr(), 2) }}</td>
             <td class="text-right font-mono">Bs. {{ number_format($caja->monto_cierre_qr ?? 0, 2) }}</td>
         </tr>
         <tr>
-            <td>Ingresos Transferencia Bancaria</td>
-            <td class="text-right font-mono">Bs. {{ number_format($caja->total_ingresos_transferencia ?? $caja->totalIngresosTransferencia(), 2) }}</td>
+            <td>Ingresos / Saldo Transferencia Bancaria</td>
+            <td class="text-right font-mono">Bs. {{ number_format($caja->saldo_esperado_transferencia ?? $caja->saldoEsperadoTransferencia(), 2) }}</td>
             <td class="text-right font-mono">Bs. {{ number_format($caja->monto_cierre_transferencia ?? 0, 2) }}</td>
+        </tr>
+        <tr class="total-row" style="background-color: #f1f5f9; border-top: 1px solid #cbd5e1; color: #0f172a;">
+            <td><strong>TOTAL CONSOLIDADO (EFECTIVO + QR + TRANSFERENCIA)</strong></td>
+            <td class="text-right font-mono font-bold">Bs. {{ number_format(($caja->saldo_esperado_efectivo ?? $caja->saldoEsperadoEfectivo()) + ($caja->saldo_esperado_qr ?? $caja->saldoEsperadoQr()) + ($caja->saldo_esperado_transferencia ?? $caja->saldoEsperadoTransferencia()), 2) }}</td>
+            <td class="text-right font-mono font-bold">Bs. {{ number_format(($caja->monto_cierre_efectivo ?? 0) + ($caja->monto_cierre_qr ?? 0) + ($caja->monto_cierre_transferencia ?? 0), 2) }}</td>
         </tr>
     </table>
 
-    <!-- Resultado de la Discrepancia -->
+    <!-- Resultado de la Discrepancia por Canal y Consolidado -->
     @php
-        $dif = (float) ($caja->diferencia_efectivo ?? 0);
+        $difEf = $caja->diferenciaEfectivoCalculada();
+        $difQr = $caja->diferenciaQrCalculada();
+        $difTr = $caja->diferenciaTransferenciaCalculada();
+        $difTotal = $difEf + $difQr + $difTr;
     @endphp
-    <div class="diff-box {{ $dif == 0 ? 'diff-ok' : ($dif > 0 ? 'diff-sobrante' : 'diff-faltante') }}">
-        <strong>Resultado del Arqueo en Efectivo: </strong>
-        @if($dif == 0)
-            <span>CUADRADO PERFECTO (Diferencia: Bs. 0.00)</span>
-        @elseif($dif > 0)
-            <span>SOBRANTE DE CAJA: + Bs. {{ number_format($dif, 2) }}</span>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <tr>
+            <td style="width: 32%; vertical-align: top; padding-right: 5px;">
+                <div class="diff-box {{ round($difEf, 2) == 0 ? 'diff-ok' : ($difEf > 0 ? 'diff-sobrante' : 'diff-faltante') }}" style="margin-top: 0;">
+                    <strong style="display: block; font-size: 10px; text-transform: uppercase;">1. Efectivo en Gaveta:</strong>
+                    @if(round($difEf, 2) == 0)
+                        <span>Cuadrado (Bs. 0.00)</span>
+                    @elseif($difEf > 0)
+                        <span>Sobrante: +Bs. {{ number_format($difEf, 2) }}</span>
+                    @else
+                        <span>Faltante: -Bs. {{ number_format(abs($difEf), 2) }}</span>
+                    @endif
+                </div>
+            </td>
+            <td style="width: 32%; vertical-align: top; padding-right: 5px; padding-left: 5px;">
+                <div class="diff-box {{ round($difQr, 2) == 0 ? 'diff-ok' : ($difQr > 0 ? 'diff-sobrante' : 'diff-faltante') }}" style="margin-top: 0;">
+                    <strong style="display: block; font-size: 10px; text-transform: uppercase;">2. Pagos Código QR:</strong>
+                    @if(round($difQr, 2) == 0)
+                        <span>Cuadrado (Bs. 0.00)</span>
+                    @elseif($difQr > 0)
+                        <span>Sobrante: +Bs. {{ number_format($difQr, 2) }}</span>
+                    @else
+                        <span>Faltante: -Bs. {{ number_format(abs($difQr), 2) }}</span>
+                    @endif
+                </div>
+            </td>
+            <td style="width: 36%; vertical-align: top; padding-left: 5px;">
+                <div class="diff-box {{ round($difTr, 2) == 0 ? 'diff-ok' : ($difTr > 0 ? 'diff-sobrante' : 'diff-faltante') }}" style="margin-top: 0;">
+                    <strong style="display: block; font-size: 10px; text-transform: uppercase;">3. Transferencias Bancarias:</strong>
+                    @if(round($difTr, 2) == 0)
+                        <span>Cuadrado (Bs. 0.00)</span>
+                    @elseif($difTr > 0)
+                        <span>Sobrante: +Bs. {{ number_format($difTr, 2) }}</span>
+                    @else
+                        <span>Faltante: -Bs. {{ number_format(abs($difTr), 2) }}</span>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="diff-box {{ round($difTotal, 2) == 0 ? 'diff-ok' : ($difTotal > 0 ? 'diff-sobrante' : 'diff-faltante') }}" style="margin-top: 8px;">
+        <strong>Balance General del Turno: </strong>
+        @if(round($difTotal, 2) == 0)
+            <span>CUADRADO TOTAL (Diferencia neta: Bs. 0.00)</span>
+        @elseif($difTotal > 0)
+            <span>SOBRANTE GLOBAL: + Bs. {{ number_format($difTotal, 2) }}</span>
         @else
-            <span>FALTANTE DE CAJA: - Bs. {{ number_format(abs($dif), 2) }}</span>
+            <span>FALTANTE GLOBAL: - Bs. {{ number_format(abs($difTotal), 2) }}</span>
         @endif
         @if($caja->observaciones_cierre)
             <div style="margin-top: 4px; font-size: 10px; font-style: italic;">

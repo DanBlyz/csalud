@@ -304,8 +304,8 @@ class CajaIndex extends Component
         $this->resetValidation();
         // Sugerir los saldos calculados automáticamente por el sistema
         $this->cierre_efectivo = number_format($caja->saldoEsperadoEfectivo(), 2, '.', '');
-        $this->cierre_qr = number_format($caja->totalIngresosQr(), 2, '.', '');
-        $this->cierre_transferencia = number_format($caja->totalIngresosTransferencia(), 2, '.', '');
+        $this->cierre_qr = number_format($caja->saldoEsperadoQr(), 2, '.', '');
+        $this->cierre_transferencia = number_format($caja->saldoEsperadoTransferencia(), 2, '.', '');
         $this->cierre_observaciones = '';
         $this->modalCierreOpen = true;
     }
@@ -350,17 +350,29 @@ class CajaIndex extends Component
         );
 
         $cajaIdCerrada = $caja->id;
-        $dif = (float) $caja->diferencia_efectivo;
-        $difTexto = $dif == 0
-            ? 'Caja cuadrada sin diferencias.'
-            : ($dif > 0 ? 'Sobrante de Bs. '.number_format($dif, 2) : 'Faltante de Bs. '.number_format(abs($dif), 2));
+
+        $formatearDif = function (float $dif, string $nombre): string {
+            if (round($dif, 2) == 0) {
+                return "{$nombre}: Cuadrado";
+            }
+
+            return $dif > 0
+                ? "{$nombre}: Sobrante (+Bs. ".number_format($dif, 2).')'
+                : "{$nombre}: Faltante (-Bs. ".number_format(abs($dif), 2).')';
+        };
+
+        $resumenDif = implode(' | ', [
+            $formatearDif((float) $caja->diferencia_efectivo, 'Efectivo'),
+            $formatearDif((float) $caja->diferencia_qr, 'QR'),
+            $formatearDif((float) $caja->diferencia_transferencia, 'Transferencia'),
+        ]);
 
         $this->cerrarModalCierre();
 
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => '¡Caja Cerrada Exitosamente!',
-            'text' => "Se completó el cierre del Turno #{$cajaIdCerrada}. {$difTexto}. Puede imprimir el comprobante oficial de arqueo.",
+            'text' => "Se completó el cierre del Turno #{$cajaIdCerrada}. Balance: {$resumenDif}. Puede imprimir el comprobante oficial de arqueo.",
         ]);
     }
 
@@ -631,8 +643,14 @@ class CajaIndex extends Component
                 'total_efectivo' => $caja->totalIngresosEfectivo(),
                 'total_qr' => $caja->totalIngresosQr(),
                 'total_transferencia' => $caja->totalIngresosTransferencia(),
-                'total_egresos' => $caja->totalEgresosEfectivo(),
+                'total_egresos' => $caja->totalEgresos(),
+                'total_egresos_efectivo' => $caja->totalEgresosEfectivo(),
+                'total_egresos_qr' => $caja->totalEgresosQr(),
+                'total_egresos_transferencia' => $caja->totalEgresosTransferencia(),
                 'saldo_esperado_efectivo' => $caja->saldoEsperadoEfectivo(),
+                'saldo_esperado_qr' => $caja->saldoEsperadoQr(),
+                'saldo_esperado_transferencia' => $caja->saldoEsperadoTransferencia(),
+                'saldo_esperado_total' => $caja->saldoEsperadoTotal(),
                 'cantidad_transacciones' => $caja->pagos()->count(),
             ];
         }
@@ -651,6 +669,9 @@ class CajaIndex extends Component
         $totalQr = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', '!=', 'Egreso Caja')->where('tipo_pago', 'QR')->sum('monto');
         $totalTransferencia = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', '!=', 'Egreso Caja')->where('tipo_pago', 'Transferencia')->sum('monto');
         $totalEgresos = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', 'Egreso Caja')->sum('monto');
+        $totalEgresosEf = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', 'Egreso Caja')->where('tipo_pago', 'Efectivo')->sum('monto');
+        $totalEgresosQr = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', 'Egreso Caja')->where('tipo_pago', 'QR')->sum('monto');
+        $totalEgresosTr = (float) (clone $pagosHoyQuery)->where('tipo_movimiento', 'Egreso Caja')->where('tipo_pago', 'Transferencia')->sum('monto');
         $cantidadTransacciones = (clone $pagosHoyQuery)->count();
 
         return [
@@ -662,7 +683,13 @@ class CajaIndex extends Component
             'total_qr' => $totalQr,
             'total_transferencia' => $totalTransferencia,
             'total_egresos' => $totalEgresos,
-            'saldo_esperado_efectivo' => max(0.00, $totalEfectivo - $totalEgresos),
+            'total_egresos_efectivo' => $totalEgresosEf,
+            'total_egresos_qr' => $totalEgresosQr,
+            'total_egresos_transferencia' => $totalEgresosTr,
+            'saldo_esperado_efectivo' => max(0.00, $totalEfectivo - $totalEgresosEf),
+            'saldo_esperado_qr' => max(0.00, $totalQr - $totalEgresosQr),
+            'saldo_esperado_transferencia' => max(0.00, $totalTransferencia - $totalEgresosTr),
+            'saldo_esperado_total' => max(0.00, ($totalEfectivo - $totalEgresosEf) + ($totalQr - $totalEgresosQr) + ($totalTransferencia - $totalEgresosTr)),
             'cantidad_transacciones' => $cantidadTransacciones,
         ];
     }

@@ -530,54 +530,144 @@
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
                         <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/50 font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 text-[10px]">
-                            <th class="py-3 px-4">Turno</th>
-                            <th class="py-3 px-4">Cajero</th>
-                            <th class="py-3 px-4">Apertura</th>
-                            <th class="py-3 px-4">Cierre</th>
-                            <th class="py-3 px-4 text-right">Fondo Apertura</th>
-                            <th class="py-3 px-4 text-right">Ingresos Totales</th>
-                            <th class="py-3 px-4 text-right">Efectivo en Cierre</th>
-                            <th class="py-3 px-4 text-center">Estado</th>
-                            <th class="py-3 px-4 text-right">Acciones</th>
+                            <th class="py-3 px-3">Turno</th>
+                            <th class="py-3 px-3">Cajero / Sede</th>
+                            <th class="py-3 px-3">Horario</th>
+                            <th class="py-3 px-3 text-right">Efectivo (Gaveta)</th>
+                            <th class="py-3 px-3 text-right">Código QR</th>
+                            <th class="py-3 px-3 text-right">Transferencias</th>
+                            <th class="py-3 px-3 text-right">Total Ingresos</th>
+                            <th class="py-3 px-3 text-center">Estado</th>
+                            <th class="py-3 px-3 text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                         @forelse($cajasHistoricas as $cj)
+                            @php
+                                $difEf = $cj->diferenciaEfectivoCalculada();
+                                $difQr = $cj->diferenciaQrCalculada();
+                                $difTr = $cj->diferenciaTransferenciaCalculada();
+                            @endphp
                             <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white">
+                                <td class="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
                                     #{{ str_pad($cj->id, 5, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">
+                                <td class="py-3 px-3 font-bold text-slate-900 dark:text-white">
                                     {{ $cj->user->name ?? 'N/D' }}
                                     <div class="text-[10px] font-normal text-slate-400">
                                         {{ $cj->sucursal->nombre ?? 'Principal' }}
                                     </div>
                                 </td>
-                                <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
-                                    {{ $cj->fecha_apertura ? $cj->fecha_apertura->format('d/m/Y H:i') : '-' }}
+                                <td class="py-3 px-3 text-slate-600 dark:text-slate-400">
+                                    <div class="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                                        <i class="fas fa-door-open text-[10px] text-emerald-500"></i> {{ $cj->fecha_apertura ? $cj->fecha_apertura->format('d/m/Y H:i') : '-' }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">
+                                        <i class="fas fa-lock text-[9px] text-slate-400"></i> {{ $cj->fecha_cierre ? $cj->fecha_cierre->format('d/m/Y H:i') : 'En curso' }}
+                                    </div>
                                 </td>
-                                <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
-                                    {{ $cj->fecha_cierre ? $cj->fecha_cierre->format('d/m/Y H:i') : 'En curso' }}
-                                </td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-slate-700 dark:text-slate-300">
-                                    Bs. {{ number_format($cj->monto_apertura, 2) }}
-                                </td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                    Bs. {{ number_format($cj->totalIngresos(), 2) }}
-                                </td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-white">
+
+                                <!-- Desglose 1: Efectivo en Gaveta -->
+                                <td class="py-3 px-3 text-right">
                                     @if($cj->isCerrada())
-                                        Bs. {{ number_format($cj->monto_cierre_efectivo ?? 0, 2) }}
-                                        @if($cj->diferencia_efectivo != 0)
-                                            <div class="text-[10px] {{ $cj->diferencia_efectivo > 0 ? 'text-blue-500' : 'text-rose-500' }}">
-                                                {{ $cj->diferencia_efectivo > 0 ? '+' : '' }}Bs. {{ number_format($cj->diferencia_efectivo, 2) }}
-                                            </div>
+                                        <div class="font-mono font-bold text-slate-900 dark:text-white">
+                                            Bs. {{ number_format($cj->monto_cierre_efectivo ?? 0, 2) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            Esp: Bs. {{ number_format($cj->saldo_esperado_efectivo ?? $cj->saldoEsperadoEfectivo(), 2) }}
+                                        </div>
+                                        @if(round($difEf, 2) == 0)
+                                            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                                <i class="fas fa-check text-[9px]"></i> Cuadrado
+                                            </span>
+                                        @elseif($difEf > 0)
+                                            <span class="inline-block text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                                                +Bs. {{ number_format($difEf, 2) }} (Sob.)
+                                            </span>
+                                        @else
+                                            <span class="inline-block text-[10px] text-rose-600 dark:text-rose-400 font-bold">
+                                                -Bs. {{ number_format(abs($difEf), 2) }} (Falt.)
+                                            </span>
                                         @endif
                                     @else
-                                        <span class="text-amber-500 text-[11px]">En operación</span>
+                                        <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                            Bs. {{ number_format($cj->saldoEsperadoEfectivo(), 2) }}
+                                        </div>
+                                        <span class="text-[10px] text-amber-500 font-medium">Gaveta actual</span>
                                     @endif
                                 </td>
-                                <td class="py-3 px-4 text-center">
+
+                                <!-- Desglose 2: Código QR -->
+                                <td class="py-3 px-3 text-right">
+                                    @if($cj->isCerrada())
+                                        <div class="font-mono font-bold text-slate-900 dark:text-white">
+                                            Bs. {{ number_format($cj->monto_cierre_qr ?? 0, 2) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            Esp: Bs. {{ number_format($cj->saldo_esperado_qr ?? $cj->saldoEsperadoQr(), 2) }}
+                                        </div>
+                                        @if(round($difQr, 2) == 0)
+                                            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                                <i class="fas fa-check text-[9px]"></i> Cuadrado
+                                            </span>
+                                        @elseif($difQr > 0)
+                                            <span class="inline-block text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                                                +Bs. {{ number_format($difQr, 2) }} (Sob.)
+                                            </span>
+                                        @else
+                                            <span class="inline-block text-[10px] text-rose-600 dark:text-rose-400 font-bold">
+                                                -Bs. {{ number_format(abs($difQr), 2) }} (Falt.)
+                                            </span>
+                                        @endif
+                                    @else
+                                        <div class="font-mono font-bold text-blue-600 dark:text-blue-400">
+                                            Bs. {{ number_format($cj->totalIngresosQr(), 2) }}
+                                        </div>
+                                        <span class="text-[10px] text-amber-500 font-medium">En curso</span>
+                                    @endif
+                                </td>
+
+                                <!-- Desglose 3: Transferencias -->
+                                <td class="py-3 px-3 text-right">
+                                    @if($cj->isCerrada())
+                                        <div class="font-mono font-bold text-slate-900 dark:text-white">
+                                            Bs. {{ number_format($cj->monto_cierre_transferencia ?? 0, 2) }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">
+                                            Esp: Bs. {{ number_format($cj->saldo_esperado_transferencia ?? $cj->saldoEsperadoTransferencia(), 2) }}
+                                        </div>
+                                        @if(round($difTr, 2) == 0)
+                                            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                                <i class="fas fa-check text-[9px]"></i> Cuadrado
+                                            </span>
+                                        @elseif($difTr > 0)
+                                            <span class="inline-block text-[10px] text-blue-600 dark:text-blue-400 font-bold">
+                                                +Bs. {{ number_format($difTr, 2) }} (Sob.)
+                                            </span>
+                                        @else
+                                            <span class="inline-block text-[10px] text-rose-600 dark:text-rose-400 font-bold">
+                                                -Bs. {{ number_format(abs($difTr), 2) }} (Falt.)
+                                            </span>
+                                        @endif
+                                    @else
+                                        <div class="font-mono font-bold text-purple-600 dark:text-purple-400">
+                                            Bs. {{ number_format($cj->totalIngresosTransferencia(), 2) }}
+                                        </div>
+                                        <span class="text-[10px] text-amber-500 font-medium">En curso</span>
+                                    @endif
+                                </td>
+
+                                <!-- Total Ingresos Recaudados -->
+                                <td class="py-3 px-3 text-right">
+                                    <div class="font-mono font-bold text-slate-900 dark:text-white">
+                                        Bs. {{ number_format($cj->totalIngresos(), 2) }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400">
+                                        Fondo: Bs. {{ number_format($cj->monto_apertura, 2) }}
+                                    </div>
+                                </td>
+
+                                <td class="py-3 px-3 text-center">
                                     @if($cj->isAbierta())
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Abierta
@@ -588,7 +678,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="py-3 px-4 text-right">
+                                <td class="py-3 px-3 text-right">
                                     @if($cj->isCerrada())
                                         <a 
                                             href="{{ route('caja.pdf.arqueo', $cj->id) }}" 
@@ -793,7 +883,7 @@
                                 class="w-full text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 py-2.5 px-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                             >
                                 <option value="Efectivo">Efectivo</option>
-                                <option value="QR">Código QR</option>
+                                <option value="QR">QR</option>
                                 <option value="Transferencia">Transferencia Bancaria</option>
                             </select>
                             @error('mov_tipo_pago')
@@ -908,39 +998,88 @@
 
                 <form wire:submit="ejecutarCierreCaja" class="p-6 space-y-5">
                     <!-- Resumen del Sistema (Calculado) -->
-                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                            Valores Calculados por el Sistema
-                        </span>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <span class="text-[10px] text-slate-400 block font-semibold">Fondo Apertura</span>
-                                <div class="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
-                                    Bs. {{ number_format($cajaActiva->monto_apertura, 2) }}
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <i class="fas fa-calculator me-1 text-emerald-500"></i> Saldos Calculados por el Sistema
+                            </span>
+                            <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
+                                Total Esperado: <strong class="text-slate-900 dark:text-white">Bs. {{ number_format($cajaActiva->saldoEsperadoTotal(), 2) }}</strong>
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                            <!-- Canal 1: Efectivo -->
+                            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                                <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                                    <i class="fas fa-money-bill-wave"></i> Efectivo Gaveta
+                                </div>
+                                <div class="text-[10px] text-slate-500 flex justify-between px-1">
+                                    <span>Fondo: {{ number_format($cajaActiva->monto_apertura, 2) }}</span>
+                                    <span>Ing: +{{ number_format($cajaActiva->totalIngresosEfectivo(), 2) }}</span>
+                                </div>
+                                <div class="text-[10px] text-rose-500 flex justify-between px-1">
+                                    <span>Salidas:</span>
+                                    <span>-{{ number_format($cajaActiva->totalEgresosEfectivo(), 2) }}</span>
+                                </div>
+                                <div class="pt-1 border-t border-slate-100 dark:border-slate-700 font-mono font-black text-xs text-emerald-700 dark:text-emerald-400">
+                                    Esperado: Bs. {{ number_format($cajaActiva->saldoEsperadoEfectivo(), 2) }}
                                 </div>
                             </div>
-                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <span class="text-[10px] text-slate-400 block font-semibold">(+) Ingresos Ef.</span>
-                                <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                                    Bs. {{ number_format($cajaActiva->totalIngresosEfectivo(), 2) }}
+
+                            <!-- Canal 2: Código QR -->
+                            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                                <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-blue-700 dark:text-blue-400">
+                                    <i class="fas fa-qrcode"></i> Cobros QR
+                                </div>
+                                <div class="text-[10px] text-slate-500 flex justify-between px-1">
+                                    <span>Ingresos QR:</span>
+                                    <span>+{{ number_format($cajaActiva->totalIngresosQr(), 2) }}</span>
+                                </div>
+                                @if($cajaActiva->totalEgresosQr() > 0)
+                                    <div class="text-[10px] text-rose-500 flex justify-between px-1">
+                                        <span>Salidas QR:</span>
+                                        <span>-{{ number_format($cajaActiva->totalEgresosQr(), 2) }}</span>
+                                    </div>
+                                @else
+                                    <div class="text-[10px] text-slate-400 flex justify-between px-1">
+                                        <span>Salidas QR:</span>
+                                        <span>Bs. 0.00</span>
+                                    </div>
+                                @endif
+                                <div class="pt-1 border-t border-slate-100 dark:border-slate-700 font-mono font-black text-xs text-blue-700 dark:text-blue-400">
+                                    Esperado: Bs. {{ number_format($cajaActiva->saldoEsperadoQr(), 2) }}
                                 </div>
                             </div>
-                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                <span class="text-[10px] text-slate-400 block font-semibold">(-) Salidas Ef.</span>
-                                <div class="font-mono font-bold text-xs text-rose-600 dark:text-rose-400">
-                                    Bs. {{ number_format($cajaActiva->totalEgresosEfectivo(), 2) }}
+
+                            <!-- Canal 3: Transferencias -->
+                            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                                <div class="flex items-center justify-center gap-1.5 text-[11px] font-bold text-purple-700 dark:text-purple-400">
+                                    <i class="fas fa-university"></i> Transferencias
                                 </div>
-                            </div>
-                            <div class="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                                <span class="text-[10px] text-emerald-700 dark:text-emerald-300 block font-bold">Esperado en Gaveta</span>
-                                <div class="font-mono font-black text-xs text-emerald-700 dark:text-emerald-400">
-                                    Bs. {{ number_format($cajaActiva->saldoEsperadoEfectivo(), 2) }}
+                                <div class="text-[10px] text-slate-500 flex justify-between px-1">
+                                    <span>Ingresos Transf:</span>
+                                    <span>+{{ number_format($cajaActiva->totalIngresosTransferencia(), 2) }}</span>
+                                </div>
+                                @if($cajaActiva->totalEgresosTransferencia() > 0)
+                                    <div class="text-[10px] text-rose-500 flex justify-between px-1">
+                                        <span>Salidas Transf:</span>
+                                        <span>-{{ number_format($cajaActiva->totalEgresosTransferencia(), 2) }}</span>
+                                    </div>
+                                @else
+                                    <div class="text-[10px] text-slate-400 flex justify-between px-1">
+                                        <span>Salidas Transf:</span>
+                                        <span>Bs. 0.00</span>
+                                    </div>
+                                @endif
+                                <div class="pt-1 border-t border-slate-100 dark:border-slate-700 font-mono font-black text-xs text-purple-700 dark:text-purple-400">
+                                    Esperado: Bs. {{ number_format($cajaActiva->saldoEsperadoTransferencia(), 2) }}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Declaración de Montos Físicos -->
+                    <!-- Declaración de Montos Físicos y Electrónicos -->
                     <div class="space-y-3">
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                             Conteo y Declaración de Fondos del Cajero
@@ -949,7 +1088,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                                    Efectivo Contado (Físico) <span class="text-rose-500">*</span>
+                                    Efectivo Contado (Gaveta) <span class="text-rose-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center font-bold text-slate-400 text-xs">Bs.</span>
@@ -968,7 +1107,7 @@
 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                                    Total QR Declarado <span class="text-rose-500">*</span>
+                                    Total QR Verificado <span class="text-rose-500">*</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center font-bold text-slate-400 text-xs">Bs.</span>
@@ -976,7 +1115,7 @@
                                         type="number" 
                                         step="0.01" 
                                         min="0" 
-                                        wire:model="cierre_qr" 
+                                        wire:model.live="cierre_qr" 
                                         class="w-full text-xs font-mono font-bold rounded-xl pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                                     >
                                 </div>
@@ -995,7 +1134,7 @@
                                         type="number" 
                                         step="0.01" 
                                         min="0" 
-                                        wire:model="cierre_transferencia" 
+                                        wire:model.live="cierre_transferencia" 
                                         class="w-full text-xs font-mono font-bold rounded-xl pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                                     >
                                 </div>
@@ -1005,24 +1144,82 @@
                             </div>
                         </div>
 
-                        <!-- Comparador en Vivo de Diferencia de Efectivo -->
+                        <!-- Comparadores en Vivo de Diferencia: Efectivo, QR y Transferencias -->
                         @php
                             $efDeclarado = (float) $cierre_efectivo;
                             $efEsperado = $cajaActiva->saldoEsperadoEfectivo();
-                            $diferenciaEnVivo = $efDeclarado - $efEsperado;
+                            $difEf = $efDeclarado - $efEsperado;
+
+                            $qrDeclarado = (float) $cierre_qr;
+                            $qrEsperado = $cajaActiva->saldoEsperadoQr();
+                            $difQr = $qrDeclarado - $qrEsperado;
+
+                            $trDeclarado = (float) $cierre_transferencia;
+                            $trEsperado = $cajaActiva->saldoEsperadoTransferencia();
+                            $difTr = $trDeclarado - $trEsperado;
+
+                            $totalDeclarado = $efDeclarado + $qrDeclarado + $trDeclarado;
+                            $totalEsperado = $efEsperado + $qrEsperado + $trEsperado;
+                            $difTotal = $totalDeclarado - $totalEsperado;
                         @endphp
-                        <div class="p-3 rounded-xl border {{ round($diferenciaEnVivo, 2) == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300' : ($diferenciaEnVivo > 0 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-800 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 text-rose-800 dark:text-rose-300') }} flex items-center justify-between text-xs font-bold">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                            <!-- Diferencia Efectivo -->
+                            <div class="p-2.5 rounded-xl border {{ round($difEf, 2) == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300' : ($difEf > 0 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-800 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 text-rose-800 dark:text-rose-300') }}">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Dif. Efectivo</div>
+                                <div class="font-mono font-bold text-xs mt-0.5">
+                                    @if(round($difEf, 2) == 0)
+                                        <span class="text-emerald-600 dark:text-emerald-400"><i class="fas fa-check-circle"></i> Cuadrado (0.00)</span>
+                                    @elseif($difEf > 0)
+                                        <span class="text-blue-600 dark:text-blue-400">+Bs. {{ number_format($difEf, 2) }} (Sobrante)</span>
+                                    @else
+                                        <span class="text-rose-600 dark:text-rose-400">-Bs. {{ number_format(abs($difEf), 2) }} (Faltante)</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Diferencia QR -->
+                            <div class="p-2.5 rounded-xl border {{ round($difQr, 2) == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300' : ($difQr > 0 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-800 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 text-rose-800 dark:text-rose-300') }}">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Dif. Código QR</div>
+                                <div class="font-mono font-bold text-xs mt-0.5">
+                                    @if(round($difQr, 2) == 0)
+                                        <span class="text-emerald-600 dark:text-emerald-400"><i class="fas fa-check-circle"></i> Cuadrado (0.00)</span>
+                                    @elseif($difQr > 0)
+                                        <span class="text-blue-600 dark:text-blue-400">+Bs. {{ number_format($difQr, 2) }} (Sobrante)</span>
+                                    @else
+                                        <span class="text-rose-600 dark:text-rose-400">-Bs. {{ number_format(abs($difQr), 2) }} (Faltante)</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Diferencia Transferencia -->
+                            <div class="p-2.5 rounded-xl border {{ round($difTr, 2) == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300' : ($difTr > 0 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-800 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 text-rose-800 dark:text-rose-300') }}">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Dif. Transferencias</div>
+                                <div class="font-mono font-bold text-xs mt-0.5">
+                                    @if(round($difTr, 2) == 0)
+                                        <span class="text-emerald-600 dark:text-emerald-400"><i class="fas fa-check-circle"></i> Cuadrado (0.00)</span>
+                                    @elseif($difTr > 0)
+                                        <span class="text-blue-600 dark:text-blue-400">+Bs. {{ number_format($difTr, 2) }} (Sobrante)</span>
+                                    @else
+                                        <span class="text-rose-600 dark:text-rose-400">-Bs. {{ number_format(abs($difTr), 2) }} (Faltante)</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Balance Consolidado General -->
+                        <div class="p-3 rounded-xl border {{ round($difTotal, 2) == 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300' : ($difTotal > 0 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 text-blue-800 dark:text-blue-300' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 text-rose-800 dark:text-rose-300') }} flex items-center justify-between text-xs font-bold">
                             <span class="flex items-center gap-1.5">
-                                <i class="fas {{ round($diferenciaEnVivo, 2) == 0 ? 'fa-check-circle' : 'fa-exclamation-triangle' }}"></i>
-                                Diferencia en Efectivo:
+                                <i class="fas {{ round($difTotal, 2) == 0 ? 'fa-check-double' : 'fa-balance-scale' }}"></i>
+                                Balance General del Arqueo (Total):
                             </span>
                             <span class="font-mono text-sm">
-                                @if(round($diferenciaEnVivo, 2) == 0)
+                                @if(round($difTotal, 2) == 0)
                                     Bs. 0.00 (Cuadrada)
-                                @elseif($diferenciaEnVivo > 0)
-                                    + Bs. {{ number_format($diferenciaEnVivo, 2) }} (Sobrante)
+                                @elseif($difTotal > 0)
+                                    + Bs. {{ number_format($difTotal, 2) }} (Sobrante Neto)
                                 @else
-                                    - Bs. {{ number_format(abs($diferenciaEnVivo), 2) }} (Faltante)
+                                    - Bs. {{ number_format(abs($difTotal), 2) }} (Faltante Neto)
                                 @endif
                             </span>
                         </div>
@@ -1152,8 +1349,8 @@
                                                 class="w-full text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 py-2 px-3 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                                             >
                                                 <option value="Efectivo">Efectivo</option>
-                                                <option value="QR">Código QR</option>
-                                                <option value="Transferencia">Transferencia Bancaria</option>
+                                                <option value="QR">QR</option>
+                                                <option value="Transferencia">Transferencia</option>
                                             </select>
                                             @error("lineasPago.{$index}.tipo_pago")
                                                 <span class="text-[10px] text-rose-500 block mt-0.5">{{ $message }}</span>

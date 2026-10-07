@@ -30,8 +30,14 @@ return new class extends Migration
             $table->decimal('total_ingresos_qr', 10, 2)->default(0.00);
             $table->decimal('total_ingresos_transferencia', 10, 2)->default(0.00);
             $table->decimal('total_egresos_efectivo', 10, 2)->default(0.00);
+            $table->decimal('total_egresos_qr', 10, 2)->default(0.00);
+            $table->decimal('total_egresos_transferencia', 10, 2)->default(0.00);
             $table->decimal('saldo_esperado_efectivo', 10, 2)->default(0.00);
+            $table->decimal('saldo_esperado_qr', 10, 2)->default(0.00);
+            $table->decimal('saldo_esperado_transferencia', 10, 2)->default(0.00);
             $table->decimal('diferencia_efectivo', 10, 2)->default(0.00);
+            $table->decimal('diferencia_qr', 10, 2)->default(0.00);
+            $table->decimal('diferencia_transferencia', 10, 2)->default(0.00);
 
             $table->text('observaciones_apertura')->nullable();
             $table->text('observaciones_cierre')->nullable();

@@ -383,12 +383,93 @@ test('puede realizar el cierre de caja y arqueo calculando diferencias y emitien
         ->and($this->caja->fecha_cierre)->not->toBeNull()
         ->and((float) $this->caja->monto_cierre_efectivo)->toBe(150.00)
         ->and((float) $this->caja->monto_cierre_qr)->toBe(80.00)
-        ->and((float) $this->caja->diferencia_efectivo)->toBe(0.00);
+        ->and((float) $this->caja->diferencia_efectivo)->toBe(0.00)
+        ->and((float) $this->caja->diferencia_qr)->toBe(0.00)
+        ->and((float) $this->caja->diferencia_transferencia)->toBe(0.00);
 
     // Comprobar la generación del Acta de Arqueo en PDF
     $response = $this->get(route('caja.pdf.arqueo', $this->caja->id));
     $response->assertOk();
     $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('cierre de caja calcula discrepancias separadas en efectivo qr y transferencia y las muestra en la pestana de turnos y acta pdf', function () {
+    $this->actingAs($this->cajero);
+
+    // Fondo apertura = 100
+    // Ingreso efectivo = 200 -> Esperado efectivo = 300
+    Pago::create([
+        'caja_id' => $this->caja->id,
+        'tipo_movimiento' => 'Ingreso Extra',
+        'categoria' => 'Extra',
+        'tipo_pago' => 'Efectivo',
+        'concepto' => 'Cobro en efectivo',
+        'monto' => 200.00,
+        'user_id' => $this->cajero->id,
+    ]);
+
+    // Ingreso QR = 150 -> Esperado QR = 150
+    Pago::create([
+        'caja_id' => $this->caja->id,
+        'tipo_movimiento' => 'Ingreso Extra',
+        'categoria' => 'Extra',
+        'tipo_pago' => 'QR',
+        'concepto' => 'Cobro QR paciente',
+        'monto' => 150.00,
+        'numero_referencia' => 'QR-999',
+        'user_id' => $this->cajero->id,
+    ]);
+
+    // Ingreso Transferencia = 500 -> Esperado Transferencia = 500
+    Pago::create([
+        'caja_id' => $this->caja->id,
+        'tipo_movimiento' => 'Ingreso Extra',
+        'categoria' => 'Extra',
+        'tipo_pago' => 'Transferencia',
+        'concepto' => 'Transferencia banco',
+        'monto' => 500.00,
+        'numero_referencia' => 'TR-888',
+        'user_id' => $this->cajero->id,
+    ]);
+
+    // Verificar que en el modal se visualicen los valores esperados
+    $component = Livewire::test(CajaIndex::class)
+        ->call('abrirModalCierre')
+        ->assertSet('modalCierreOpen', true)
+        ->assertSet('cierre_efectivo', '300.00')
+        ->assertSet('cierre_qr', '150.00')
+        ->assertSet('cierre_transferencia', '500.00')
+        // El cajero declara:
+        // Efectivo: 310 (+10 sobrante)
+        // QR: 130 (-20 faltante)
+        // Transferencia: 500 (0 cuadrado)
+        ->set('cierre_efectivo', '310.00')
+        ->set('cierre_qr', '130.00')
+        ->set('cierre_transferencia', '500.00')
+        ->assertSee('+Bs. 10.00 (Sobrante)')
+        ->assertSee('-Bs. 20.00 (Faltante)')
+        ->assertSee('Cuadrado (0.00)')
+        ->call('ejecutarCierreCaja')
+        ->assertSet('modalCierreOpen', false);
+
+    $this->caja->refresh();
+    expect($this->caja->estado)->toBe('Cerrada')
+        ->and((float) $this->caja->diferencia_efectivo)->toBe(10.00)
+        ->and((float) $this->caja->diferencia_qr)->toBe(-20.00)
+        ->and((float) $this->caja->diferencia_transferencia)->toBe(0.00);
+
+    // En la pestaña de turnos/arqueo, verificar que se desglosan las 3 columnas
+    $component->call('cambiarTab', 'arqueo')
+        ->assertSee('Efectivo (Gaveta)')
+        ->assertSee('Código QR')
+        ->assertSee('Transferencias')
+        ->assertSee('+Bs. 10.00 (Sob.)')
+        ->assertSee('-Bs. 20.00 (Falt.)')
+        ->assertSee('Cuadrado');
+
+    // Verificar en el PDF
+    $response = $this->get(route('caja.pdf.arqueo', $this->caja->id));
+    $response->assertOk();
 });
 
 test('puede generar y descargar el pdf de detalle de proforma con los servicios correctos', function () {
