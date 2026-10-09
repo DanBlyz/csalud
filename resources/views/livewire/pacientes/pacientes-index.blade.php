@@ -14,6 +14,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            @permiso('pacientes.crear')
             <button 
                 wire:click="abrirModalCrear" 
                 wire:loading.attr="disabled"
@@ -23,6 +24,7 @@
                 <i class="fas fa-user-plus"></i>
                 <span>Nuevo Paciente</span>
             </button>
+            @endpermiso
         </div>
     </div>
 
@@ -236,6 +238,7 @@
                                     </button>
 
                                     <!-- Editar -->
+                                    @permiso('pacientes.editar')
                                     <button 
                                         wire:click="abrirModalEditar({{ $paciente->id }})" 
                                         type="button" 
@@ -244,8 +247,10 @@
                                     >
                                         <i class="fas fa-user-edit text-sm"></i>
                                     </button>
+                                    @endpermiso
 
                                     <!-- Eliminar -->
+                                    @permiso('pacientes.eliminar')
                                     <button 
                                         type="button" 
                                         @click="$dispatch('swal:confirm', {
@@ -264,6 +269,7 @@
                                     >
                                         <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>
@@ -278,6 +284,7 @@
                                     <p class="text-xs text-slate-400 max-w-sm mt-1">
                                         No hay pacientes registrados que coincidan con el criterio de búsqueda.
                                     </p>
+                                    @permiso('pacientes.crear')
                                     <button 
                                         wire:click="abrirModalCrear" 
                                         wire:loading.attr="disabled"
@@ -286,6 +293,7 @@
                                     >
                                         <i class="fas fa-plus me-1"></i> Registrar Primer Paciente
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

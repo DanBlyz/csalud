@@ -44,7 +44,7 @@ class ProveedoresIndex extends Component
     protected function rules(): array
     {
         return [
-            'razon_social' => 'required|string|min:3|max:191|unique:proveedores,razon_social,'.$this->proveedorId.',id,deleted_at,NULL',
+            'razon_social' => 'required|string|min:3|max:191|unique:proveedores,razon_social,' . $this->proveedorId . ',id,deleted_at,NULL',
             'nit_ruc' => 'nullable|string|max:50',
             'contacto_nombre' => 'nullable|string|max:150',
             'telefono' => 'nullable|string|max:30',
@@ -73,6 +73,16 @@ class ProveedoresIndex extends Component
 
     public function abrirModal(?int $id = null): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar proveedores farmacéuticos.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->proveedorId = $id;
 
@@ -107,6 +117,16 @@ class ProveedoresIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar proveedores farmacéuticos.',
+            ]);
+
+            return;
+        }
+
         $this->validate();
 
         $data = [
@@ -154,6 +174,16 @@ class ProveedoresIndex extends Component
 
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar proveedores farmacéuticos.',
+            ]);
+
+            return;
+        }
+
         $proveedor = Proveedor::withCount('lotes')->findOrFail($id);
 
         if ($proveedor->lotes_count > 0) {

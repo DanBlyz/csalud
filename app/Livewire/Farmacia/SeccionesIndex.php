@@ -71,6 +71,16 @@ class SeccionesIndex extends Component
 
     public function abrirModal(?int $id = null): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.secciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar secciones y áreas hospitalarias.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->seccionId = $id;
 
@@ -101,12 +111,22 @@ class SeccionesIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.secciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar secciones y áreas hospitalarias.',
+            ]);
+
+            return;
+        }
+
         $this->validate();
 
         // Si se marca como almacén principal, desmarcar otros en la misma sucursal
         if ($this->es_almacen_principal) {
             Seccion::where('sucursal_id', $this->sucursal_id)
-                ->when($this->seccionId, fn ($q) => $q->where('id', '!=', $this->seccionId))
+                ->when($this->seccionId, fn($q) => $q->where('id', '!=', $this->seccionId))
                 ->update(['es_almacen_principal' => false]);
         }
 
@@ -144,6 +164,16 @@ class SeccionesIndex extends Component
 
     public function toggleActivo(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.secciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar secciones y áreas hospitalarias.',
+            ]);
+
+            return;
+        }
+
         $seccion = Seccion::findOrFail($id);
 
         if ($seccion->es_almacen_principal && $seccion->activo) {
@@ -162,12 +192,22 @@ class SeccionesIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Actualizado',
-            'text' => "El área {$seccion->nombre} ahora se encuentra ".($seccion->activo ? 'Activa' : 'Inactiva').'.',
+            'text' => "El área {$seccion->nombre} ahora se encuentra " . ($seccion->activo ? 'Activa' : 'Inactiva') . '.',
         ]);
     }
 
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.secciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar secciones y áreas hospitalarias.',
+            ]);
+
+            return;
+        }
+
         $seccion = Seccion::with('loteSecciones')->findOrFail($id);
 
         if ($seccion->es_almacen_principal) {
@@ -211,7 +251,7 @@ class SeccionesIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $term = '%'.trim($this->search).'%';
+            $term = '%' . trim($this->search) . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('nombre', 'like', $term)
                     ->orWhere('descripcion', 'like', $term);

@@ -33,6 +33,7 @@ beforeEach(function () {
         'sucursal_id' => $this->sucursal->id,
         'activo' => true,
     ]);
+    $this->actingAs($this->admin);
 });
 
 test('puede acceder al listado de pacientes y renderizar correctamente', function () {

@@ -14,6 +14,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            @permiso('crear-proforma')
             <a 
                 href="{{ route('proformas.crear') }}" 
                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer"
@@ -21,6 +22,7 @@
                 <i class="fas fa-plus-circle"></i>
                 <span>Nueva Admisión / Proforma</span>
             </a>
+            @endpermiso
         </div>
     </div>
 
@@ -89,7 +91,7 @@
                     </div>
 
                     <!-- Filtro Sucursal (si aplica) -->
-                    @if (auth()->user()->rol?->nombre === 'Admin')
+                    @if (Auth::user()->rol?->nombre === 'Admin')
                         <div class="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block"></div>
                         <div class="flex items-center gap-2">
                             <label for="filtroSuc" class="text-xs font-medium text-slate-600 dark:text-slate-400">Sucursal:</label>
@@ -296,6 +298,7 @@
                                     </a>
 
                                     <!-- Imprimir Detalle Clínico PDF -->
+                                    @permiso('proformas.imprimir')
                                     <a 
                                         href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
                                         target="_blank"
@@ -314,8 +317,10 @@
                                     >
                                         <i class="fas fa-file-invoice-dollar text-xs"></i>
                                     </a>
+                                    @endpermiso
 
                                     @if ($proforma->estado === 'En Curso')
+                                        @permiso('proformas.anular')
                                         <!-- Anular -->
                                         <button 
                                             type="button" 
@@ -355,6 +360,7 @@
                                         >
                                             <i class="fas fa-trash-alt text-xs"></i>
                                         </button>
+                                        @endpermiso
                                     @endif
                                 </div>
                             </td>

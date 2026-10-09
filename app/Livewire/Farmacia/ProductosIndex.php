@@ -107,6 +107,17 @@ class ProductosIndex extends Component
 
     public function abrirModalProducto(?int $id = null): void
     {
+        $permiso = $id ? 'farmacia.productos.editar' : 'farmacia.productos.crear';
+        if (! Auth::user()?->tienePermiso($permiso)) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'message' => 'No tiene permiso para ' . ($id ? 'editar' : 'crear') . ' medicamentos o insumos.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->productoId = $id;
 
@@ -138,6 +149,17 @@ class ProductosIndex extends Component
 
     public function guardarProducto(): void
     {
+        $permiso = $this->productoId ? 'farmacia.productos.editar' : 'farmacia.productos.crear';
+        if (! Auth::user()?->tienePermiso($permiso)) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'message' => 'No tiene permiso para ' . ($this->productoId ? 'editar' : 'crear') . ' medicamentos o insumos.',
+            ]);
+
+            return;
+        }
+
         $this->validate();
 
         if ($this->productoId) {
@@ -188,6 +210,16 @@ class ProductosIndex extends Component
 
     public function eliminarProducto(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.productos.eliminar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'message' => 'No tiene permiso para eliminar medicamentos o insumos.',
+            ]);
+
+            return;
+        }
+
         $producto = Producto::with('lotes')->findOrFail($id);
 
         $stockDisponible = (int) $producto->lotes->where('cantidad_actual', '>', 0)->sum('cantidad_actual');
@@ -231,7 +263,7 @@ class ProductosIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $search = '%'.trim($this->search).'%';
+            $search = '%' . trim($this->search) . '%';
             $query->where(function (Builder $q) use ($search) {
                 $q->where('nombre', 'like', $search)
                     ->orWhere('descripcion', 'like', $search)
@@ -276,9 +308,9 @@ class ProductosIndex extends Component
             ->get(['id', 'stock_minimo']);
 
         $totalProductos = $productosTotales->count();
-        $totalStockNormal = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > $p->stock_minimo)->count();
-        $totalStockCritico = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > 0 && ($p->stock_total ?? 0) <= $p->stock_minimo)->count();
-        $totalStockAgotado = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) <= 0)->count();
+        $totalStockNormal = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) > $p->stock_minimo)->count();
+        $totalStockCritico = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) > 0 && ($p->stock_total ?? 0) <= $p->stock_minimo)->count();
+        $totalStockAgotado = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) <= 0)->count();
 
         $marcas = Marca::orderBy('nombre')->get();
         $secciones = Seccion::where('activo', true)->orderBy('es_almacen_principal', 'desc')->orderBy('nombre')->get();

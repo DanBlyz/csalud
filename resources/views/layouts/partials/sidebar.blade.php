@@ -52,180 +52,224 @@
         >
             <i class="fas fa-tachometer-alt w-5 text-sm {{ request()->routeIs('dashboard') ? 'text-white' : 'text-blue-400' }}"></i>
             <span class="ms-2">Dashboard</span>
-        </a>
+        </a>        <!-- Section: ATENCIÓN CLÍNICA -->
+        @anypermiso([5, 6, 7, 'pacientes.ver', 'pacientes.instituciones.ver', 'proformas.ver', 'proformas.crear'])
+            <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Atención Clínica
+            </div>
 
-        <!-- Section: ATENCIÓN CLÍNICA -->
-        <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Atención Clínica
-        </div>
+            <!-- Instituciones y Convenios -->
+            @anypermiso([5, 'pacientes.instituciones.ver', 'pacientes.instituciones.crear'])
+                <a 
+                    href="{{ route('pacientes.instituciones') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.instituciones*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-hospital-alt w-5 text-sm {{ request()->routeIs('pacientes.instituciones*') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Instituciones / Seguros</span>
+                </a>
+            @endanypermiso
 
-        <!-- Instituciones y Convenios -->
-        <a 
-            href="{{ route('pacientes.instituciones') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.instituciones*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-hospital-alt w-5 text-sm {{ request()->routeIs('pacientes.instituciones*') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Instituciones / Seguros</span>
-        </a>
+            <!-- Pacientes -->
+            @anypermiso([5, 'pacientes.ver', 'pacientes.crear'])
+                <a 
+                    href="{{ route('pacientes.index') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.index') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-user-injured w-5 text-sm {{ request()->routeIs('pacientes.index') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Pacientes</span>
+                </a>
+            @endanypermiso
 
-        <!-- Pacientes -->
-        <a 
-            href="{{ route('pacientes.index') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('pacientes.index') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-user-injured w-5 text-sm {{ request()->routeIs('pacientes.index') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Pacientes</span>
-        </a>
+            <!-- Proformas / Admisión -->
+            @anypermiso([7, 'proformas.ver'])
+                <a 
+                    href="{{ route('proformas.index') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-file-invoice-dollar w-5 text-sm {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'text-white' : 'text-blue-400' }}"></i>
+                    <span class="ms-2">Proformas Clínicas</span>
+                </a>
+            @endanypermiso
 
-        <!-- Proformas / Admisión -->
-        <a 
-            href="{{ route('proformas.index') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-file-invoice-dollar w-5 text-sm {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'text-white' : 'text-blue-400' }}"></i>
-            <span class="ms-2">Proformas Clínicas</span>
-        </a>
-
-        <!-- Nueva Proforma (Admisión) -->
-        <a 
-            href="{{ route('proformas.crear') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.crear') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-plus-circle w-5 text-sm {{ request()->routeIs('proformas.crear') ? 'text-white' : 'text-indigo-400' }}"></i>
-            <span class="ms-2">Nueva Admisión</span>
-        </a>
+            <!-- Nueva Proforma (Admisión) -->
+            @anypermiso([6, 'proformas.crear'])
+                <a 
+                    href="{{ route('proformas.crear') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('proformas.crear') ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-plus-circle w-5 text-sm {{ request()->routeIs('proformas.crear') ? 'text-white' : 'text-indigo-400' }}"></i>
+                    <span class="ms-2">Nueva Admisión</span>
+                </a>
+            @endanypermiso
+        @endanypermiso
 
         <!-- Section: FARMACIA E INVENTARIO -->
-        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Farmacia e Inventario
-        </div>
+        @anypermiso([7, 9, 'farmacia.despacho.gestionar', 'farmacia.medicamentos.ver', 'farmacia.lotes.ver', 'farmacia.secciones.ver', 'farmacia.marcas.ver', 'farmacia.proveedores.ver', 'farmacia.kardex.ver'])
+            <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Farmacia e Inventario
+            </div>
 
-        <!-- Despacho de Recetas -->
-        <a 
-            href="{{ route('farmacia.despachos') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.despachos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-hand-holding-medical w-5 text-sm {{ request()->routeIs('farmacia.despachos') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Despacho de Recetas</span>
-        </a>
+            <!-- Despacho de Recetas -->
+            @anypermiso([7, 9, 'farmacia.despacho.gestionar', 'despachar-farmacia'])
+                <a 
+                    href="{{ route('farmacia.despachos') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.despachos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-hand-holding-medical w-5 text-sm {{ request()->routeIs('farmacia.despachos') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Despacho de Recetas</span>
+                </a>
+            @endanypermiso
 
-        <!-- Catálogo de Medicamentos e Insumos -->
-        <a 
-            href="{{ route('farmacia.productos') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.productos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-pills w-5 text-sm {{ request()->routeIs('farmacia.productos') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Catálogo de Fármacos</span>
-        </a>
+            <!-- Catálogo de Medicamentos e Insumos -->
+            @anypermiso([9, 'farmacia.medicamentos.ver'])
+                <a 
+                    href="{{ route('farmacia.productos') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.productos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-pills w-5 text-sm {{ request()->routeIs('farmacia.productos') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Catálogo de Fármacos</span>
+                </a>
+            @endanypermiso
 
-        <!-- Control de Lotes y Abastecimiento -->
-        <a 
-            href="{{ route('farmacia.lotes') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.lotes') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-boxes w-5 text-sm {{ request()->routeIs('farmacia.lotes') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Lotes y Stock</span>
-        </a>
+            <!-- Control de Lotes y Abastecimiento -->
+            @anypermiso([9, 'farmacia.lotes.ver'])
+                <a 
+                    href="{{ route('farmacia.lotes') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.lotes') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-boxes w-5 text-sm {{ request()->routeIs('farmacia.lotes') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Lotes y Stock</span>
+                </a>
+            @endanypermiso
 
-        <!-- Secciones y Áreas Hospitalarias -->
-        <a 
-            href="{{ route('farmacia.secciones') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.secciones') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-layer-group w-5 text-sm {{ request()->routeIs('farmacia.secciones') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Secciones y Áreas</span>
-        </a>
+            <!-- Secciones y Áreas Hospitalarias -->
+            @anypermiso([9, 'farmacia.secciones.ver'])
+                <a 
+                    href="{{ route('farmacia.secciones') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.secciones') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-layer-group w-5 text-sm {{ request()->routeIs('farmacia.secciones') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Secciones y Áreas</span>
+                </a>
+            @endanypermiso
 
-        <!-- Marcas y Laboratorios -->
-        <a 
-            href="{{ route('farmacia.marcas') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.marcas') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-trademark w-5 text-sm {{ request()->routeIs('farmacia.marcas') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Marcas y Laboratorios</span>
-        </a>
+            <!-- Marcas y Laboratorios -->
+            @anypermiso([9, 'farmacia.marcas.ver'])
+                <a 
+                    href="{{ route('farmacia.marcas') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.marcas') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-trademark w-5 text-sm {{ request()->routeIs('farmacia.marcas') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Marcas y Laboratorios</span>
+                </a>
+            @endanypermiso
 
-        <!-- Proveedores y Droguerías -->
-        <a 
-            href="{{ route('farmacia.proveedores') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.proveedores') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-truck w-5 text-sm {{ request()->routeIs('farmacia.proveedores') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Proveedores y Droguerías</span>
-        </a>
+            <!-- Proveedores y Droguerías -->
+            @anypermiso([9, 'farmacia.proveedores.ver'])
+                <a 
+                    href="{{ route('farmacia.proveedores') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.proveedores') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-truck w-5 text-sm {{ request()->routeIs('farmacia.proveedores') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Proveedores y Droguerías</span>
+                </a>
+            @endanypermiso
 
-        <!-- Kardex y Movimientos -->
-        <a 
-            href="{{ route('farmacia.movimientos') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.movimientos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-clipboard-list w-5 text-sm {{ request()->routeIs('farmacia.movimientos') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Kardex de Movimientos</span>
-        </a>
+            <!-- Kardex de Movimientos -->
+            @anypermiso([9, 'farmacia.kardex.ver'])
+                <a 
+                    href="{{ route('farmacia.movimientos') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.movimientos') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-clipboard-list w-5 text-sm {{ request()->routeIs('farmacia.movimientos') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Kardex de Movimientos</span>
+                </a>
+            @endanypermiso
+        @endanypermiso
 
         <!-- Section: CAJA Y FACTURACIÓN -->
-        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Cobros y Recibos
-        </div>
+        @anypermiso([8, 10, 'caja.sesiones.abrir', 'caja.recibos.crear', 'caja.cierres.ver', 'cobro-caja'])
+            <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Cobros y Recibos
+            </div>
 
-        <!-- Caja y Pagos -->
-        <a 
-            href="{{ route('caja.index') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('caja.index') ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-cash-register w-5 text-sm {{ request()->routeIs('caja.index') ? 'text-white' : 'text-emerald-400' }}"></i>
-            <span class="ms-2">Cobros y Liquidaciones</span>
-        </a>
+            <!-- Caja y Pagos -->
+            @anypermiso([8, 10, 'caja.sesiones.abrir', 'caja.recibos.crear', 'cobro-caja'])
+                <a 
+                    href="{{ route('caja.index') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('caja.index') ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-cash-register w-5 text-sm {{ request()->routeIs('caja.index') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span class="ms-2">Cobros y Liquidaciones</span>
+                </a>
+            @endanypermiso
 
-        <!-- Cierres Mensuales y Utilidades -->
-        <a 
-            href="{{ route('caja.cierres') }}" 
-            class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('caja.cierres') ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
-        >
-            <i class="fas fa-chart-pie w-5 text-sm {{ request()->routeIs('caja.cierres') ? 'text-white' : 'text-emerald-400' }}"></i>
-            <span class="ms-2">Cierres y Utilidades</span>
-        </a>
+            <!-- Cierres Mensuales y Utilidades -->
+            @anypermiso([10, 'caja.cierres.ver', 'caja.cierres.gestionar'])
+                <a 
+                    href="{{ route('caja.cierres') }}" 
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('caja.cierres') ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-chart-pie w-5 text-sm {{ request()->routeIs('caja.cierres') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span class="ms-2">Cierres y Utilidades</span>
+                </a>
+            @endanypermiso
+        @endanypermiso
 
         <!-- Section: SISTEMA -->
-        <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Administración
-        </div>
+        @anypermiso([1, 2, 3, 4, 'admin.sucursales.ver', 'admin.roles.ver', 'admin.usuarios.ver', 'admin.especialidades.ver', 'admin.servicios.ver', 'admin.reportes.ver'])
+            <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Administración
+            </div>
 
-        <!-- Sedes / Sucursales -->
-        <a href="{{ route('administracion.sucursales') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.sucursales') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-hospital w-5 text-sm {{ request()->routeIs('administracion.sucursales') ? 'text-white' : 'text-blue-400' }}"></i>
-            <span class="ms-2">Sedes y Sucursales</span>
-        </a>
+            <!-- Sedes / Sucursales -->
+            @anypermiso([2, 'admin.sucursales.ver', 'admin.sucursales.crear'])
+                <a href="{{ route('administracion.sucursales') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.sucursales') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-hospital w-5 text-sm {{ request()->routeIs('administracion.sucursales') ? 'text-white' : 'text-blue-400' }}"></i>
+                    <span class="ms-2">Sedes y Sucursales</span>
+                </a>
+            @endanypermiso
 
-        <!-- Roles y Permisos -->
-        <a href="{{ route('administracion.roles') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.roles') ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-user-tag w-5 text-sm {{ request()->routeIs('administracion.roles') ? 'text-white' : 'text-purple-400' }}"></i>
-            <span class="ms-2">Roles de Acceso</span>
-        </a>
+            <!-- Roles y Permisos -->
+            @anypermiso([3, 'admin.roles.ver', 'admin.roles.crear'])
+                <a href="{{ route('administracion.roles') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.roles') ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-user-tag w-5 text-sm {{ request()->routeIs('administracion.roles') ? 'text-white' : 'text-purple-400' }}"></i>
+                    <span class="ms-2">Roles de Acceso</span>
+                </a>
+            @endanypermiso
 
-        <!-- Usuarios y Personal -->
-        <a href="{{ route('administracion.usuarios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.usuarios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-users-cog w-5 text-sm {{ request()->routeIs('administracion.usuarios') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Personal y Usuarios</span>
-        </a>
+            <!-- Usuarios y Personal -->
+            @anypermiso([1, 'admin.usuarios.ver', 'admin.usuarios.crear'])
+                <a href="{{ route('administracion.usuarios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.usuarios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-users-cog w-5 text-sm {{ request()->routeIs('administracion.usuarios') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Personal y Usuarios</span>
+                </a>
+            @endanypermiso
 
-        <!-- Especialidades -->
-        <a href="{{ route('administracion.especialidades') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.especialidades') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-stethoscope w-5 text-sm {{ request()->routeIs('administracion.especialidades') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Especialidades</span>
-        </a>
+            <!-- Especialidades -->
+            @anypermiso([4, 'admin.especialidades.ver', 'admin.especialidades.crear'])
+                <a href="{{ route('administracion.especialidades') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.especialidades') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-stethoscope w-5 text-sm {{ request()->routeIs('administracion.especialidades') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Especialidades</span>
+                </a>
+            @endanypermiso
 
-        <!-- Servicios -->
-        <a href="{{ route('administracion.servicios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.servicios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-clinic-medical w-5 text-sm {{ request()->routeIs('administracion.servicios') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Servicios</span>
-        </a>
+            <!-- Servicios -->
+            @anypermiso([4, 'admin.servicios.ver', 'admin.servicios.crear'])
+                <a href="{{ route('administracion.servicios') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.servicios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-clinic-medical w-5 text-sm {{ request()->routeIs('administracion.servicios') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Servicios</span>
+                </a>
+            @endanypermiso
 
-        <!-- Reportes del Sistema -->
-        <a href="{{ route('administracion.reportes') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.reportes*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-            <i class="fas fa-file-invoice w-5 text-sm {{ request()->routeIs('administracion.reportes*') ? 'text-white' : 'text-teal-400' }}"></i>
-            <span class="ms-2">Reportes</span>
-        </a>
+            <!-- Reportes del Sistema -->
+            @anypermiso([1, 'admin.reportes.ver'])
+                <a href="{{ route('administracion.reportes') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.reportes*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fas fa-file-invoice w-5 text-sm {{ request()->routeIs('administracion.reportes*') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Reportes</span>
+                </a>
+            @endanypermiso
+        @endanypermiso
 
         <!-- Configuración de Perfil -->
         {{-- <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('profile.edit') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">

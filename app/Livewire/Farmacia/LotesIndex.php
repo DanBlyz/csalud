@@ -153,7 +153,7 @@ class LotesIndex extends Component
             ->value('id') ?? Seccion::where('sucursal_id', $this->sucursal_id)->value('id');
         $this->producto_id = null;
         $this->proveedor_id = null;
-        $this->codigo_lote = 'LOT-'.strtoupper(substr(uniqid(), -6));
+        $this->codigo_lote = 'LOT-' . strtoupper(substr(uniqid(), -6));
         $this->cantidad_ingresada = null;
         $this->fecha_vencimiento = null;
         $this->precio_compra = '';
@@ -171,6 +171,16 @@ class LotesIndex extends Component
 
     public function abrirModalLote(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.crear')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para ingresar nuevos lotes de inventario.',
+            ]);
+
+            return;
+        }
+
         $this->limpiarFormularioLote();
         $this->modalLoteOpen = true;
     }
@@ -196,6 +206,16 @@ class LotesIndex extends Component
 
     public function guardarLote(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.crear')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para ingresar nuevos lotes de inventario.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'sucursal_id' => 'required|exists:sucursales,id',
             'seccion_ingreso_id' => 'nullable|exists:secciones,id',
@@ -272,6 +292,16 @@ class LotesIndex extends Component
 
     public function abrirModalAjuste(int $loteId): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.anular')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para registrar mermas o ajustes de lotes.',
+            ]);
+
+            return;
+        }
+
         $lote = Lote::with('loteSecciones.seccion')->findOrFail($loteId);
         $this->loteAjusteId = $loteId;
         $this->tipoAjuste = ($lote->fecha_vencimiento && $lote->fecha_vencimiento->isPast())
@@ -295,6 +325,16 @@ class LotesIndex extends Component
 
     public function procesarAjuste(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.anular')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para registrar mermas o ajustes de lotes.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'loteAjusteId' => 'required|exists:lotes,id',
             'seccionAjusteId' => 'nullable|exists:secciones,id',
@@ -376,6 +416,16 @@ class LotesIndex extends Component
 
     public function abrirModalTransferencia(int $loteId): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.movimientos.transferir')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para realizar transferencias de inventario.',
+            ]);
+
+            return;
+        }
+
         $lote = Lote::with('loteSecciones.seccion')->findOrFail($loteId);
         $this->loteTransferenciaId = $loteId;
 
@@ -408,6 +458,16 @@ class LotesIndex extends Component
 
     public function transferirStock(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.movimientos.transferir')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para realizar transferencias de inventario.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'loteTransferenciaId' => 'required|exists:lotes,id',
             'seccion_origen_id' => 'required|exists:secciones,id',
@@ -455,7 +515,7 @@ class LotesIndex extends Component
             ->with(['producto.marca', 'sucursal', 'proveedor', 'loteSecciones.seccion']);
 
         if (! empty($this->search)) {
-            $search = '%'.trim($this->search).'%';
+            $search = '%' . trim($this->search) . '%';
             $query->where(function (Builder $q) use ($search) {
                 $q->where('codigo_lote', 'like', $search)
                     ->orWhereHas('producto', function (Builder $p) use ($search) {
@@ -498,18 +558,18 @@ class LotesIndex extends Component
 
         // Métricas
         $totalLotesActivos = Lote::where('cantidad_actual', '>', 0)
-            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
-            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
+            ->when($this->filtroSucursal, fn($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn($q) => $q->whereHas('loteSecciones', fn($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
         $lotesPorVencer = Lote::whereBetween('fecha_vencimiento', [$hoy, $proximoLimite])
             ->where('cantidad_actual', '>', 0)
-            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
-            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
+            ->when($this->filtroSucursal, fn($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn($q) => $q->whereHas('loteSecciones', fn($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
         $lotesVencidos = Lote::where('fecha_vencimiento', '<', $hoy)
             ->where('cantidad_actual', '>', 0)
-            ->when($this->filtroSucursal, fn ($q) => $q->where('sucursal_id', $this->filtroSucursal))
-            ->when($this->filtroSeccion, fn ($q) => $q->whereHas('loteSecciones', fn ($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
+            ->when($this->filtroSucursal, fn($q) => $q->where('sucursal_id', $this->filtroSucursal))
+            ->when($this->filtroSeccion, fn($q) => $q->whereHas('loteSecciones', fn($sq) => $sq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)))
             ->count();
 
         // Valorización de Stock:
@@ -526,13 +586,13 @@ class LotesIndex extends Component
         $productosConStock = Producto::query()
             ->whereHas('lotes', function ($q) {
                 $q->where('cantidad_actual', '>', 0)
-                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
-                    ->when($this->filtroSeccion, fn ($sq) => $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
+                    ->when($this->filtroSucursal, fn($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
+                    ->when($this->filtroSeccion, fn($sq) => $sq->whereHas('loteSecciones', fn($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
             })
             ->with(['lotes' => function ($q) {
                 $q->where('cantidad_actual', '>', 0)
-                    ->when($this->filtroSucursal, fn ($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
-                    ->when($this->filtroSeccion, fn ($sq) => $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
+                    ->when($this->filtroSucursal, fn($sq) => $sq->where('sucursal_id', $this->filtroSucursal))
+                    ->when($this->filtroSeccion, fn($sq) => $sq->whereHas('loteSecciones', fn($lsq) => $lsq->where('seccion_id', $this->filtroSeccion)->where('cantidad_actual', '>', 0)));
             }])
             ->get();
 
@@ -564,7 +624,7 @@ class LotesIndex extends Component
         $seccionesSucursalId = $this->filtroSucursal ?? $this->sucursal_id ?? Auth::user()->sucursal_id ?? Sucursal::first()?->id;
         $secciones = Seccion::query()
             ->where('activo', true)
-            ->when($seccionesSucursalId, fn ($q) => $q->where('sucursal_id', $seccionesSucursalId))
+            ->when($seccionesSucursalId, fn($q) => $q->where('sucursal_id', $seccionesSucursalId))
             ->orderBy('es_almacen_principal', 'desc')
             ->orderBy('nombre')
             ->get();
@@ -582,7 +642,7 @@ class LotesIndex extends Component
         if ($this->modalLoteOpen) {
             $pQuery = Producto::with('marca')->orderBy('nombre');
             if (! empty($this->buscarProducto)) {
-                $pSearch = '%'.trim($this->buscarProducto).'%';
+                $pSearch = '%' . trim($this->buscarProducto) . '%';
                 $pQuery->where('nombre', 'like', $pSearch);
             }
             $productosEncontrados = $pQuery->take(10)->get();

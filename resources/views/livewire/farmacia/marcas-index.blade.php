@@ -20,6 +20,7 @@
             </p>
         </div>
 
+        @permiso('farmacia.catalogos.gestionar')
         <button 
             type="button" 
             wire:click="abrirModal" 
@@ -28,6 +29,7 @@
             <i class="fas fa-plus text-xs"></i>
             <span>Nueva Marca / Laboratorio</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Métricas Rápidas -->
@@ -144,6 +146,7 @@
                             </td>
                             <td class="px-5 py-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    @permiso('farmacia.catalogos.gestionar')
                                     <button 
                                         type="button" 
                                         wire:click="abrirModal({{ $marca->id }})" 
@@ -171,6 +174,7 @@
                                     >
                                         <i class="fas fa-trash-alt text-xs"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

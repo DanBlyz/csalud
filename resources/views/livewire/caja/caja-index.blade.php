@@ -20,7 +20,7 @@
 
         <!-- Acciones Globales y Selector de Sucursal -->
         <div class="flex flex-wrap items-center gap-3">
-            @if(auth()->user()->esAdmin() || $sucursales->count() > 1)
+            @if(Auth::user()->esAdmin() || $sucursales->count() > 1)
                 <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 shadow-xs">
                     <i class="fas fa-hospital text-xs text-emerald-500"></i>
                     <select wire:model.live="sucursalId" class="text-xs bg-transparent border-0 font-medium text-slate-700 dark:text-slate-300 focus:ring-0 py-0 ps-1 pe-6 cursor-pointer">
@@ -33,6 +33,7 @@
             @endif
 
             @if($cajaActiva)
+                @permiso('caja.movimientos.extra')
                 <button 
                     type="button" 
                     wire:click="abrirModalMovimiento('Ingreso Extra')" 
@@ -49,6 +50,8 @@
                     <i class="fas fa-arrow-circle-up text-xs"></i>
                     <span>Salida / Gasto</span>
                 </button>
+                @endpermiso
+                @permiso('caja.cerrar')
                 <button 
                     type="button" 
                     wire:click="abrirModalCierre" 
@@ -57,7 +60,9 @@
                     <i class="fas fa-lock text-xs"></i>
                     <span>Cerrar Caja</span>
                 </button>
+                @endpermiso
             @else
+                @permiso('caja.aperturar')
                 <button 
                     type="button" 
                     wire:click="abrirModalApertura" 
@@ -66,6 +71,7 @@
                     <i class="fas fa-key text-xs"></i>
                     <span>Aperturar Caja</span>
                 </button>
+                @endpermiso
             @endif
         </div>
     </div>
@@ -102,6 +108,7 @@
                         Bs. {{ number_format($cajaActiva->saldoEsperadoEfectivo(), 2) }}
                     </div>
                 </div>
+                @permiso('caja.cerrar')
                 <button 
                     type="button" 
                     wire:click="abrirModalCierre" 
@@ -109,6 +116,7 @@
                 >
                     Arqueo y Cierre
                 </button>
+                @endpermiso
             </div>
         </div>
     @else
@@ -126,6 +134,7 @@
                     </p>
                 </div>
             </div>
+            @permiso('caja.aperturar')
             <button 
                 type="button" 
                 wire:click="abrirModalApertura" 
@@ -134,6 +143,7 @@
                 <i class="fas fa-key text-xs"></i>
                 <span>Aperturar Caja Ahora</span>
             </button>
+            @endpermiso
         </div>
     @endif
 
@@ -370,6 +380,7 @@
                                 <td class="py-3 px-4 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
                                         @if($prof->saldoPendiente() > 0)
+                                            @permiso('caja.cobrar')
                                             <button 
                                                 type="button" 
                                                 wire:click="abrirModalCobro({{ $prof->id }})" 
@@ -379,6 +390,7 @@
                                                 <i class="fas fa-cash-register text-xs"></i>
                                                 <span>Cobrar</span>
                                             </button>
+                                            @endpermiso
                                         @endif
 
                                         @if($prof->totalPagado() > 0)

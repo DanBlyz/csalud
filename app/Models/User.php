@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Traits\Auditable;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -98,15 +97,64 @@ class User extends Authenticatable
     }
 
     /**
-     * Comprueba si el usuario tiene un permiso específico por ID numérico.
+     * Comprueba si el usuario tiene un permiso específico por ID numérico o slug/nombre.
      */
-    public function tienePermiso(int $permisoId): bool
+    public function tienePermiso(int|string $permiso): bool
     {
         if ($this->esAdmin()) {
             return true;
         }
 
-        return $this->permisos()->where('permisos.id', $permisoId)->exists();
+        if (is_numeric($permiso)) {
+            return $this->permisos()->where('permisos.id', (int) $permiso)->exists();
+        }
+
+        if ($this->permisos()->where('permisos.nombre', $permiso)->exists()) {
+            return true;
+        }
+
+        // Retrocompatibilidad con permisos generales/módulos base (IDs 1 al 10)
+        $legacyPrefixMap = [
+            'usuarios.' => [1, 'gestion-usuarios'],
+            'sucursales.' => [2, 'gestion-sucursales'],
+            'roles.' => [3, 'gestion-roles'],
+            'catalogos.' => [4, 'gestion-catalogos'],
+            'pacientes.' => [5, 'gestion-pacientes'],
+            'instituciones.' => [5, 'gestion-pacientes'],
+            'farmacia.' => [9, 'despachar-farmacia'],
+            'caja.' => [10, 'cobro-caja'],
+        ];
+
+        foreach ($legacyPrefixMap as $prefix => $legacyIdentifiers) {
+            if (str_starts_with($permiso, $prefix)) {
+                return $this->permisos()->where(function ($q) use ($legacyIdentifiers) {
+                    $q->whereIn('permisos.id', array_filter($legacyIdentifiers, 'is_int'))
+                        ->orWhereIn('permisos.nombre', array_filter($legacyIdentifiers, 'is_string'));
+                })->exists();
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Comprueba si el usuario tiene al menos uno de los permisos dados.
+     *
+     * @param  array<int|string>  $permisos
+     */
+    public function tieneAlgunPermiso(array $permisos): bool
+    {
+        if ($this->esAdmin()) {
+            return true;
+        }
+
+        foreach ($permisos as $permiso) {
+            if ($this->tienePermiso($permiso)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function proformasAtendidas(): BelongsToMany
@@ -122,7 +170,7 @@ class User extends Authenticatable
 
     public function pagosRegistrados(): HasMany
     {
-        return $this->hasMany(ProformaPago::class, 'user_id');
+        return $this->hasMany(Pago::class, 'user_id');
     }
 
     public function pagosHonorariosRecibidos(): HasMany

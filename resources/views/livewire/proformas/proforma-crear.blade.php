@@ -41,6 +41,7 @@
                 </div>
 
                 @if (! $pacienteSeleccionado)
+                    @permiso('pacientes.crear')
                     <button 
                         type="button" 
                         wire:click="abrirModalNuevoPaciente" 
@@ -49,6 +50,7 @@
                         <i class="fas fa-user-plus text-xs"></i>
                         <span>+ Registrar Nuevo Paciente</span>
                     </button>
+                    @endpermiso
                 @endif
             </div>
 
@@ -160,6 +162,7 @@
                             @empty
                                 <div class="px-4 py-4 text-center text-xs text-slate-400">
                                     <p class="font-medium text-slate-600 dark:text-slate-300">No se encontraron pacientes con "{{ $pacienteSearch }}"</p>
+                                    @permiso('pacientes.crear')
                                     <button 
                                         type="button" 
                                         wire:click="abrirModalNuevoPaciente" 
@@ -167,6 +170,7 @@
                                     >
                                         ¿Desea registrarlo como nuevo paciente ahora?
                                     </button>
+                                    @endpermiso
                                 </div>
                             @endforelse
                         </div>
@@ -808,6 +812,7 @@
                     Cancelar
                 </a>
 
+                @permiso('crear-proforma')
                 <button 
                     type="submit" 
                     wire:loading.attr="disabled"
@@ -821,6 +826,7 @@
                         <i class="fas fa-spinner fa-spin"></i> Registrando expediente completo...
                     </span>
                 </button>
+                @endpermiso
             </div>
         </div>
     </form>

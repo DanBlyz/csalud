@@ -13,6 +13,7 @@
             </p>
         </div>
 
+        @permiso('usuarios.crear')
         <button 
             wire:click="abrirModalCrear" 
             wire:loading.attr="disabled"
@@ -22,6 +23,7 @@
             <i class="fas fa-user-plus"></i>
             <span>Nuevo Usuario</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Main Card Container -->
@@ -206,6 +208,7 @@
 
                             <!-- Estado (Toggle) -->
                             <td class="py-3.5 px-4 text-center">
+                                @permiso('usuarios.eliminar')
                                 <button 
                                     wire:click="toggleActivo({{ $user->id }})" 
                                     wire:loading.attr="disabled"
@@ -216,12 +219,19 @@
                                     <span class="w-1.5 h-1.5 rounded-full {{ $user->activo ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                                     {{ $user->activo ? 'Activo' : 'Suspendido' }}
                                 </button>
+                                @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $user->activo ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $user->activo ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                    {{ $user->activo ? 'Activo' : 'Suspendido' }}
+                                </span>
+                                @endpermiso
                             </td>
 
                             <!-- Acciones Rápidas -->
                             <td class="py-3.5 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <!-- Editar -->
+                                    @permiso('usuarios.editar')
                                     <button 
                                         wire:click="abrirModalEditar({{ $user->id }})" 
                                         type="button" 
@@ -230,8 +240,10 @@
                                     >
                                         <i class="fas fa-edit text-xs"></i>
                                     </button>
+                                    @endpermiso
 
                                     <!-- Reset Rápido de Contraseña (fas fa-key) -->
+                                    @permiso('usuarios.editar')
                                     <button 
                                         wire:click="abrirModalPassword({{ $user->id }})" 
                                         type="button" 
@@ -240,8 +252,10 @@
                                     >
                                         <i class="fas fa-key text-xs"></i>
                                     </button>
+                                    @endpermiso
 
                                     <!-- Permisos Granulares (fas fa-user-shield) -->
+                                    @permiso('usuarios.permisos')
                                     <button 
                                         wire:click="abrirModalPermisos({{ $user->id }})" 
                                         type="button" 
@@ -250,9 +264,11 @@
                                     >
                                         <i class="fas fa-user-shield text-xs"></i>
                                     </button>
+                                    @endpermiso
 
                                     <!-- Eliminar (con swal:confirm) -->
                                     @if ($user->id !== auth()->id())
+                                        @permiso('usuarios.eliminar')
                                         <button 
                                             type="button" 
                                             @click="$dispatch('swal:confirm', {
@@ -271,6 +287,7 @@
                                         >
                                             <i class="fas fa-trash-alt text-xs"></i>
                                         </button>
+                                        @endpermiso
                                     @endif
                                 </div>
                             </td>
@@ -556,86 +573,196 @@
 
     <!-- MODAL 3: Asignación de Permisos Granulares (fas fa-user-shield) -->
     @if ($modalPermisosOpen)
-        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-permisos-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-permisos-title" role="dialog" aria-modal="true" x-data="{ busquedaPermiso: '', moduloFiltro: 'todos' }">
             <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-lg">
-                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white text-sm">
+            <div class="flex min-h-full items-center justify-center p-3 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl">
+                    <!-- Header Modal -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600 text-white text-base shadow-sm">
                                 <i class="fas fa-user-shield"></i>
                             </span>
                             <div>
-                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100" id="modal-permisos-title">
-                                    Permisos Asignados
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2" id="modal-permisos-title">
+                                    <span>Control de Permisos Granulares</span>
+                                    <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300">
+                                        {{ count($permisosSeleccionados) }} / {{ $todosPermisos->count() }} asignados
+                                    </span>
                                 </h3>
-                                <p class="text-[11px] text-slate-400">Usuario: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $permisosUsuarioNombre }}</span></p>
+                                <p class="text-xs text-slate-400 mt-0.5">Usuario: <strong class="text-slate-700 dark:text-slate-200">{{ $permisosUsuarioNombre }}</strong></p>
                             </div>
                         </div>
-                        <button wire:click="cerrarModalPermisos" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                        <button wire:click="cerrarModalPermisos" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
                             <i class="fas fa-times text-base"></i>
                         </button>
                     </div>
 
-                    <form wire:submit="guardarPermisos" class="p-6">
-                        <!-- Botones de selección rápida -->
-                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs">
-                            <span class="text-slate-500 font-medium">Marque los permisos autorizados:</span>
-                            <div class="flex items-center gap-2">
-                                <button wire:click="seleccionarTodosPermisos" type="button" class="text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-semibold">
-                                    Todos
+                    <form wire:submit="guardarPermisos" class="p-5 sm:p-6 space-y-4">
+                        <!-- Barra de Herramientas: Búsqueda y Selección Global -->
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                            <!-- Input Búsqueda en Vivo -->
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fas fa-search text-xs"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    x-model="busquedaPermiso"
+                                    placeholder="Filtrar permisos por nombre o descripción..."
+                                    class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 shadow-2xs placeholder:text-slate-400"
+                                />
+                            </div>
+
+                            <!-- Botones Globales -->
+                            <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                <button 
+                                    wire:click="seleccionarTodosPermisos" 
+                                    type="button" 
+                                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition cursor-pointer"
+                                >
+                                    <i class="fas fa-check-double me-1"></i> Seleccionar Todos
                                 </button>
-                                <span class="text-slate-300 dark:text-slate-700">|</span>
-                                <button wire:click="deseleccionarTodosPermisos" type="button" class="text-slate-500 dark:text-slate-400 hover:underline text-[11px] font-semibold">
-                                    Ninguno
+                                <button 
+                                    wire:click="deseleccionarTodosPermisos" 
+                                    type="button" 
+                                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                                >
+                                    <i class="fas fa-ban me-1"></i> Deseleccionar Todos
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Lista de Permisos con Checkbox -->
-                        <div class="space-y-2.5 max-h-72 overflow-y-auto pe-1 custom-scrollbar">
-                            @foreach ($todosPermisos as $permiso)
-                                <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors">
-                                    <input 
-                                        type="checkbox" 
-                                        value="{{ $permiso->id }}" 
-                                        wire:model="permisosSeleccionados"
-                                        class="mt-0.5 rounded-sm border-slate-300 dark:border-slate-700 text-purple-600 focus:ring-purple-500"
-                                    />
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-xs text-slate-800 dark:text-slate-200">
-                                                {{ $permiso->nombre }}
-                                            </span>
-                                            <span class="font-mono text-[10px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.2 rounded">
-                                                ID: {{ $permiso->id }}
-                                            </span>
-                                        </div>
-                                        <p class="text-[11px] text-slate-400 mt-0.5">
-                                            {{ $permiso->descripcion }}
-                                        </p>
-                                    </div>
-                                </label>
+                        <!-- Filtro de Pestañas Rápidas por Módulo -->
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                            <button 
+                                type="button" 
+                                @click="moduloFiltro = 'todos'" 
+                                :class="moduloFiltro === 'todos' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+                                class="px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer text-[11px]"
+                            >
+                                Todos ({{ $todosPermisos->count() }})
+                            </button>
+                            @php
+                                $modulosAgrupados = $todosPermisos->groupBy('modulo');
+                            @endphp
+                            @foreach ($modulosAgrupados as $moduloNom => $itemsGrupo)
+                                <button 
+                                    type="button" 
+                                    @click="moduloFiltro = '{{ $moduloNom }}'" 
+                                    :class="moduloFiltro === '{{ $moduloNom }}' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+                                    class="px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer text-[11px]"
+                                >
+                                    {{ $moduloNom }} ({{ $itemsGrupo->count() }})
+                                </button>
                             @endforeach
                         </div>
 
-                        <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
-                            <button wire:click="cerrarModalPermisos" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
-                                Cancelar
-                            </button>
-                            <button 
-                                type="submit" 
-                                wire:loading.attr="disabled"
-                                wire:target="guardarPermisos"
-                                class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                            >
-                                <span wire:loading.remove wire:target="guardarPermisos">
-                                    <i class="fas fa-check me-1"></i> Guardar Permisos
-                                </span>
-                                <span wire:loading wire:target="guardarPermisos" class="inline-flex items-center gap-1.5">
-                                    <i class="fas fa-spinner fa-spin"></i> Guardando...
-                                </span>
-                            </button>
+                        <!-- Lista de Permisos Agrupados por Módulo -->
+                        <div class="space-y-5 max-h-[55vh] overflow-y-auto pe-1.5 custom-scrollbar">
+                            @foreach ($modulosAgrupados as $moduloNombre => $permisosModulo)
+                                <div 
+                                    x-show="moduloFiltro === 'todos' || moduloFiltro === '{{ $moduloNombre }}'" 
+                                    class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50 p-3.5 space-y-3"
+                                >
+                                    <!-- Encabezado del Módulo -->
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                                        <div class="flex items-center gap-2">
+                                            @php
+                                                $moduloIcon = match($moduloNombre) {
+                                                    'Administración y Sistema' => 'fa-cogs text-blue-500',
+                                                    'Pacientes e Instituciones' => 'fa-user-injured text-emerald-500',
+                                                    'Proformas Clínicas y Admisión' => 'fa-file-medical text-indigo-500',
+                                                    'Farmacia e Inventario' => 'fa-pills text-teal-500',
+                                                    'Caja y Finanzas' => 'fa-cash-register text-amber-500',
+                                                    default => 'fa-layer-group text-purple-500',
+                                                };
+                                            @endphp
+                                            <i class="fas {{ $moduloIcon }} text-sm"></i>
+                                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                                {{ $moduloNombre }}
+                                            </h4>
+                                            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                                {{ $permisosModulo->count() }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Acciones Rápidas del Módulo -->
+                                        <div class="flex items-center gap-2 self-end sm:self-center">
+                                            <button 
+                                                wire:click="seleccionarPermisosModulo('{{ $moduloNombre }}')" 
+                                                type="button" 
+                                                class="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                                            >
+                                                + Marcar Módulo
+                                            </button>
+                                            <span class="text-slate-300 dark:text-slate-700">|</span>
+                                            <button 
+                                                wire:click="deseleccionarPermisosModulo('{{ $moduloNombre }}')" 
+                                                type="button" 
+                                                class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
+                                            >
+                                                - Desmarcar Módulo
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grid de Permisos -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                        @foreach ($permisosModulo as $permiso)
+                                            <label 
+                                                x-show="!busquedaPermiso || '{{ strtolower(addslashes($permiso->nombre . ' ' . $permiso->descripcion . ' ' . $permiso->id)) }}'.includes(busquedaPermiso.toLowerCase())"
+                                                class="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors shadow-2xs"
+                                            >
+                                                <input 
+                                                    type="checkbox" 
+                                                    value="{{ $permiso->id }}" 
+                                                    wire:model="permisosSeleccionados"
+                                                    class="mt-0.5 rounded-sm border-slate-300 dark:border-slate-700 text-purple-600 focus:ring-purple-500 shrink-0"
+                                                />
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center justify-between gap-1">
+                                                        <span class="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                                            {{ $permiso->nombre }}
+                                                        </span>
+                                                        <span class="font-mono text-[9px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-950/60 px-1 py-0.2 rounded shrink-0">
+                                                            #{{ $permiso->id }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                                                        {{ $permiso->descripcion }}
+                                                    </p>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <!-- Footer Modal -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <span class="text-xs text-slate-400 hidden sm:inline">
+                                Superusuarios / Administradores tienen acceso total por defecto.
+                            </span>
+                            <div class="flex items-center justify-end gap-2.5 w-full sm:w-auto">
+                                <button wire:click="cerrarModalPermisos" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    wire:loading.attr="disabled"
+                                    wire:target="guardarPermisos"
+                                    class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <span wire:loading.remove wire:target="guardarPermisos">
+                                        <i class="fas fa-save me-1"></i> Guardar Permisos ({{ count($permisosSeleccionados) }})
+                                    </span>
+                                    <span wire:loading wire:target="guardarPermisos" class="inline-flex items-center gap-1.5">
+                                        <i class="fas fa-spinner fa-spin"></i> Guardando...
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

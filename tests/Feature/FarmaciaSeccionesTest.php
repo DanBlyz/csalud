@@ -317,6 +317,11 @@ test('puede despachar medicamentos asignando una sección satélite y descontand
 });
 
 test('puede registrar y revertir consumo extra asignando área hospitalaria en proforma detalle', function () {
+    $permisoAgregar = Permiso::firstOrCreate(['nombre' => 'proformas.consumos.agregar'], ['descripcion' => 'Agregar consumos extras']);
+    $permisoEliminar = Permiso::firstOrCreate(['nombre' => 'proformas.consumos.eliminar'], ['descripcion' => 'Eliminar consumos extras']);
+    $permisoVer = Permiso::firstOrCreate(['nombre' => 'proformas.consumos.ver'], ['descripcion' => 'Ver consumos extras']);
+    $this->farmaceutico->permisos()->syncWithoutDetaching([$permisoAgregar->id, $permisoEliminar->id, $permisoVer->id]);
+
     $this->actingAs($this->farmaceutico);
 
     $paciente = Paciente::factory()->create();

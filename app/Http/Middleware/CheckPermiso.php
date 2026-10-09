@@ -29,7 +29,7 @@ class CheckPermiso
             return $next($request);
         }
 
-        if (! $user->tienePermiso((int) $permisoId)) {
+        if (! $user->tienePermiso($permisoId)) {
             abort(403, 'No tiene autorización para acceder a este recurso.');
         }
 

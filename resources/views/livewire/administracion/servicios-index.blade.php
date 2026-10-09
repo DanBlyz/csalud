@@ -14,6 +14,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            @permiso('catalogos.gestionar')
             @if ($tab === 'servicios')
                 <button 
                     wire:click="abrirModalServicioCrear" 
@@ -35,6 +36,7 @@
                     <span>Nueva Categoría</span>
                 </button>
             @endif
+            @endpermiso
         </div>
     </div>
 
@@ -177,6 +179,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
+                                    @permiso('catalogos.gestionar')
                                     <button 
                                         wire:click="toggleEstadoServicio({{ $servicio->id }})" 
                                         wire:loading.attr="disabled"
@@ -187,9 +190,16 @@
                                         <span class="w-1.5 h-1.5 rounded-full {{ $servicio->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                                         {{ $servicio->estado ? 'Activo' : 'Inactivo' }}
                                     </button>
+                                    @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $servicio->estado ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $servicio->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                        {{ $servicio->estado ? 'Activo' : 'Inactivo' }}
+                                    </span>
+                                    @endpermiso
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
+                                        @permiso('catalogos.gestionar')
                                         <button 
                                             wire:click="abrirModalServicioEditar({{ $servicio->id }})" 
                                             type="button" 
@@ -217,6 +227,7 @@
                                         >
                                             <i class="fas fa-trash-alt text-sm"></i>
                                         </button>
+                                        @endpermiso
                                     </div>
                                 </td>
                             </tr>
@@ -270,6 +281,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
+                                    @permiso('catalogos.gestionar')
                                     <button 
                                         wire:click="toggleEstadoCategoria({{ $categoria->id }})" 
                                         wire:loading.attr="disabled"
@@ -280,9 +292,16 @@
                                         <span class="w-1.5 h-1.5 rounded-full {{ $categoria->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                                         {{ $categoria->estado ? 'Activa' : 'Inactiva' }}
                                     </button>
+                                    @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $categoria->estado ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $categoria->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                        {{ $categoria->estado ? 'Activa' : 'Inactiva' }}
+                                    </span>
+                                    @endpermiso
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
+                                        @permiso('catalogos.gestionar')
                                         <button 
                                             wire:click="abrirModalCategoriaEditar({{ $categoria->id }})" 
                                             type="button" 
@@ -310,6 +329,7 @@
                                         >
                                             <i class="fas fa-trash-alt text-sm"></i>
                                         </button>
+                                        @endpermiso
                                     </div>
                                 </td>
                             </tr>

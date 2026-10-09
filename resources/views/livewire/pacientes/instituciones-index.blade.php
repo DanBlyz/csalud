@@ -14,6 +14,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            @permiso('instituciones.gestionar')
             <button 
                 wire:click="abrirModal" 
                 type="button" 
@@ -22,6 +23,7 @@
                 <i class="fas fa-plus"></i>
                 <span>Nueva Institución</span>
             </button>
+            @endpermiso
         </div>
     </div>
 
@@ -155,6 +157,7 @@
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-center">
+                                @permiso('instituciones.gestionar')
                                 <button 
                                     wire:click="toggleEstado({{ $inst->id }})" 
                                     wire:loading.attr="disabled"
@@ -165,12 +168,19 @@
                                     <span class="w-1.5 h-1.5 rounded-full {{ ($inst->estado === 'Activo' || $inst->estado === null) ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
                                     <span>{{ $inst->estado ?: 'Activo' }}</span>
                                 </button>
+                                @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ ($inst->estado === 'Activo' || $inst->estado === null) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ ($inst->estado === 'Activo' || $inst->estado === null) ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
+                                    <span>{{ $inst->estado ?: 'Activo' }}</span>
+                                </span>
+                                @endpermiso
                             </td>
                             <td class="py-3 px-4 text-slate-500 text-[11px]">
                                 {{ $inst->created_at ? $inst->created_at->format('d/m/Y') : '-' }}
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1">
+                                    @permiso('instituciones.gestionar')
                                     <!-- Editar -->
                                     <button 
                                         wire:click="abrirModal({{ $inst->id }})" 
@@ -199,6 +209,7 @@
                                     >
                                         <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

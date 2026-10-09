@@ -24,6 +24,7 @@
                 <span>Gestión de Lotes</span>
             </a>
 
+            @permiso('farmacia.productos.crear')
             <button 
                 wire:click="abrirModalProducto" 
                 wire:loading.attr="disabled"
@@ -33,6 +34,7 @@
                 <i class="fas fa-plus"></i>
                 <span>Nuevo Medicamento / Insumo</span>
             </button>
+            @endpermiso
         </div>
     </div>
 
@@ -295,6 +297,7 @@
                             </td>
                             <td class="py-3 px-4 text-right">
                                 <div class="inline-flex items-center gap-1">
+                                    @permiso('farmacia.productos.editar')
                                     <button 
                                         wire:click="abrirModalProducto({{ $prod->id }})" 
                                         type="button" 
@@ -303,6 +306,8 @@
                                     >
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    @endpermiso
+                                    @permiso('farmacia.productos.eliminar')
                                     <button 
                                         wire:click="eliminarProducto({{ $prod->id }})" 
                                         wire:confirm="¿Está seguro de que desea eliminar este artículo del catálogo? Esta acción no se puede deshacer si tiene existencias."
@@ -314,6 +319,7 @@
                                         <i class="fas fa-trash-alt" wire:loading.remove wire:target="eliminarProducto({{ $prod->id }})"></i>
                                         <i class="fas fa-spinner fa-spin" wire:loading wire:target="eliminarProducto({{ $prod->id }})"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>
@@ -323,6 +329,7 @@
                                 <i class="fas fa-prescription-bottle-alt text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
                                 <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">No se encontraron medicamentos o insumos</p>
                                 <p class="text-xs text-slate-400 mt-1">Pruebe modificando los términos de búsqueda o agregue un nuevo artículo.</p>
+                                @permiso('farmacia.productos.crear')
                                 <button 
                                     wire:click="abrirModalProducto" 
                                     type="button" 
@@ -330,6 +337,7 @@
                                 >
                                     <i class="fas fa-plus"></i> Registrar Primer Medicamento
                                 </button>
+                                @endpermiso
                             </td>
                         </tr>
                     @endforelse

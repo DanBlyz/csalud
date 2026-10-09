@@ -29,7 +29,7 @@ class MarcasIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:2|max:150|unique:marcas,nombre,'.$this->marcaId.',id,deleted_at,NULL',
+            'nombre' => 'required|string|min:2|max:150|unique:marcas,nombre,' . $this->marcaId . ',id,deleted_at,NULL',
             'descripcion' => 'nullable|string|max:500',
         ];
     }
@@ -54,6 +54,16 @@ class MarcasIndex extends Component
 
     public function abrirModal(?int $id = null): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar marcas o laboratorios.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->marcaId = $id;
 
@@ -80,6 +90,16 @@ class MarcasIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar marcas o laboratorios.',
+            ]);
+
+            return;
+        }
+
         $this->validate();
 
         if ($this->marcaId) {
@@ -111,6 +131,16 @@ class MarcasIndex extends Component
 
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('farmacia.catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar marcas o laboratorios.',
+            ]);
+
+            return;
+        }
+
         $marca = Marca::withCount('productos')->findOrFail($id);
 
         if ($marca->productos_count > 0) {

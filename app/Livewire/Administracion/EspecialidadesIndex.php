@@ -4,6 +4,7 @@ namespace App\Livewire\Administracion;
 
 use App\Models\Especialidad;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -29,7 +30,7 @@ class EspecialidadesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:3|max:100|unique:especialidades,nombre,'.$this->especialidadId,
+            'nombre' => 'required|string|min:3|max:100|unique:especialidades,nombre,' . $this->especialidadId,
             'descripcion' => 'nullable|string|max:255',
         ];
     }
@@ -51,6 +52,16 @@ class EspecialidadesIndex extends Component
 
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar catálogos y especialidades.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset(['especialidadId', 'nombre', 'descripcion']);
         $this->modalOpen = true;
@@ -58,6 +69,16 @@ class EspecialidadesIndex extends Component
 
     public function abrirModalEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar catálogos y especialidades.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $esp = Especialidad::findOrFail($id);
 
@@ -75,6 +96,16 @@ class EspecialidadesIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar catálogos y especialidades.',
+            ]);
+
+            return;
+        }
+
         $validated = $this->validate();
 
         if ($this->especialidadId) {
@@ -102,6 +133,16 @@ class EspecialidadesIndex extends Component
     #[On('eliminarEspecialidad')]
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar catálogos y especialidades.',
+            ]);
+
+            return;
+        }
+
         $esp = Especialidad::withCount('users')->findOrFail($id);
 
         if ($esp->users_count > 0) {

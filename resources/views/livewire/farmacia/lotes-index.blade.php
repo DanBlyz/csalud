@@ -24,6 +24,7 @@
                 <span>Catálogo de Fármacos</span>
             </a>
 
+            @permiso('farmacia.lotes.crear')
             <button 
                 wire:click="abrirModalLote" 
                 wire:loading.attr="disabled"
@@ -33,6 +34,7 @@
                 <i class="fas fa-plus"></i>
                 <span>Ingresar Nuevo Lote</span>
             </button>
+            @endpermiso
         </div>
     </div>
 
@@ -345,6 +347,7 @@
                             <td class="py-3 px-4 text-right">
                                 @if ($lote->cantidad_actual > 0)
                                     <div class="flex items-center justify-end gap-1.5">
+                                        @permiso('farmacia.movimientos.transferir')
                                         <button 
                                             wire:click="abrirModalTransferencia({{ $lote->id }})" 
                                             type="button" 
@@ -354,7 +357,9 @@
                                             <i class="fas fa-dolly text-teal-600 dark:text-teal-400"></i>
                                             <span>Transferir</span>
                                         </button>
+                                        @endpermiso
 
+                                        @permiso('farmacia.lotes.anular')
                                         <button 
                                             wire:click="abrirModalAjuste({{ $lote->id }})" 
                                             type="button" 
@@ -364,6 +369,7 @@
                                             <i class="fas fa-minus-circle text-amber-600"></i>
                                             <span>Ajuste</span>
                                         </button>
+                                        @endpermiso
                                     </div>
                                 @else
                                     <span class="text-[11px] text-slate-400 italic">Sin existencias</span>
@@ -376,6 +382,7 @@
                                 <i class="fas fa-boxes text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
                                 <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">No se encontraron lotes registrados</p>
                                 <p class="text-xs text-slate-400 mt-1">Registre un nuevo lote para abastecer el stock físico de medicamentos.</p>
+                                @permiso('farmacia.lotes.crear')
                                 <button 
                                     wire:click="abrirModalLote" 
                                     type="button" 
@@ -383,6 +390,7 @@
                                 >
                                     <i class="fas fa-plus"></i> Ingresar Primer Lote
                                 </button>
+                                @endpermiso
                             </td>
                         </tr>
                     @endforelse

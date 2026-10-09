@@ -404,6 +404,16 @@ class ReportesIndex extends Component
 
     public function descargarExcelConvenio(ReportePlanillaConvenioService $service)
     {
+        if (! Auth::user()?->tienePermiso('reportes.exportar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para exportar reportes.',
+            ]);
+
+            return null;
+        }
+
         $this->validate([
             'conv_institucion_id' => ['required', 'exists:instituciones,id'],
             'conv_mes' => ['required', 'integer', 'min:1', 'max:12'],
@@ -490,6 +500,16 @@ class ReportesIndex extends Component
 
     public function descargarExcelFlujoCaja(ReporteFlujoCajaService $service)
     {
+        if (! Auth::user()?->tienePermiso('reportes.exportar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para exportar reportes.',
+            ]);
+
+            return null;
+        }
+
         $this->validate([
             'flujo_mes' => ['required', 'integer', 'min:1', 'max:12'],
             'flujo_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
@@ -551,6 +571,16 @@ class ReportesIndex extends Component
 
     public function descargarExcelAnual(ReporteFlujoCajaService $service)
     {
+        if (! Auth::user()?->tienePermiso('reportes.exportar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para exportar reportes.',
+            ]);
+
+            return null;
+        }
+
         $this->validate([
             'anual_anio' => ['required', 'integer', 'min:2000', 'max:2100'],
             'anual_sucursal_id' => ['nullable', 'exists:sucursales,id'],
@@ -594,9 +624,9 @@ class ReportesIndex extends Component
             ->orderBy('nombre', 'asc');
 
         if (! empty($this->buscarProducto)) {
-            $search = '%'.trim($this->buscarProducto).'%';
+            $search = '%' . trim($this->buscarProducto) . '%';
             $productosQuery->where('nombre', 'like', $search)
-                ->orWhereHas('marca', fn ($m) => $m->where('nombre', 'like', $search));
+                ->orWhereHas('marca', fn($m) => $m->where('nombre', 'like', $search));
         }
 
         $productos = $productosQuery->get(['id', 'nombre', 'marca_id', 'unidad_medida']);

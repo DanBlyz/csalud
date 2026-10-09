@@ -120,6 +120,16 @@ class UsuariosIndex extends Component
      * ------------------------------------------------------------- */
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.crear')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para crear usuarios.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset([
             'usuarioId',
@@ -147,6 +157,16 @@ class UsuariosIndex extends Component
 
     public function abrirModalEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.editar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para editar usuarios.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $user = User::findOrFail($id);
 
@@ -176,6 +196,17 @@ class UsuariosIndex extends Component
 
     public function guardarUsuario(): void
     {
+        $permisoRequerido = $this->usuarioId ? 'usuarios.editar' : 'usuarios.crear';
+        if (! Auth::user()?->tienePermiso($permisoRequerido)) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para guardar usuarios.',
+            ]);
+
+            return;
+        }
+
         $rules = [
             'nombres' => 'required|string|max:100',
             'apellido_paterno' => 'required|string|max:100',
@@ -253,6 +284,16 @@ class UsuariosIndex extends Component
 
     public function toggleActivo(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para cambiar el estado de usuarios.',
+            ]);
+
+            return;
+        }
+
         $user = User::findOrFail($id);
 
         if ($user->id === Auth::id()) {
@@ -282,6 +323,16 @@ class UsuariosIndex extends Component
      * ------------------------------------------------------------- */
     public function abrirModalPassword(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.editar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para restablecer contraseñas de usuarios.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $user = User::findOrFail($id);
 
@@ -301,6 +352,16 @@ class UsuariosIndex extends Component
 
     public function guardarPassword(): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.editar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para restablecer contraseñas de usuarios.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'nuevaPassword' => 'required|string|min:6|confirmed',
         ], [
@@ -327,11 +388,21 @@ class UsuariosIndex extends Component
      * ------------------------------------------------------------- */
     public function abrirModalPermisos(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.permisos')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar permisos de usuarios.',
+            ]);
+
+            return;
+        }
+
         $user = User::with('permisos')->findOrFail($id);
 
         $this->permisosUsuarioId = $user->id;
         $this->permisosUsuarioNombre = $user->nombre_completo ?? $user->name;
-        $this->permisosSeleccionados = $user->permisos->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = $user->permisos->pluck('id')->map(fn($id) => (string) $id)->toArray();
 
         $this->modalPermisosOpen = true;
     }
@@ -343,7 +414,7 @@ class UsuariosIndex extends Component
 
     public function seleccionarTodosPermisos(): void
     {
-        $this->permisosSeleccionados = Permiso::pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = Permiso::pluck('id')->map(fn($id) => (string) $id)->toArray();
     }
 
     public function deseleccionarTodosPermisos(): void
@@ -351,8 +422,30 @@ class UsuariosIndex extends Component
         $this->permisosSeleccionados = [];
     }
 
+    public function seleccionarPermisosModulo(string $modulo): void
+    {
+        $idsModulo = Permiso::all()->filter(fn($p) => $p->modulo === $modulo)->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = array_values(array_unique(array_merge($this->permisosSeleccionados, $idsModulo)));
+    }
+
+    public function deseleccionarPermisosModulo(string $modulo): void
+    {
+        $idsModulo = Permiso::all()->filter(fn($p) => $p->modulo === $modulo)->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = array_values(array_diff($this->permisosSeleccionados, $idsModulo));
+    }
+
     public function guardarPermisos(): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.permisos')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para guardar permisos de usuarios.',
+            ]);
+
+            return;
+        }
+
         $user = User::findOrFail($this->permisosUsuarioId);
         $user->permisos()->sync($this->permisosSeleccionados);
 
@@ -371,10 +464,20 @@ class UsuariosIndex extends Component
     #[On('eliminarUsuario')]
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('usuarios.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para eliminar usuarios.',
+            ]);
+
+            return;
+        }
+
         if ($id === Auth::id()) {
             $this->dispatch('swal', [
                 'icon' => 'error',
-                'title' => 'Acción Bloqueada',
+                'title' => 'Acceso Bloqueada',
                 'text' => 'No puedes eliminar tu propia cuenta mientras estás en sesión.',
                 'toast' => false,
             ]);

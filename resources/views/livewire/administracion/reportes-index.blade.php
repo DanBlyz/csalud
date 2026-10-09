@@ -962,6 +962,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        @permiso('reportes.exportar')
                         <button 
                             type="button" 
                             wire:click="descargarExcelConvenio" 
@@ -973,6 +974,7 @@
                             <span wire:loading.remove wire:target="descargarExcelConvenio">Exportar a Excel (.xlsx)</span>
                             <span wire:loading wire:target="descargarExcelConvenio">Exportando...</span>
                         </button>
+                        @endpermiso
                     </div>
                 </div>
 
@@ -1291,6 +1293,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        @permiso('reportes.exportar')
                         <button 
                             type="button" 
                             wire:click="descargarExcelFlujoCaja" 
@@ -1302,6 +1305,7 @@
                             <span wire:loading.remove wire:target="descargarExcelFlujoCaja">Exportar a Excel (.xlsx)</span>
                             <span wire:loading wire:target="descargarExcelFlujoCaja">Exportando...</span>
                         </button>
+                        @endpermiso
                     </div>
                 </div>
 
@@ -1579,6 +1583,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        @permiso('reportes.exportar')
                         <button 
                             type="button" 
                             wire:click="descargarExcelAnual" 
@@ -1590,6 +1595,7 @@
                             <span wire:loading.remove wire:target="descargarExcelAnual">Exportar a Excel (.xlsx)</span>
                             <span wire:loading wire:target="descargarExcelAnual">Exportando...</span>
                         </button>
+                        @endpermiso
                     </div>
                 </div>
 

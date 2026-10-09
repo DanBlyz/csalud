@@ -116,6 +116,16 @@ class CierresIndex extends Component
     // =========================================================================
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.crear')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para crear cierres mensuales.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->nuevo_anio = (int) date('Y');
         $this->nuevo_mes = (int) date('n');
@@ -150,6 +160,15 @@ class CierresIndex extends Component
 
     public function crearCierre(): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.crear')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para crear cierres mensuales.',
+            ]);
+
+            return;
+        }
         $this->validate([
             'nuevo_anio' => ['required', 'integer', 'min:2020', 'max:2035'],
             'nuevo_mes' => ['required', 'integer', 'between:1,12'],
@@ -236,8 +255,8 @@ class CierresIndex extends Component
         $pagosQuery = Pago::whereBetween('created_at', [$inicio, $fin]);
         if ($sucursalId) {
             $pagosQuery->where(function ($q) use ($sucursalId) {
-                $q->whereHas('caja', fn ($c) => $c->where('sucursal_id', $sucursalId))
-                    ->orWhereHas('proforma', fn ($p) => $p->where('sucursal_id', $sucursalId));
+                $q->whereHas('caja', fn($c) => $c->where('sucursal_id', $sucursalId))
+                    ->orWhereHas('proforma', fn($p) => $p->where('sucursal_id', $sucursalId));
             });
         }
 
@@ -293,7 +312,7 @@ class CierresIndex extends Component
         // 2. EGRESOS CLÍNICOS: Honorarios Médicos (ProformaPagoMedico)
         $honorariosQuery = ProformaPagoMedico::whereBetween('fecha_pago', [$cierre->fecha_inicio, $cierre->fecha_fin]);
         if ($sucursalId) {
-            $honorariosQuery->whereHas('proforma', fn ($q) => $q->where('sucursal_id', $sucursalId));
+            $honorariosQuery->whereHas('proforma', fn($q) => $q->where('sucursal_id', $sucursalId));
         }
 
         $honorarios = $honorariosQuery->with(['medico.especialidad', 'proforma.paciente'])->get();
@@ -371,6 +390,16 @@ class CierresIndex extends Component
 
     public function sincronizarAutomaticos(): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.sincronizar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para sincronizar movimientos automáticos.',
+            ]);
+
+            return;
+        }
+
         if (! $this->cierreSeleccionadoId) {
             return;
         }
@@ -402,6 +431,16 @@ class CierresIndex extends Component
 
     public function cambiarEstadoCierre(string $nuevoEstado): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.finalizar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para cambiar el estado de este cierre.',
+            ]);
+
+            return;
+        }
+
         if (! $this->cierreSeleccionadoId) {
             return;
         }
@@ -418,6 +457,16 @@ class CierresIndex extends Component
 
     public function eliminarCierre(int $cierreId): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para eliminar cierres mensuales.',
+            ]);
+
+            return;
+        }
+
         $cierre = CierreMensual::findOrFail($cierreId);
         $cierre->delete();
 
@@ -437,6 +486,16 @@ class CierresIndex extends Component
     // =========================================================================
     public function abrirModalPartida(string $tipo = 'Egreso'): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.partidas')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar partidas del cierre.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->editando_partida_id = null;
         $this->partida_tipo = $tipo;
@@ -492,6 +551,16 @@ class CierresIndex extends Component
 
     public function editarPartida(int $partidaId): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.partidas')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar partidas del cierre.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $partida = CierreDetalle::findOrFail($partidaId);
 
@@ -511,6 +580,16 @@ class CierresIndex extends Component
 
     public function guardarPartida(): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.partidas')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar partidas del cierre.',
+            ]);
+
+            return;
+        }
+
         if (! $this->cierreSeleccionadoId) {
             return;
         }
@@ -583,6 +662,15 @@ class CierresIndex extends Component
 
     public function eliminarPartida(int $partidaId): void
     {
+        if (! Auth::user()?->tienePermiso('caja.cierres.partidas')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar partidas del cierre.',
+            ]);
+
+            return;
+        }
         if (! $this->cierreSeleccionadoId) {
             return;
         }
@@ -633,11 +721,11 @@ class CierresIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $search = '%'.trim($this->search).'%';
+            $search = '%' . trim($this->search) . '%';
             $query->where(function ($q) use ($search) {
                 $q->where('observaciones', 'like', $search)
-                    ->orWhereHas('sucursal', fn ($s) => $s->where('nombre', 'like', $search))
-                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $search));
+                    ->orWhereHas('sucursal', fn($s) => $s->where('nombre', 'like', $search))
+                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', $search));
             });
         }
 
@@ -662,7 +750,7 @@ class CierresIndex extends Component
             $cierreSeleccionado = CierreMensual::with([
                 'sucursal',
                 'user',
-                'detalles' => fn ($q) => $q->orderBy('fecha', 'desc')->orderBy('id', 'desc'),
+                'detalles' => fn($q) => $q->orderBy('fecha', 'desc')->orderBy('id', 'desc'),
             ])->find($this->cierreSeleccionadoId);
         }
 

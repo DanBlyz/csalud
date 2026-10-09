@@ -16,6 +16,7 @@
             </p>
         </div>
 
+        @permiso('caja.cierres.crear')
         <div class="flex items-center gap-2 shrink-0">
             <button 
                 type="button" 
@@ -26,6 +27,7 @@
                 <span>Nuevo Cierre Mensual</span>
             </button>
         </div>
+        @endpermiso
     </div>
 
     <!-- Metricas Superiores (Colores Solidos) -->
@@ -232,6 +234,7 @@
                                     </button>
 
                                     @if ($cierre->estado === 'Borrador')
+                                        @permiso('caja.cierres.eliminar')
                                         <button 
                                             type="button" 
                                             wire:click="eliminarCierre({{ $cierre->id }})" 
@@ -242,6 +245,7 @@
                                         >
                                             <i class="fas fa-trash-alt text-xs"></i>
                                         </button>
+                                        @endpermiso
                                     @endif
                                 </div>
                             </td>
@@ -252,6 +256,7 @@
                                 <i class="fas fa-chart-pie text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                 <p class="font-medium text-slate-600 dark:text-slate-300">No se encontraron cierres mensuales registrados.</p>
                                 <p class="text-xs text-slate-400 mt-0.5">Aperture un nuevo cierre para consolidar cobros, honorarios médicos y gastos del mes.</p>
+                                @permiso('caja.cierres.crear')
                                 <button 
                                     type="button" 
                                     wire:click="abrirModalCrear" 
@@ -259,6 +264,7 @@
                                 >
                                     <i class="fas fa-plus-circle"></i> Nuevo Cierre
                                 </button>
+                                @endpermiso
                             </td>
                         </tr>
                     @endforelse
@@ -460,6 +466,7 @@
                         <!-- Botones de Acción del Cierre -->
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($cierreSeleccionado->estado === 'Borrador')
+                                @permiso('caja.cierres.sincronizar')
                                 <button 
                                     type="button" 
                                     wire:click="sincronizarAutomaticos" 
@@ -474,7 +481,9 @@
                                         <i class="fas fa-spinner fa-spin text-xs"></i> Actualizando...
                                     </span>
                                 </button>
+                                @endpermiso
 
+                                @permiso('caja.cierres.partidas')
                                 <button 
                                     type="button" 
                                     wire:click="abrirModalPartida('Egreso')" 
@@ -494,7 +503,9 @@
                                     <i class="fas fa-plus-circle text-xs"></i>
                                     <span>Agregar Ingreso Extra</span>
                                 </button>
+                                @endpermiso
 
+                                @permiso('caja.cierres.finalizar')
                                 <button 
                                     type="button" 
                                     wire:click="cambiarEstadoCierre('Cerrado')" 
@@ -504,7 +515,9 @@
                                     <i class="fas fa-lock text-xs text-amber-400"></i>
                                     <span>Finalizar Cierre</span>
                                 </button>
+                                @endpermiso
                             @else
+                                @permiso('caja.cierres.finalizar')
                                 <button 
                                     type="button" 
                                     wire:click="cambiarEstadoCierre('Borrador')" 
@@ -514,6 +527,7 @@
                                     <i class="fas fa-lock-open text-xs"></i>
                                     <span>Reabrir Período</span>
                                 </button>
+                                @endpermiso
                             @endif
 
                             <button wire:click="cerrarModalDetalle" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
@@ -687,6 +701,7 @@
                                             </td>
                                             <td class="py-2.5 px-3 text-center">
                                                 @if ($cierreSeleccionado->estado === 'Borrador')
+                                                    @permiso('caja.cierres.partidas')
                                                     <div class="flex items-center justify-center gap-1">
                                                         <button 
                                                             type="button" 
@@ -708,6 +723,7 @@
                                                             <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarPartida({{ $det->id }})"></i>
                                                         </button>
                                                     </div>
+                                                    @endpermiso
                                                 @else
                                                     <span class="text-slate-400 text-[10px] italic">Bloqueado</span>
                                                 @endif

@@ -13,6 +13,7 @@
             </p>
         </div>
 
+        @permiso('catalogos.gestionar')
         <button 
             wire:click="abrirModalCrear" 
             wire:loading.attr="disabled"
@@ -22,6 +23,7 @@
             <i class="fas fa-plus"></i>
             <span>Nueva Especialidad</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Main Card Container -->
@@ -102,6 +104,7 @@
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    @permiso('catalogos.gestionar')
                                     <button 
                                         wire:click="abrirModalEditar({{ $esp->id }})" 
                                         type="button" 
@@ -114,21 +117,22 @@
                                     <button 
                                         type="button" 
                                         @click="$dispatch('swal:confirm', {
-                                            title: '¿Eliminar especialidad \'{{ addslashes($esp->nombre) }}\'?',
-                                            text: 'Se verificará que no tenga médicos asignados.',
-                                            icon: 'warning',
-                                            confirmButtonText: 'Sí, eliminar',
-                                            cancelButtonText: 'Cancelar',
-                                            event: 'eliminarEspecialidad',
-                                            componentId: '{{ $this->getId() }}',
-                                            method: 'eliminar',
-                                            params: [{{ $esp->id }}]
-                                        })"
+                                             title: '¿Eliminar especialidad \'{{ addslashes($esp->nombre) }}\'?',
+                                             text: 'Se verificará que no tenga médicos asignados.',
+                                             icon: 'warning',
+                                             confirmButtonText: 'Sí, eliminar',
+                                             cancelButtonText: 'Cancelar',
+                                             event: 'eliminarEspecialidad',
+                                             componentId: '{{ $this->getId() }}',
+                                             method: 'eliminar',
+                                             params: [{{ $esp->id }}]
+                                         })"
                                         class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                                         title="Eliminar Especialidad"
                                     >
                                         <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

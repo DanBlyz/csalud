@@ -5,6 +5,7 @@ namespace App\Livewire\Administracion;
 use App\Models\Categoria;
 use App\Models\Servicio;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -86,6 +87,16 @@ class ServiciosIndex extends Component
      * ------------------------------------------------------------- */
     public function abrirModalServicioCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset(['servicioId', 'nombreServicio', 'descripcionServicio']);
         $this->precio_tentativo = '0.00';
@@ -97,6 +108,16 @@ class ServiciosIndex extends Component
 
     public function abrirModalServicioEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $servicio = Servicio::findOrFail($id);
 
@@ -118,6 +139,16 @@ class ServiciosIndex extends Component
 
     public function guardarServicio(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'categoria_id' => 'required|exists:categorias,id',
             'nombreServicio' => 'required|string|min:3|max:150',
@@ -162,6 +193,16 @@ class ServiciosIndex extends Component
 
     public function toggleEstadoServicio(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $servicio = Servicio::findOrFail($id);
         $servicio->estado = ! $servicio->estado;
         $servicio->save();
@@ -169,13 +210,23 @@ class ServiciosIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Modificado',
-            'text' => "El servicio '{$servicio->nombre}' ahora está ".($servicio->estado ? 'activo' : 'inactivo').'.',
+            'text' => "El servicio '{$servicio->nombre}' ahora está " . ($servicio->estado ? 'activo' : 'inactivo') . '.',
         ]);
     }
 
     #[On('eliminarServicio')]
     public function eliminarServicio(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $servicio = Servicio::withCount('proformaServicios')->findOrFail($id);
 
         if ($servicio->proforma_servicios_count > 0) {
@@ -203,6 +254,16 @@ class ServiciosIndex extends Component
      * ------------------------------------------------------------- */
     public function abrirModalCategoriaCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset(['categoriaId', 'nombreCategoria', 'descripcionCategoria']);
         $this->estadoCategoria = true;
@@ -211,6 +272,16 @@ class ServiciosIndex extends Component
 
     public function abrirModalCategoriaEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $cat = Categoria::findOrFail($id);
 
@@ -230,6 +301,16 @@ class ServiciosIndex extends Component
 
     public function guardarCategoria(): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $this->validate([
             'nombreCategoria' => 'required|string|min:3|max:100',
             'descripcionCategoria' => 'nullable|string|max:255',
@@ -268,6 +349,16 @@ class ServiciosIndex extends Component
 
     public function toggleEstadoCategoria(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $cat = Categoria::findOrFail($id);
         $cat->estado = ! $cat->estado;
         $cat->save();
@@ -275,13 +366,23 @@ class ServiciosIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Modificado',
-            'text' => "La categoría '{$cat->nombre}' ahora está ".($cat->estado ? 'activa' : 'inactiva').'.',
+            'text' => "La categoría '{$cat->nombre}' ahora está " . ($cat->estado ? 'activa' : 'inactiva') . '.',
         ]);
     }
 
     #[On('eliminarCategoria')]
     public function eliminarCategoria(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('catalogos.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar servicios y categorías.',
+            ]);
+
+            return;
+        }
+
         $cat = Categoria::withCount('servicios')->findOrFail($id);
 
         if ($cat->servicios_count > 0) {

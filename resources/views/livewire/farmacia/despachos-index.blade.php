@@ -203,6 +203,7 @@
                             </td>
                             <td class="py-3 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    @permiso('despachar-farmacia')
                                     <button 
                                         wire:click="abrirModalDespacho({{ $receta->id }})" 
                                         wire:loading.attr="disabled"
@@ -213,6 +214,7 @@
                                         <i class="fas fa-dolly-flatbed text-[11px]"></i>
                                         <span>Atender Despacho</span>
                                     </button>
+                                    @endpermiso
                                     <a 
                                         href="{{ route('proformas.show', $receta->proforma_id) }}" 
                                         class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"

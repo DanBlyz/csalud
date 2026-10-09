@@ -289,6 +289,16 @@ class DespachosIndex extends Component
 
     public function abrirModalDespacho(int $recetaId): void
     {
+        if (! Auth::user()?->tienePermiso('despachar-farmacia')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para despachar medicamentos e insumos de farmacia.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->recetaId = $recetaId;
 
@@ -351,12 +361,12 @@ class DespachosIndex extends Component
             if (! $loteSugerido) {
                 $otroLote = Lote::where('producto_id', $det->producto_id)
                     ->where('sucursal_id', $sucursalId)
-                    ->whereHas('loteSecciones', fn ($q) => $q->where('cantidad_actual', '>', 0))
+                    ->whereHas('loteSecciones', fn($q) => $q->where('cantidad_actual', '>', 0))
                     ->where(function ($q) {
                         $q->whereNull('fecha_vencimiento')
                             ->orWhere('fecha_vencimiento', '>=', now()->toDateString());
                     })
-                    ->with(['loteSecciones' => fn ($q) => $q->where('cantidad_actual', '>', 0)])
+                    ->with(['loteSecciones' => fn($q) => $q->where('cantidad_actual', '>', 0)])
                     ->orderBy('fecha_vencimiento', 'asc')
                     ->first();
 
@@ -422,6 +432,16 @@ class DespachosIndex extends Component
 
     public function procesarDespacho(): void
     {
+        if (! Auth::user()?->tienePermiso('despachar-farmacia')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para procesar despachos de farmacia.',
+            ]);
+
+            return;
+        }
+
         $receta = Receta::with(['proforma', 'detalles'])->findOrFail($this->recetaId);
 
         // Validar ítems de prescripción
@@ -586,7 +606,7 @@ class DespachosIndex extends Component
             ]);
 
         if (! empty($this->search)) {
-            $search = '%'.trim($this->search).'%';
+            $search = '%' . trim($this->search) . '%';
             $query->where(function (Builder $q) use ($search) {
                 $q->whereHas('proforma.paciente', function (Builder $pac) use ($search) {
                     $pac->where('nombres', 'like', $search)
@@ -621,8 +641,8 @@ class DespachosIndex extends Component
         // Métricas rápidas
         $sucursales = Sucursal::orderBy('nombre')->get();
         $totalPendientes = Receta::where('activo', true)
-            ->whereHas('proforma', fn ($p) => $p->where('estado', 'En Curso'))
-            ->whereHas('detalles', fn ($d) => $d->where('despachado', false))
+            ->whereHas('proforma', fn($p) => $p->where('estado', 'En Curso'))
+            ->whereHas('detalles', fn($d) => $d->where('despachado', false))
             ->count();
 
         // Lotes e insumos disponibles para el modal de despacho
@@ -709,7 +729,7 @@ class DespachosIndex extends Component
                     });
                 if ($secExtraId) {
                     $q->where(function ($sq) use ($secExtraId) {
-                        $sq->whereHas('loteSecciones', fn ($lsq) => $lsq->where('seccion_id', $secExtraId)->where('cantidad_actual', '>', 0))
+                        $sq->whereHas('loteSecciones', fn($lsq) => $lsq->where('seccion_id', $secExtraId)->where('cantidad_actual', '>', 0))
                             ->orWhereDoesntHave('loteSecciones');
                     });
                 }
@@ -718,11 +738,11 @@ class DespachosIndex extends Component
             }]);
 
             if (! empty($this->buscarExtraProducto)) {
-                $searchExtra = '%'.trim($this->buscarExtraProducto).'%';
+                $searchExtra = '%' . trim($this->buscarExtraProducto) . '%';
                 $pQuery->where(function ($q) use ($searchExtra) {
                     $q->where('nombre', 'like', $searchExtra)
                         ->orWhere('descripcion', 'like', $searchExtra)
-                        ->orWhereHas('marca', fn ($m) => $m->where('nombre', 'like', $searchExtra));
+                        ->orWhereHas('marca', fn($m) => $m->where('nombre', 'like', $searchExtra));
                 });
                 $productosParaExtras = $pQuery->orderBy('nombre')->take(10)->get();
             } else {

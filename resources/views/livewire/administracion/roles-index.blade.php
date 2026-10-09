@@ -13,6 +13,7 @@
             </p>
         </div>
 
+        @permiso('roles.gestionar')
         <button 
             wire:click="abrirModalCrear" 
             wire:loading.attr="disabled"
@@ -22,6 +23,7 @@
             <i class="fas fa-plus"></i>
             <span>Nuevo Rol</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Main Card Container -->
@@ -109,6 +111,7 @@
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    @permiso('roles.gestionar')
                                     <button 
                                         wire:click="abrirModalEditar({{ $rol->id }})" 
                                         type="button" 
@@ -138,6 +141,7 @@
                                             <i class="fas fa-trash-alt text-sm"></i>
                                         </button>
                                     @endif
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

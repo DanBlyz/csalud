@@ -4,6 +4,7 @@ namespace App\Livewire\Administracion;
 
 use App\Models\Sucursal;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -71,6 +72,16 @@ class SucursalesIndex extends Component
 
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('sucursales.crear')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para crear sucursales.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset(['sucursalId', 'nombre', 'direccion', 'telefono', 'ciudad']);
         $this->estado = true;
@@ -79,6 +90,16 @@ class SucursalesIndex extends Component
 
     public function abrirModalEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('sucursales.editar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para editar sucursales.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $sucursal = Sucursal::findOrFail($id);
 
@@ -100,6 +121,17 @@ class SucursalesIndex extends Component
 
     public function guardar(): void
     {
+        $permisoRequerido = $this->sucursalId ? 'sucursales.editar' : 'sucursales.crear';
+        if (! Auth::user()?->tienePermiso($permisoRequerido)) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para guardar sucursales.',
+            ]);
+
+            return;
+        }
+
         $validated = $this->validate();
 
         if ($this->sucursalId) {
@@ -126,6 +158,16 @@ class SucursalesIndex extends Component
 
     public function toggleEstado(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('sucursales.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para cambiar el estado de sucursales.',
+            ]);
+
+            return;
+        }
+
         $sucursal = Sucursal::findOrFail($id);
         $sucursal->estado = ! $sucursal->estado;
         $sucursal->save();
@@ -142,6 +184,16 @@ class SucursalesIndex extends Component
     #[On('eliminarSucursal')]
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('sucursales.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para eliminar sucursales.',
+            ]);
+
+            return;
+        }
+
         $sucursal = Sucursal::withCount(['users', 'lotes', 'proformas'])->findOrFail($id);
 
         // Regla de Negocio documentada en Obsidian: No se puede eliminar si posee usuarios, lotes o proformas

@@ -17,14 +17,16 @@
 
         <div class="flex items-center gap-2">
             @if ($proforma->estado !== 'Pagada')
-                <button 
-                    wire:click="abrirModalEditarCabecera" 
-                    type="button" 
-                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                    <i class="fas fa-edit text-xs text-blue-500"></i>
-                    <span>Editar Cabecera</span>
-                </button>
+                @permiso('proformas.editar')
+                    <button 
+                        wire:click="abrirModalEditarCabecera" 
+                        type="button" 
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                        <i class="fas fa-edit text-xs text-blue-500"></i>
+                        <span>Editar Cabecera</span>
+                    </button>
+                @endpermiso
             @endif
 
             <a 
@@ -258,59 +260,65 @@
 
                     <div class="flex flex-wrap items-center gap-2">
                         @if($proforma->estado === 'Pagada' || $proforma->saldoPendiente() <= 0)
-                            <a 
-                                href="{{ route('proformas.pdf.recibo', $proforma->id) }}" 
-                                target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all transform active:scale-95"
-                                title="Imprimir Recibo Oficial de Caja"
-                            >
-                                <i class="fas fa-receipt text-xs"></i>
-                                <span>Recibo Caja</span>
-                            </a>
-                            <a 
-                                href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
-                                target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
-                                title="Imprimir Resumen Clínico PDF (Costos Finales)"
-                            >
-                                <i class="fas fa-file-invoice text-xs"></i>
-                                <span>Resumen PDF</span>
-                            </a>
-                            <a 
-                                href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
-                                target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition-all transform active:scale-95"
-                                title="Imprimir Detalle Clínico Completo PDF"
-                            >
-                                <i class="fas fa-file-pdf text-xs"></i>
-                                <span>Detalle PDF</span>
-                            </a>
+                            @permiso('proformas.imprimir')
+                                <a 
+                                    href="{{ route('proformas.pdf.recibo', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                    title="Imprimir Recibo Oficial de Caja"
+                                >
+                                    <i class="fas fa-receipt text-xs"></i>
+                                    <span>Recibo Caja</span>
+                                </a>
+                                <a 
+                                    href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                    title="Imprimir Resumen Clínico PDF (Costos Finales)"
+                                >
+                                    <i class="fas fa-file-invoice text-xs"></i>
+                                    <span>Resumen PDF</span>
+                                </a>
+                                <a 
+                                    href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                    title="Imprimir Detalle Clínico Completo PDF"
+                                >
+                                    <i class="fas fa-file-pdf text-xs"></i>
+                                    <span>Detalle PDF</span>
+                                </a>
+                            @endpermiso
                         @else
-                            <a 
-                                href="{{ route('caja.index', ['search' => $proforma->id]) }}" 
-                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
-                            >
-                                <i class="fas fa-cash-register text-sm"></i>
-                                <span>Liquidar en Caja</span>
-                            </a>
-                            <a 
-                                href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
-                                target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
-                                title="Imprimir Resumen Clínico PDF (Costos Finales)"
-                            >
-                                <i class="fas fa-file-invoice text-xs"></i>
-                                <span>Resumen PDF</span>
-                            </a>
-                            <a 
-                                href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
-                                target="_blank"
-                                class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
-                                title="Imprimir Detalle Clínico Completo PDF"
-                            >
-                                <i class="fas fa-file-pdf text-xs text-rose-400"></i>
-                                <span>Detalle PDF</span>
-                            </a>
+                            @permiso('cobro-caja')
+                                <a 
+                                    href="{{ route('caja.index', ['search' => $proforma->id]) }}" 
+                                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all transform active:scale-95 cursor-pointer"
+                                >
+                                    <i class="fas fa-cash-register text-sm"></i>
+                                    <span>Liquidar en Caja</span>
+                                </a>
+                            @endpermiso
+                            @permiso('proformas.imprimir')
+                                <a 
+                                    href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all transform active:scale-95"
+                                    title="Imprimir Resumen Clínico PDF (Costos Finales)"
+                                >
+                                    <i class="fas fa-file-invoice text-xs"></i>
+                                    <span>Resumen PDF</span>
+                                </a>
+                                <a 
+                                    href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
+                                    title="Imprimir Detalle Clínico Completo PDF"
+                                >
+                                    <i class="fas fa-file-pdf text-xs text-rose-400"></i>
+                                    <span>Detalle PDF</span>
+                                </a>
+                            @endpermiso
                         @endif
                     </div>
                 </div>
@@ -323,99 +331,113 @@
         <!-- Tab Navigation Bar -->
         <div class="flex items-center space-x-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px">
             <!-- 1. Servicios -->
-            <button 
-                wire:click="cambiarTab('servicios')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'servicios' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-briefcase-medical text-xs"></i>
-                <span>Servicios y Procedimientos</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $proforma->servicios->count() }}
-                </span>
-            </button>
+            @permiso('proformas.servicios.ver')
+                <button 
+                    wire:click="cambiarTab('servicios')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'servicios' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-briefcase-medical text-xs"></i>
+                    <span>Servicios y Procedimientos</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->servicios->count() }}
+                    </span>
+                </button>
+            @endpermiso
 
             <!-- 2. Solicitudes / Exámenes -->
-            <button 
-                wire:click="cambiarTab('solicitudes')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'solicitudes' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-flask text-xs"></i>
-                <span>Solicitudes y Exámenes</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $proforma->solicitudes->count() }}
-                </span>
-            </button>
+            @permiso('proformas.solicitudes.ver')
+                <button 
+                    wire:click="cambiarTab('solicitudes')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'solicitudes' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-flask text-xs"></i>
+                    <span>Solicitudes y Exámenes</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->solicitudes->count() }}
+                    </span>
+                </button>
+            @endpermiso
 
             <!-- 3. Calendario -->
-            <button 
-                wire:click="cambiarTab('calendario')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'calendario' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-calendar-alt text-xs"></i>
-                <span>Calendario y Agenda</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $proforma->calendarios->count() }}
-                </span>
-            </button>
+            @permiso('proformas.cronograma.ver')
+                <button 
+                    wire:click="cambiarTab('calendario')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'calendario' ? 'border-purple-600 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-calendar-alt text-xs"></i>
+                    <span>Calendario y Agenda</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->calendarios->count() }}
+                    </span>
+                </button>
+            @endpermiso
 
             <!-- 4. Recetas Médicas -->
-            <button 
-                wire:click="cambiarTab('recetas')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'recetas' ? 'border-teal-600 text-teal-600 dark:text-teal-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-prescription text-xs"></i>
-                <span>Prescripción y Recetas</span>
-                @if ($proforma->recetaActiva)
-                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
-                        1 Activa
-                    </span>
-                @else
-                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 font-mono">0</span>
-                @endif
-            </button>
+            @permiso('proformas.recetas.ver')
+                <button 
+                    wire:click="cambiarTab('recetas')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'recetas' ? 'border-teal-600 text-teal-600 dark:text-teal-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-prescription text-xs"></i>
+                    <span>Prescripción y Recetas</span>
+                    @if ($proforma->recetaActiva)
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+                            1 Activa
+                        </span>
+                    @else
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 font-mono">0</span>
+                    @endif
+                </button>
+            @endpermiso
 
             <!-- 5. Consumos Extras -->
-            <button 
-                wire:click="cambiarTab('consumos')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'consumos' ? 'border-amber-600 text-amber-600 dark:text-amber-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-syringe text-xs"></i>
-                <span>Consumos Extras e Insumos</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $proforma->consumosExtras->count() }}
-                </span>
-            </button>
+            @permiso('proformas.consumos.ver')
+                <button 
+                    wire:click="cambiarTab('consumos')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'consumos' ? 'border-amber-600 text-amber-600 dark:text-amber-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-syringe text-xs"></i>
+                    <span>Consumos Extras e Insumos</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->consumosExtras->count() }}
+                    </span>
+                </button>
+            @endpermiso
 
             <!-- 6. Despachos de Farmacia -->
-            <button 
-                wire:click="cambiarTab('despachos')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'despachos' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-dolly-flatbed text-xs"></i>
-                <span>Despachos de Farmacia</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $movimientosDespacho->count() }}
-                </span>
-            </button>
+            @permiso('despachar-farmacia')
+                <button 
+                    wire:click="cambiarTab('despachos')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'despachos' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-dolly-flatbed text-xs"></i>
+                    <span>Despachos de Farmacia</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $movimientosDespacho->count() }}
+                    </span>
+                </button>
+            @endpermiso
 
             <!-- 7. Honorarios Médicos -->
-            <button 
-                wire:click="cambiarTab('pagos_medicos')" 
-                type="button" 
-                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'pagos_medicos' ? 'border-violet-600 text-violet-600 dark:text-violet-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
-            >
-                <i class="fas fa-hand-holding-medical text-xs"></i>
-                <span>Honorarios Médicos</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
-                    {{ $proforma->pagosMedicos->count() }}
-                </span>
-            </button>
+            @permiso('proformas.honorarios.ver')
+                <button 
+                    wire:click="cambiarTab('pagos_medicos')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'pagos_medicos' ? 'border-violet-600 text-violet-600 dark:text-violet-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-hand-holding-medical text-xs"></i>
+                    <span>Honorarios Médicos</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->pagosMedicos->count() }}
+                    </span>
+                </button>
+            @endpermiso
         </div>
 
         <!-- CONTENIDO DEL TAB SELECCIONADO -->
@@ -424,723 +446,811 @@
             <!-- TAB 1: SERVICIOS Y PROCEDIMIENTOS -->
             <!-- =================================================================== -->
             @if ($tab === 'servicios')
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-briefcase-medical text-indigo-600 dark:text-indigo-400"></i>
-                                Catálogo de Servicios y Procedimientos Aplicados
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Asigne consultas, procedimientos, quirófano o curaciones al paciente.</p>
+                @permiso('proformas.servicios.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-briefcase-medical text-indigo-600 dark:text-indigo-400"></i>
+                                    Catálogo de Servicios y Procedimientos Aplicados
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Asigne consultas, procedimientos, quirófano o curaciones al paciente.</p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.servicios.agregar')
+                                    <button 
+                                        wire:click="abrirModalServicio" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar Procedimiento / Servicio</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalServicio" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Agregar Procedimiento / Servicio</span>
-                            </button>
-                        @endif
-                    </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
-                                <tr>
-                                    <th class="py-3 px-4 w-12 text-center">#</th>
-                                    <th class="py-3 px-4">Servicio Médico</th>
-                                    <th class="py-3 px-4">Categoría</th>
-                                    <th class="py-3 px-4">Observaciones Clínicas</th>
-                                    <th class="py-3 px-4 text-right">Precio Catálogo</th>
-                                    <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Costo Final Acordado</th>
-                                    @if ($proforma->estado !== 'Pagada')
-                                        <th class="py-3 px-4 text-center w-20">Acción</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                                @forelse ($proforma->servicios as $idx => $ps)
-                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                                        <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
-                                        <td class="py-3 px-4">
-                                            <div class="font-bold text-slate-900 dark:text-white text-sm">
-                                                {{ $ps->servicio->nombre ?? 'Servicio eliminado' }}
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
-                                                {{ $ps->servicio?->categoria?->nombre ?? 'General' }}
-                                            </span>
-                                        </td>
-                                        <td class="py-3 px-4 text-slate-500 dark:text-slate-400">
-                                            {{ $ps->observaciones ?: 'Sin observaciones particulares' }}
-                                        </td>
-                                        <td class="py-3 px-4 text-right font-mono text-slate-400">
-                                            Bs. {{ number_format($ps->servicio?->precio_tentativo ?? 0, 2) }}
-                                        </td>
-                                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-emerald-400 text-sm">
-                                            Bs. {{ number_format($ps->costo_final, 2) }}
-                                        </td>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Servicio Médico</th>
+                                        <th class="py-3 px-4">Categoría</th>
+                                        <th class="py-3 px-4">Observaciones Clínicas</th>
+                                        <th class="py-3 px-4 text-right">Precio Catálogo</th>
+                                        <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Costo Final Acordado</th>
                                         @if ($proforma->estado !== 'Pagada')
-                                            <td class="py-3 px-4 text-center">
-                                                <button 
-                                                    type="button" 
-                                                    @click="$dispatch('swal:confirm', {
-                                                        title: '¿Remover \'{{ addslashes($ps->servicio?->nombre ?? 'Servicio') }}\'?',
-                                                        text: 'Se descontará del costo total de la proforma.',
-                                                        icon: 'warning',
-                                                        confirmButtonText: 'Sí, remover',
-                                                        cancelButtonText: 'Cancelar',
-                                                        componentId: '{{ $this->getId() }}',
-                                                        method: 'eliminarServicioProforma',
-                                                        params: [{{ $ps->id }}],
-                                                        event: 'eliminarServicioProforma'
-                                                    })"
-                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                    title="Eliminar Servicio de la Proforma"
-                                                >
-                                                    <i class="fas fa-trash-alt text-xs"></i>
-                                                </button>
-                                            </td>
+                                            @permiso('proformas.servicios.eliminar')
+                                                <th class="py-3 px-4 text-center w-20">Acción</th>
+                                            @endpermiso
                                         @endif
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 7 : 6 }}" class="py-10 px-4 text-center text-slate-400">
-                                            <i class="fas fa-briefcase-medical text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-                                            <p class="font-medium text-slate-600 dark:text-slate-300">No hay servicios clínicos agregados a esta proforma.</p>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($proforma->servicios as $idx => $ps)
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                            <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-bold text-slate-900 dark:text-white text-sm">
+                                                    {{ $ps->servicio->nombre ?? 'Servicio eliminado' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                                                    {{ $ps->servicio?->categoria?->nombre ?? 'General' }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-500 dark:text-slate-400">
+                                                {{ $ps->observaciones ?: 'Sin observaciones particulares' }}
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-mono text-slate-400">
+                                                Bs. {{ number_format($ps->servicio?->precio_tentativo ?? 0, 2) }}
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-emerald-400 text-sm">
+                                                Bs. {{ number_format($ps->costo_final, 2) }}
+                                            </td>
                                             @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    wire:click="abrirModalServicio" 
-                                                    type="button" 
-                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 cursor-pointer"
-                                                >
-                                                    <i class="fas fa-plus"></i> Agregar Primer Servicio
-                                                </button>
+                                                @permiso('proformas.servicios.eliminar')
+                                                    <td class="py-3 px-4 text-center">
+                                                        <button 
+                                                            type="button" 
+                                                            @click="$dispatch('swal:confirm', {
+                                                                title: '¿Remover \'{{ addslashes($ps->servicio?->nombre ?? 'Servicio') }}\'?',
+                                                                text: 'Se descontará del costo total de la proforma.',
+                                                                icon: 'warning',
+                                                                confirmButtonText: 'Sí, remover',
+                                                                cancelButtonText: 'Cancelar',
+                                                                componentId: '{{ $this->getId() }}',
+                                                                method: 'eliminarServicioProforma',
+                                                                params: [{{ $ps->id }}],
+                                                                event: 'eliminarServicioProforma'
+                                                            })"
+                                                            class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                            title="Eliminar Servicio de la Proforma"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                @endpermiso
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 7 : 6 }}" class="py-10 px-4 text-center text-slate-400">
+                                                <i class="fas fa-briefcase-medical text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-300">No hay servicios clínicos agregados a esta proforma.</p>
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.servicios.agregar')
+                                                        <button 
+                                                            wire:click="abrirModalServicio" 
+                                                            type="button" 
+                                                            class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 cursor-pointer"
+                                                        >
+                                                            <i class="fas fa-plus"></i> Agregar Primer Servicio
+                                                        </button>
+                                                    @endpermiso
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar los servicios y procedimientos clínicos.</p>
+                    </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 2: SOLICITUDES Y EXÁMENES (FORMATO TABLA) -->
             <!-- =================================================================== -->
             @if ($tab === 'solicitudes')
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-flask text-blue-600 dark:text-blue-400"></i>
-                                Solicitudes de Laboratorio, Imagenología y Exámenes
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Órdenes de laboratorio, ecografías, rayos X y recepción de archivos digitales adjuntos.</p>
+                @permiso('proformas.solicitudes.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-flask text-blue-600 dark:text-blue-400"></i>
+                                    Solicitudes de Laboratorio, Imagenología y Exámenes
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Órdenes de laboratorio, ecografías, rayos X y recepción de archivos digitales adjuntos.</p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.solicitudes.agregar')
+                                    <button 
+                                        wire:click="abrirModalSolicitud" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Nueva Solicitud / Examen</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalSolicitud" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Nueva Solicitud / Examen</span>
-                            </button>
-                        @endif
-                    </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-4 w-12 text-center">#</th>
-                                    <th class="py-3 px-4">Estudio / Tipo de Examen</th>
-                                    <th class="py-3 px-4">Indicaciones / Observaciones</th>
-                                    <th class="py-3 px-4">Fecha de Solicitud</th>
-                                    <th class="py-3 px-4">Documento / Informe</th>
-                                    @if ($proforma->estado !== 'Pagada')
-                                        <th class="py-3 px-4 text-center">Acciones</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                                @forelse ($proforma->solicitudes as $index => $sol)
-                                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
-                                        <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
-                                        <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">
-                                            <div class="flex items-center gap-2.5">
-                                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs shrink-0">
-                                                    <i class="fas fa-vial"></i>
-                                                </span>
-                                                <span class="text-sm font-semibold">{{ $sol->tipoSolicitud->nombre ?? 'Estudio General' }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
-                                            {{ $sol->observaciones ?: 'Sin indicaciones específicas' }}
-                                        </td>
-                                        <td class="py-3 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">
-                                            <i class="far fa-clock me-1 text-slate-400"></i>
-                                            {{ $sol->created_at?->format('d/m/Y H:i') }}
-                                        </td>
-                                        <td class="py-3 px-4 whitespace-nowrap">
-                                            @if ($sol->archivo)
-                                                <a 
-                                                    href="{{ asset('storage/' . $sol->archivo) }}" 
-                                                    target="_blank" 
-                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-semibold text-xs transition-colors"
-                                                >
-                                                    <i class="fas fa-file-arrow-down"></i>
-                                                    <span>Ver / Descargar</span>
-                                                </a>
-                                            @else
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[11px] font-medium border border-slate-200 dark:border-slate-700">
-                                                    <i class="fas fa-file-circle-xmark"></i> Sin archivo
-                                                </span>
-                                            @endif
-                                        </td>
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Estudio / Tipo de Examen</th>
+                                        <th class="py-3 px-4">Indicaciones / Observaciones</th>
+                                        <th class="py-3 px-4">Fecha de Solicitud</th>
+                                        <th class="py-3 px-4">Documento / Informe</th>
                                         @if ($proforma->estado !== 'Pagada')
-                                            <td class="py-3 px-4 text-center whitespace-nowrap">
-                                                <div class="inline-flex items-center gap-1.5">
-                                                    <button 
-                                                        type="button" 
-                                                        wire:click="abrirModalSubirArchivo({{ $sol->id }})" 
-                                                        wire:loading.attr="disabled"
-                                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-colors cursor-pointer"
-                                                        title="{{ $sol->archivo ? 'Reemplazar / Actualizar archivo' : 'Adjuntar informe digital' }}"
-                                                    >
-                                                        <i class="fas {{ $sol->archivo ? 'fa-arrow-up-from-bracket' : 'fa-paperclip' }}"></i>
-                                                        <span>{{ $sol->archivo ? 'Actualizar' : 'Subir archivo' }}</span>
-                                                    </button>
-
-                                                    <button 
-                                                        type="button" 
-                                                        @click="$dispatch('swal:confirm', {
-                                                            title: '¿Remover orden de \'{{ addslashes($sol->tipoSolicitud->nombre ?? 'Examen') }}\'?',
-                                                            text: 'Se eliminará la solicitud médica y cualquier archivo adjunto.',
-                                                            icon: 'warning',
-                                                            confirmButtonText: 'Sí, remover',
-                                                            cancelButtonText: 'Cancelar',
-                                                            componentId: '{{ $this->getId() }}',
-                                                            method: 'eliminarSolicitudProforma',
-                                                            params: [{{ $sol->id }}],
-                                                            event: 'eliminarSolicitudProforma'
-                                                        })"
-                                                        class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                        title="Eliminar Solicitud"
-                                                    >
-                                                        <i class="fas fa-trash-alt text-xs"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            @permiso('proformas.solicitudes.eliminar')
+                                                <th class="py-3 px-4 text-center">Acciones</th>
+                                            @endpermiso
                                         @endif
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
-                                            <i class="fas fa-flask text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-                                            <p class="font-medium text-slate-600 dark:text-slate-300">No se han emitido órdenes de laboratorio o estudios complementarios.</p>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($proforma->solicitudes as $index => $sol)
+                                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                            <td class="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">
+                                                <div class="flex items-center gap-2.5">
+                                                    <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs shrink-0">
+                                                        <i class="fas fa-vial"></i>
+                                                    </span>
+                                                    <span class="text-sm font-semibold">{{ $sol->tipoSolicitud->nombre ?? 'Estudio General' }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-xs">
+                                                {{ $sol->observaciones ?: 'Sin indicaciones específicas' }}
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                                                <i class="far fa-clock me-1 text-slate-400"></i>
+                                                {{ $sol->created_at?->format('d/m/Y H:i') }}
+                                            </td>
+                                            <td class="py-3 px-4 whitespace-nowrap">
+                                                @if ($sol->archivo)
+                                                    <a 
+                                                        href="{{ asset('storage/' . $sol->archivo) }}" 
+                                                        target="_blank" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-semibold text-xs transition-colors"
+                                                    >
+                                                        <i class="fas fa-file-arrow-down"></i>
+                                                        <span>Ver / Descargar</span>
+                                                    </a>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-[11px] font-medium border border-slate-200 dark:border-slate-700">
+                                                        <i class="fas fa-file-circle-xmark"></i> Sin archivo
+                                                    </span>
+                                                @endif
+                                            </td>
                                             @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    wire:click="abrirModalSolicitud" 
-                                                    type="button" 
-                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
-                                                >
-                                                    <i class="fas fa-plus"></i> Solicitar Primer Examen
-                                                </button>
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    <div class="inline-flex items-center gap-1.5">
+                                                        @permiso('proformas.solicitudes.agregar')
+                                                            <button 
+                                                                type="button" 
+                                                                wire:click="abrirModalSubirArchivo({{ $sol->id }})" 
+                                                                wire:loading.attr="disabled"
+                                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition-colors cursor-pointer"
+                                                                title="{{ $sol->archivo ? 'Reemplazar / Actualizar archivo' : 'Adjuntar informe digital' }}"
+                                                            >
+                                                                <i class="fas {{ $sol->archivo ? 'fa-arrow-up-from-bracket' : 'fa-paperclip' }}"></i>
+                                                                <span>{{ $sol->archivo ? 'Actualizar' : 'Subir archivo' }}</span>
+                                                            </button>
+                                                        @endpermiso
+
+                                                        @permiso('proformas.solicitudes.eliminar')
+                                                            <button 
+                                                                type="button" 
+                                                                @click="$dispatch('swal:confirm', {
+                                                                    title: '¿Remover orden de \'{{ addslashes($sol->tipoSolicitud->nombre ?? 'Examen') }}\'?',
+                                                                    text: 'Se eliminará la solicitud médica y cualquier archivo adjunto.',
+                                                                    icon: 'warning',
+                                                                    confirmButtonText: 'Sí, remover',
+                                                                    cancelButtonText: 'Cancelar',
+                                                                    componentId: '{{ $this->getId() }}',
+                                                                    method: 'eliminarSolicitudProforma',
+                                                                    params: [{{ $sol->id }}],
+                                                                    event: 'eliminarSolicitudProforma'
+                                                                })"
+                                                                class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                                title="Eliminar Solicitud"
+                                                            >
+                                                                <i class="fas fa-trash-alt text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                    </div>
+                                                </td>
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
+                                                <i class="fas fa-flask text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-300">No se han emitido órdenes de laboratorio o estudios complementarios.</p>
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.solicitudes.agregar')
+                                                        <button 
+                                                            wire:click="abrirModalSolicitud" 
+                                                            type="button" 
+                                                            class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer"
+                                                        >
+                                                            <i class="fas fa-plus"></i> Solicitar Primer Examen
+                                                        </button>
+                                                    @endpermiso
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar solicitudes y exámenes clínicos.</p>
+                    </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 3: CALENDARIO Y AGENDA (FORMATO TABLA) -->
             <!-- =================================================================== -->
             @if ($tab === 'calendario')
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-purple-600 dark:text-purple-400"></i>
-                                Cronograma de Actividades, Controles y Procedimientos
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Agenda cronológica de rondas de enfermería, cambio de sueros, curaciones o cirugías.</p>
+                @permiso('proformas.cronograma.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-purple-600 dark:text-purple-400"></i>
+                                    Cronograma de Actividades, Controles y Procedimientos
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Agenda cronológica de rondas de enfermería, cambio de sueros, curaciones o cirugías.</p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.cronograma.agregar')
+                                    <button 
+                                        wire:click="abrirModalCalendario" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Programar Actividad</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalCalendario" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Programar Actividad</span>
-                            </button>
-                        @endif
-                    </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-4 w-12 text-center">#</th>
-                                    <th class="py-3 px-4">Fecha Programada</th>
-                                    <th class="py-3 px-4">Hora</th>
-                                    <th class="py-3 px-4">Actividad / Control / Procedimiento</th>
-                                    <th class="py-3 px-4 text-center">Estado</th>
-                                    @if ($proforma->estado !== 'Pagada')
-                                        <th class="py-3 px-4 text-center">Acciones</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                                @forelse ($proforma->calendarios as $index => $cal)
-                                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors {{ $cal->estado === 'Realizado' ? 'bg-emerald-50/20 dark:bg-emerald-950/10' : '' }}">
-                                        <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
-                                        <td class="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-                                                <i class="far fa-calendar text-purple-500"></i>
-                                                {{ $cal->fecha?->format('d/m/Y') }}
-                                            </span>
-                                        </td>
-                                        <td class="py-3 px-4 font-mono font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                            <i class="far fa-clock text-slate-400 me-1"></i>
-                                            {{ substr($cal->hora, 0, 5) }} hrs
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <span class="font-medium {{ $cal->estado === 'Realizado' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100' }}">
-                                                {{ $cal->descripcion }}
-                                            </span>
-                                        </td>
-                                        <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    type="button" 
-                                                    wire:click="toggleEstadoEvento({{ $cal->id }})" 
-                                                    wire:loading.attr="disabled"
-                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}"
-                                                    title="Haz clic para alternar entre Programado y Realizado"
-                                                >
-                                                    <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
-                                                    <span>{{ $cal->estado }}</span>
-                                                </button>
-                                            @else
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}">
-                                                    <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
-                                                    <span>{{ $cal->estado }}</span>
-                                                </span>
-                                            @endif
-                                        </td>
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Fecha Programada</th>
+                                        <th class="py-3 px-4">Hora</th>
+                                        <th class="py-3 px-4">Actividad / Control / Procedimiento</th>
+                                        <th class="py-3 px-4 text-center">Estado</th>
                                         @if ($proforma->estado !== 'Pagada')
-                                            <td class="py-3 px-4 text-center whitespace-nowrap">
-                                                <button 
-                                                    type="button" 
-                                                    @click="$dispatch('swal:confirm', {
-                                                        title: '¿Remover actividad del calendario?',
-                                                        text: 'Se eliminará \'{{ addslashes($cal->descripcion) }}\' de la agenda del paciente.',
-                                                        icon: 'warning',
-                                                        confirmButtonText: 'Sí, remover',
-                                                        cancelButtonText: 'Cancelar',
-                                                        componentId: '{{ $this->getId() }}',
-                                                        method: 'eliminarEventoCalendario',
-                                                        params: [{{ $cal->id }}],
-                                                        event: 'eliminarEventoCalendario'
-                                                    })"
-                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                    title="Eliminar Actividad"
-                                                >
-                                                    <i class="fas fa-trash-alt text-xs"></i>
-                                                </button>
-                                            </td>
+                                            @permiso('proformas.cronograma.gestionar')
+                                                <th class="py-3 px-4 text-center">Acciones</th>
+                                            @endpermiso
                                         @endif
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
-                                            <i class="fas fa-calendar-times text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-                                            <p class="font-medium text-slate-600 dark:text-slate-300">No hay citas, rondas o curaciones programadas en la agenda.</p>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($proforma->calendarios as $index => $cal)
+                                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors {{ $cal->estado === 'Realizado' ? 'bg-emerald-50/20 dark:bg-emerald-950/10' : '' }}">
+                                            <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                            <td class="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                                                    <i class="far fa-calendar text-purple-500"></i>
+                                                    {{ $cal->fecha?->format('d/m/Y') }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 font-mono font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                                <i class="far fa-clock text-slate-400 me-1"></i>
+                                                {{ substr($cal->hora, 0, 5) }} hrs
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="font-medium {{ $cal->estado === 'Realizado' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100' }}">
+                                                    {{ $cal->descripcion }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.cronograma.gestionar')
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="toggleEstadoEvento({{ $cal->id }})" 
+                                                            wire:loading.attr="disabled"
+                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}"
+                                                            title="Haz clic para alternar entre Programado y Realizado"
+                                                        >
+                                                            <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
+                                                            <span>{{ $cal->estado }}</span>
+                                                        </button>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}">
+                                                            <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
+                                                            <span>{{ $cal->estado }}</span>
+                                                        </span>
+                                                    @endpermiso
+                                                @else
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $cal->estado === 'Realizado' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' : 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800' }}">
+                                                        <i class="fas {{ $cal->estado === 'Realizado' ? 'fa-circle-check text-emerald-600' : 'fa-clock text-purple-600' }}"></i>
+                                                        <span>{{ $cal->estado }}</span>
+                                                    </span>
+                                                @endif
+                                            </td>
                                             @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    wire:click="abrirModalCalendario" 
-                                                    type="button" 
-                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 cursor-pointer"
-                                                >
-                                                    <i class="fas fa-plus"></i> Programar Primera Actividad
-                                                </button>
+                                                @permiso('proformas.cronograma.gestionar')
+                                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                        <button 
+                                                            type="button" 
+                                                            @click="$dispatch('swal:confirm', {
+                                                                title: '¿Remover actividad del calendario?',
+                                                                text: 'Se eliminará \'{{ addslashes($cal->descripcion) }}\' de la agenda del paciente.',
+                                                                icon: 'warning',
+                                                                confirmButtonText: 'Sí, remover',
+                                                                cancelButtonText: 'Cancelar',
+                                                                componentId: '{{ $this->getId() }}',
+                                                                method: 'eliminarEventoCalendario',
+                                                                params: [{{ $cal->id }}],
+                                                                event: 'eliminarEventoCalendario'
+                                                            })"
+                                                            class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                            title="Eliminar Actividad"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                @endpermiso
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-10 px-4 text-center text-slate-400">
+                                                <i class="fas fa-calendar-times text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-300">No hay citas, rondas o curaciones programadas en la agenda.</p>
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.cronograma.agregar')
+                                                        <button 
+                                                            wire:click="abrirModalCalendario" 
+                                                            type="button" 
+                                                            class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 cursor-pointer"
+                                                        >
+                                                            <i class="fas fa-plus"></i> Programar Primera Actividad
+                                                        </button>
+                                                    @endpermiso
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar el cronograma y agenda médica.</p>
+                    </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 4: PRESCRIPCIÓN Y RECETAS (REGLA: SOLO 1 RECETA ACTIVA) -->
             <!-- =================================================================== -->
             @if ($tab === 'recetas')
-                <div class="space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                    <i class="fas fa-prescription text-teal-600 dark:text-teal-400"></i>
-                                    Prescripciones y Recetas Médicas
-                                </h3>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
-                                    Regla: 1 Receta Activa
-                                </span>
+                @permiso('proformas.recetas.ver')
+                    <div class="space-y-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <i class="fas fa-prescription text-teal-600 dark:text-teal-400"></i>
+                                        Prescripciones y Recetas Médicas
+                                    </h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                                        Regla: 1 Receta Activa
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-0.5">Farmacia despacha únicamente los ítems de la prescripción marcada como Activa.</p>
                             </div>
-                            <p class="text-xs text-slate-400 mt-0.5">Farmacia despacha únicamente los ítems de la prescripción marcada como Activa.</p>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('emitir-receta')
+                                    <button 
+                                        wire:click="abrirModalReceta" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Prescribir Nueva Receta</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalReceta" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Prescribir Nueva Receta</span>
-                            </button>
+
+                        <!-- BANNER EXPLICATIVO: REGLA DE COBRO POR SALIDA DE FARMACIA -->
+                        <div class="p-3.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200">
+                            <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5 text-sm shrink-0"></i>
+                            <div class="space-y-1">
+                                <span class="font-bold">Pauta Médica y Despachos de Farmacia:</span>
+                                <p class="text-blue-800/90 dark:text-blue-300 leading-relaxed">
+                                    Las recetas constituyen la guía de tratamiento clínico indicada por el médico. El importe total de la receta es un <strong class="font-semibold underline">estimado referencial</strong>; a la cuenta de la proforma <strong class="font-semibold">solo se cargan los medicamentos efectivamente entregados por Farmacia</strong> día a día o según horario, previniendo cobros indebidos si el médico suspende o modifica la dosis del tratamiento.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RECETA ACTIVA VIGENTE -->
+                        @if ($proforma->recetaActiva)
+                            <div class="p-5 rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/40 dark:bg-slate-850 shadow-xs">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white text-base shadow-sm">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="font-bold text-sm text-slate-900 dark:text-white">
+                                                    Receta Médica Activa #{{ $proforma->recetaActiva->id }}
+                                                </h4>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse">
+                                                    VIGENTE EN FARMACIA
+                                                </span>
+                                            </div>
+                                            <div class="text-xs text-slate-400 mt-0.5">
+                                                Emitida por: <strong class="text-slate-700 dark:text-slate-300">Dr(a). {{ $proforma->recetaActiva->doctor->nombre_completo ?? 'Médico Tratante' }}</strong> • {{ $proforma->recetaActiva->created_at?->format('d/m/Y H:i') }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex flex-col sm:items-end gap-1">
+                                        <div class="text-xs font-mono font-medium text-slate-500 dark:text-slate-400">
+                                            Pauta Prescrita (Estimado Referencial): <span class="font-bold text-slate-700 dark:text-slate-200">Bs. {{ number_format($totalPrescripcionReferencial, 2) }}</span>
+                                        </div>
+                                        <div class="text-xs font-mono font-bold text-teal-600 dark:text-teal-400">
+                                            Despachado en Farmacia (Cobrable): Bs. {{ number_format($subtotalFarmacia, 2) }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($proforma->recetaActiva->observaciones)
+                                    <div class="mb-4 p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                                        <strong class="font-bold text-slate-800 dark:text-slate-200">Indicaciones Generales:</strong> {{ $proforma->recetaActiva->observaciones }}
+                                    </div>
+                                @endif
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-emerald-100/50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold border-b border-emerald-200 dark:border-slate-700 uppercase tracking-wider text-[10px]">
+                                            <tr>
+                                                <th class="py-2.5 px-3">Medicamento / Fármaco</th>
+                                                <th class="py-2.5 px-3 text-center">Cantidad</th>
+                                                <th class="py-2.5 px-3">Posología e Indicaciones (Dosis / Horas / Días)</th>
+                                                <th class="py-2.5 px-3 text-right">Precio Unitario</th>
+                                                <th class="py-2.5 px-3 text-right">Subtotal</th>
+                                                <th class="py-2.5 px-3 text-center">Estado Farmacia</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                                            @foreach ($proforma->recetaActiva->detalles as $det)
+                                                <tr class="hover:bg-white/60 dark:hover:bg-slate-800/60">
+                                                    <td class="py-2.5 px-3">
+                                                        <div class="font-bold text-slate-800 dark:text-white">
+                                                            {{ $det->producto->nombre ?? 'Producto no encontrado' }}
+                                                        </div>
+                                                        <div class="text-[10px] text-slate-400">
+                                                            {{ $det->producto?->unidad_medida ?? 'Presentación estándar' }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center font-bold font-mono text-xs">
+                                                        {{ $det->cantidad }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                                                        {{ $det->indicaciones }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-right font-mono text-slate-500">
+                                                        Bs. {{ number_format($det->producto?->ultimo_precio_venta ?? 0, 2) }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800 dark:text-emerald-400">
+                                                        Bs. {{ number_format($det->cantidad * ($det->producto?->ultimo_precio_venta ?? 0), 2) }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center">
+                                                        @if ($det->despachado)
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                                <i class="fas fa-check me-1"></i> Despachado
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
+                                                                <i class="fas fa-clock me-1"></i> Pendiente
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @else
+                            <div class="p-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-slate-400">
+                                <i class="fas fa-prescription-bottle text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                <p class="font-medium text-slate-700 dark:text-slate-200">No hay receta activa vigente para este paciente.</p>
+                                <p class="text-xs text-slate-400 mt-1">Prescriba una receta para que farmacia proceda al despacho de medicamentos.</p>
+                                @if ($proforma->estado !== 'Pagada')
+                                    @permiso('emitir-receta')
+                                        <button 
+                                            wire:click="abrirModalReceta" 
+                                            type="button" 
+                                            class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i> Prescribir Receta Ahora
+                                        </button>
+                                    @endpermiso
+                                @endif
+                            </div>
+                        @endif
+
+                        <!-- HISTORIAL DE RECETAS ANTERIORES (INACTIVAS) -->
+                        @php
+                            $recetasHistoricas = $proforma->recetas->where('activo', false);
+                        @endphp
+
+                        @if ($recetasHistoricas->isNotEmpty())
+                            <div class="pt-4 border-t border-slate-200 dark:border-slate-800" x-data="{ verHistorico: false }">
+                                <button 
+                                    @click="verHistorico = !verHistorico" 
+                                    type="button" 
+                                    class="flex items-center justify-between w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-history text-slate-400"></i>
+                                        <span>Historial de Recetas Anteriores ({{ $recetasHistoricas->count() }} archivadas)</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': verHistorico }"></i>
+                                </button>
+
+                                <div x-show="verHistorico" x-collapse class="mt-3 space-y-3" style="display: none;">
+                                    @foreach ($recetasHistoricas as $recOld)
+                                        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold text-slate-700 dark:text-slate-300">Receta #{{ $recOld->id }} (Histórica)</span>
+                                                    <span class="px-2 py-0.2 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">Inactiva</span>
+                                                </div>
+                                                <span class="text-slate-400 font-mono text-[11px]">{{ $recOld->created_at?->format('d/m/Y H:i') }}</span>
+                                            </div>
+
+                                            <ul class="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
+                                                @foreach ($recOld->detalles as $dOld)
+                                                    <li>
+                                                        <strong>{{ $dOld->producto->nombre ?? 'Medicamento' }}</strong> ({{ $dOld->cantidad }} un.): {{ $dOld->indicaciones }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         @endif
                     </div>
-
-                    <!-- BANNER EXPLICATIVO: REGLA DE COBRO POR SALIDA DE FARMACIA -->
-                    <div class="p-3.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200">
-                        <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5 text-sm shrink-0"></i>
-                        <div class="space-y-1">
-                            <span class="font-bold">Pauta Médica y Despachos de Farmacia:</span>
-                            <p class="text-blue-800/90 dark:text-blue-300 leading-relaxed">
-                                Las recetas constituyen la guía de tratamiento clínico indicada por el médico. El importe total de la receta es un <strong class="font-semibold underline">estimado referencial</strong>; a la cuenta de la proforma <strong class="font-semibold">solo se cargan los medicamentos efectivamente entregados por Farmacia</strong> día a día o según horario, previniendo cobros indebidos si el médico suspende o modifica la dosis del tratamiento.
-                            </p>
-                        </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar las prescripciones y recetas médicas.</p>
                     </div>
-
-                    <!-- RECETA ACTIVA VIGENTE -->
-                    @if ($proforma->recetaActiva)
-                        <div class="p-5 rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/40 dark:bg-slate-850 shadow-xs">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white text-base shadow-sm">
-                                        <i class="fas fa-check-circle"></i>
-                                    </span>
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">
-                                                Receta Médica Activa #{{ $proforma->recetaActiva->id }}
-                                            </h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 animate-pulse">
-                                                VIGENTE EN FARMACIA
-                                            </span>
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-0.5">
-                                            Emitida por: <strong class="text-slate-700 dark:text-slate-300">Dr(a). {{ $proforma->recetaActiva->doctor->nombre_completo ?? 'Médico Tratante' }}</strong> • {{ $proforma->recetaActiva->created_at?->format('d/m/Y H:i') }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex flex-col sm:items-end gap-1">
-                                    <div class="text-xs font-mono font-medium text-slate-500 dark:text-slate-400">
-                                        Pauta Prescrita (Estimado Referencial): <span class="font-bold text-slate-700 dark:text-slate-200">Bs. {{ number_format($totalPrescripcionReferencial, 2) }}</span>
-                                    </div>
-                                    <div class="text-xs font-mono font-bold text-teal-600 dark:text-teal-400">
-                                        Despachado en Farmacia (Cobrable): Bs. {{ number_format($subtotalFarmacia, 2) }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            @if ($proforma->recetaActiva->observaciones)
-                                <div class="mb-4 p-2.5 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-                                    <strong class="font-bold text-slate-800 dark:text-slate-200">Indicaciones Generales:</strong> {{ $proforma->recetaActiva->observaciones }}
-                                </div>
-                            @endif
-
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs">
-                                    <thead class="bg-emerald-100/50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold border-b border-emerald-200 dark:border-slate-700 uppercase tracking-wider text-[10px]">
-                                        <tr>
-                                            <th class="py-2.5 px-3">Medicamento / Fármaco</th>
-                                            <th class="py-2.5 px-3 text-center">Cantidad</th>
-                                            <th class="py-2.5 px-3">Posología e Indicaciones (Dosis / Horas / Días)</th>
-                                            <th class="py-2.5 px-3 text-right">Precio Unitario</th>
-                                            <th class="py-2.5 px-3 text-right">Subtotal</th>
-                                            <th class="py-2.5 px-3 text-center">Estado Farmacia</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                                        @foreach ($proforma->recetaActiva->detalles as $det)
-                                            <tr class="hover:bg-white/60 dark:hover:bg-slate-800/60">
-                                                <td class="py-2.5 px-3">
-                                                    <div class="font-bold text-slate-800 dark:text-white">
-                                                        {{ $det->producto->nombre ?? 'Producto no encontrado' }}
-                                                    </div>
-                                                    <div class="text-[10px] text-slate-400">
-                                                        {{ $det->producto?->unidad_medida ?? 'Presentación estándar' }}
-                                                    </div>
-                                                </td>
-                                                <td class="py-2.5 px-3 text-center font-bold font-mono text-xs">
-                                                    {{ $det->cantidad }}
-                                                </td>
-                                                <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                                                    {{ $det->indicaciones }}
-                                                </td>
-                                                <td class="py-2.5 px-3 text-right font-mono text-slate-500">
-                                                    Bs. {{ number_format($det->producto?->ultimo_precio_venta ?? 0, 2) }}
-                                                </td>
-                                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800 dark:text-emerald-400">
-                                                    Bs. {{ number_format($det->cantidad * ($det->producto?->ultimo_precio_venta ?? 0), 2) }}
-                                                </td>
-                                                <td class="py-2.5 px-3 text-center">
-                                                    @if ($det->despachado)
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                                            <i class="fas fa-check me-1"></i> Despachado
-                                                        </span>
-                                                    @else
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
-                                                            <i class="fas fa-clock me-1"></i> Pendiente
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @else
-                        <div class="p-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-slate-400">
-                            <i class="fas fa-prescription-bottle text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-                            <p class="font-medium text-slate-700 dark:text-slate-200">No hay receta activa vigente para este paciente.</p>
-                            <p class="text-xs text-slate-400 mt-1">Prescriba una receta para que farmacia proceda al despacho de medicamentos.</p>
-                            @if ($proforma->estado !== 'Pagada')
-                                <button 
-                                    wire:click="abrirModalReceta" 
-                                    type="button" 
-                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 cursor-pointer"
-                                >
-                                    <i class="fas fa-plus"></i> Prescribir Receta Ahora
-                                </button>
-                            @endif
-                        </div>
-                    @endif
-
-                    <!-- HISTORIAL DE RECETAS ANTERIORES (INACTIVAS) -->
-                    @php
-                        $recetasHistoricas = $proforma->recetas->where('activo', false);
-                    @endphp
-
-                    @if ($recetasHistoricas->isNotEmpty())
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800" x-data="{ verHistorico: false }">
-                            <button 
-                                @click="verHistorico = !verHistorico" 
-                                type="button" 
-                                class="flex items-center justify-between w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                            >
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-history text-slate-400"></i>
-                                    <span>Historial de Recetas Anteriores ({{ $recetasHistoricas->count() }} archivadas)</span>
-                                </div>
-                                <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': verHistorico }"></i>
-                            </button>
-
-                            <div x-show="verHistorico" x-collapse class="mt-3 space-y-3" style="display: none;">
-                                @foreach ($recetasHistoricas as $recOld)
-                                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-bold text-slate-700 dark:text-slate-300">Receta #{{ $recOld->id }} (Histórica)</span>
-                                                <span class="px-2 py-0.2 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">Inactiva</span>
-                                            </div>
-                                            <span class="text-slate-400 font-mono text-[11px]">{{ $recOld->created_at?->format('d/m/Y H:i') }}</span>
-                                        </div>
-
-                                        <ul class="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
-                                            @foreach ($recOld->detalles as $dOld)
-                                                <li>
-                                                    <strong>{{ $dOld->producto->nombre ?? 'Medicamento' }}</strong> ({{ $dOld->cantidad }} un.): {{ $dOld->indicaciones }}
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 5: CONSUMOS EXTRAS E INSUMOS DIRECTOS -->
             <!-- =================================================================== -->
             @if ($tab === 'consumos')
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-syringe text-amber-600 dark:text-amber-400"></i>
-                                Consumos Extras, Descartables y Material Hospitalario
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Jeringas, soluciones fisiológicas, apósitos o catéteres reportados directamente por enfermería y médicos.</p>
+                @permiso('proformas.consumos.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-syringe text-amber-600 dark:text-amber-400"></i>
+                                    Consumos Extras, Descartables y Material Hospitalario
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Jeringas, soluciones fisiológicas, apósitos o catéteres reportados directamente por enfermería y médicos.</p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.consumos.agregar')
+                                    <button 
+                                        wire:click="abrirModalConsumo" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Registrar Consumo de Insumo</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalConsumo" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Registrar Consumo de Insumo</span>
-                            </button>
-                        @endif
-                    </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
-                                <tr>
-                                    <th class="py-3 px-4 w-12 text-center">#</th>
-                                    <th class="py-3 px-4">Insumo / Material</th>
-                                    <th class="py-3 px-4 text-center">Cantidad</th>
-                                    <th class="py-3 px-4 text-right">Precio Unitario</th>
-                                    <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Subtotal</th>
-                                    <th class="py-3 px-4">Reportado Por</th>
-                                    <th class="py-3 px-4">Fecha y Hora</th>
-                                    @if ($proforma->estado !== 'Pagada')
-                                        <th class="py-3 px-4 text-center w-20">Acción</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                                @forelse ($proforma->consumosExtras as $idx => $ce)
-                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                                        <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
-                                        <td class="py-3 px-4">
-                                            <div class="font-bold text-slate-900 dark:text-white text-sm">
-                                                {{ $ce->producto->nombre ?? 'Insumo eliminado' }}
-                                            </div>
-                                            @if ($ce->observaciones)
-                                                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5">
-                                                    @if (str_starts_with($ce->observaciones, '['))
-                                                        @php
-                                                            $finTag = strpos($ce->observaciones, ']');
-                                                            $tagArea = $finTag !== false ? substr($ce->observaciones, 1, $finTag - 1) : null;
-                                                            $restoObs = $finTag !== false ? trim(substr($ce->observaciones, $finTag + 1)) : $ce->observaciones;
-                                                        @endphp
-                                                        @if ($tagArea)
-                                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                                                                <i class="fas fa-layer-group text-[8px]"></i> {{ $tagArea }}
-                                                            </span>
-                                                        @endif
-                                                        @if ($restoObs)
-                                                            <span>{{ $restoObs }}</span>
-                                                        @endif
-                                                    @else
-                                                        <span>{{ $ce->observaciones }}</span>
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="py-3 px-4 text-center font-mono font-bold">
-                                            {{ $ce->cantidad }}
-                                        </td>
-                                        <td class="py-3 px-4 text-right font-mono text-slate-500">
-                                            Bs. {{ number_format($ce->precio_unitario, 2) }}
-                                        </td>
-                                        <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-amber-400 text-sm">
-                                            Bs. {{ number_format($ce->cantidad * $ce->precio_unitario, 2) }}
-                                        </td>
-                                        <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
-                                            {{ $ce->user->nombre_completo ?? 'Personal de guardia' }}
-                                        </td>
-                                        <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">
-                                            {{ $ce->created_at?->format('d/m/Y H:i') }}
-                                        </td>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Insumo / Material</th>
+                                        <th class="py-3 px-4 text-center">Cantidad</th>
+                                        <th class="py-3 px-4 text-right">Precio Unitario</th>
+                                        <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Subtotal</th>
+                                        <th class="py-3 px-4">Reportado Por</th>
+                                        <th class="py-3 px-4">Fecha y Hora</th>
                                         @if ($proforma->estado !== 'Pagada')
-                                            <td class="py-3 px-4 text-center">
-                                                <button 
-                                                    type="button" 
-                                                    @click="$dispatch('swal:confirm', {
-                                                        title: '¿Remover insumo extra?',
-                                                        text: 'Se descontará del costo total de la proforma y las existencias se reintegrarán al inventario.',
-                                                        icon: 'warning',
-                                                        confirmButtonText: 'Sí, remover',
-                                                        cancelButtonText: 'Cancelar',
-                                                        componentId: '{{ $this->getId() }}',
-                                                        method: 'eliminarConsumoExtra',
-                                                        params: [{{ $ce->id }}],
-                                                        event: 'eliminarConsumoExtra'
-                                                    })"
-                                                    class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                                    title="Eliminar Insumo"
-                                                >
-                                                    <i class="fas fa-trash-alt text-xs"></i>
-                                                </button>
-                                            </td>
+                                            @permiso('proformas.consumos.eliminar')
+                                                <th class="py-3 px-4 text-center w-20">Acción</th>
+                                            @endpermiso
                                         @endif
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 8 : 7 }}" class="py-10 px-4 text-center text-slate-400">
-                                            <i class="fas fa-syringe text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-                                            <p class="font-medium text-slate-600 dark:text-slate-300">No se han registrado consumos extras de insumos o materiales hospitalarios.</p>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($proforma->consumosExtras as $idx => $ce)
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                            <td class="py-3 px-4 text-center font-mono text-slate-400 text-[11px]">{{ $idx + 1 }}</td>
+                                            <td class="py-3 px-4">
+                                                <div class="font-bold text-slate-900 dark:text-white text-sm">
+                                                    {{ $ce->producto->nombre ?? 'Insumo eliminado' }}
+                                                </div>
+                                                @if ($ce->observaciones)
+                                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5">
+                                                        @if (str_starts_with($ce->observaciones, '['))
+                                                            @php
+                                                                $finTag = strpos($ce->observaciones, ']');
+                                                                $tagArea = $finTag !== false ? substr($ce->observaciones, 1, $finTag - 1) : null;
+                                                                $restoObs = $finTag !== false ? trim(substr($ce->observaciones, $finTag + 1)) : $ce->observaciones;
+                                                            @endphp
+                                                            @if ($tagArea)
+                                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                                                    <i class="fas fa-layer-group text-[8px]"></i> {{ $tagArea }}
+                                                                </span>
+                                                            @endif
+                                                            @if ($restoObs)
+                                                                <span>{{ $restoObs }}</span>
+                                                            @endif
+                                                        @else
+                                                            <span>{{ $ce->observaciones }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="py-3 px-4 text-center font-mono font-bold">
+                                                {{ $ce->cantidad }}
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-mono text-slate-500">
+                                                Bs. {{ number_format($ce->precio_unitario, 2) }}
+                                            </td>
+                                            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-amber-400 text-sm">
+                                                Bs. {{ number_format($ce->cantidad * $ce->precio_unitario, 2) }}
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
+                                                {{ $ce->user->nombre_completo ?? 'Personal de guardia' }}
+                                            </td>
+                                            <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                                                {{ $ce->created_at?->format('d/m/Y H:i') }}
+                                            </td>
                                             @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    wire:click="abrirModalConsumo" 
-                                                    type="button" 
-                                                    class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 cursor-pointer"
-                                                >
-                                                    <i class="fas fa-plus"></i> Registrar Primer Insumo
-                                                </button>
+                                                @permiso('proformas.consumos.eliminar')
+                                                    <td class="py-3 px-4 text-center">
+                                                        <button 
+                                                            type="button" 
+                                                            @click="$dispatch('swal:confirm', {
+                                                                title: '¿Remover insumo extra?',
+                                                                text: 'Se descontará del costo total de la proforma y las existencias se reintegrarán al inventario.',
+                                                                icon: 'warning',
+                                                                confirmButtonText: 'Sí, remover',
+                                                                cancelButtonText: 'Cancelar',
+                                                                componentId: '{{ $this->getId() }}',
+                                                                method: 'eliminarConsumoExtra',
+                                                                params: [{{ $ce->id }}],
+                                                                event: 'eliminarConsumoExtra'
+                                                            })"
+                                                            class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                            title="Eliminar Insumo"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                @endpermiso
                                             @endif
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 8 : 7 }}" class="py-10 px-4 text-center text-slate-400">
+                                                <i class="fas fa-syringe text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-300">No se han registrado consumos extras de insumos o materiales hospitalarios.</p>
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.consumos.agregar')
+                                                        <button 
+                                                            wire:click="abrirModalConsumo" 
+                                                            type="button" 
+                                                            class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 cursor-pointer"
+                                                        >
+                                                            <i class="fas fa-plus"></i> Registrar Primer Insumo
+                                                        </button>
+                                                    @endpermiso
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar consumos e insumos extras.</p>
+                    </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 6: DESPACHOS Y ENTREGAS DE FARMACIA -->
             <!-- =================================================================== -->
             @if ($tab === 'despachos')
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-dolly-flatbed text-emerald-600 dark:text-emerald-400"></i>
-                                Historial de Despachos y Entregas de Farmacia
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Control de medicamentos e insumos dispensados físicamente con descuento en tiempo real del stock de inventario.</p>
+                @permiso('despachar-farmacia')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-dolly-flatbed text-emerald-600 dark:text-emerald-400"></i>
+                                    Historial de Despachos y Entregas de Farmacia
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Control de medicamentos e insumos dispensados físicamente con descuento en tiempo real del stock de inventario.</p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('despachar-farmacia')
+                                    <button 
+                                        wire:click="abrirModalDespacho" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus-circle"></i>
+                                        <span>Realizar Despacho</span>
+                                    </button>
+                                @endpermiso
+                            @endif
                         </div>
-                        @if ($proforma->estado !== 'Pagada')
-                            <button 
-                                wire:click="abrirModalDespacho" 
-                                wire:loading.attr="disabled"
-                                type="button" 
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                            >
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Realizar Despacho</span>
-                            </button>
-                        @endif
-                    </div>
 
                     <!-- Resumen rápido de despachos -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -1274,13 +1384,15 @@
                                             <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado despachos de farmacia ni consumos para esta proforma.</p>
                                             <p class="text-xs text-slate-400 mt-0.5">Puede dispensar los medicamentos de la receta activa o cargar insumos extras directamente.</p>
                                             @if ($proforma->estado !== 'Pagada')
-                                                <button 
-                                                    wire:click="abrirModalDespacho" 
-                                                    type="button" 
-                                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer shadow-md shadow-emerald-500/20"
-                                                >
-                                                    <i class="fas fa-plus-circle"></i> Realizar Primer Despacho
-                                                </button>
+                                                @permiso('despachar-farmacia')
+                                                    <button 
+                                                        wire:click="abrirModalDespacho" 
+                                                        type="button" 
+                                                        class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 cursor-pointer shadow-md shadow-emerald-500/20"
+                                                    >
+                                                        <i class="fas fa-plus-circle"></i> Realizar Primer Despacho
+                                                    </button>
+                                                @endpermiso
                                             @endif
                                         </td>
                                     </tr>
@@ -1289,32 +1401,42 @@
                         </table>
                     </div>
                 </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar ni gestionar despachos de farmacia.</p>
+                    </div>
+                @endpermiso
             @endif
 
             <!-- =================================================================== -->
             <!-- TAB 7: HONORARIOS Y PAGOS MÉDICOS -->
             <!-- =================================================================== -->
             @if ($tab === 'pagos_medicos')
-                <div>
-                    <!-- Header del Tab -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i class="fas fa-hand-holding-medical text-violet-600 dark:text-violet-400"></i>
-                                Liquidación y Honorarios de Médicos Tratantes
-                            </h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Pondere los servicios clínicos realizados y asigne los montos correspondientes a los médicos que participaron en este caso.</p>
+                @permiso('proformas.honorarios.ver')
+                    <div>
+                        <!-- Header del Tab -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-hand-holding-medical text-violet-600 dark:text-violet-400"></i>
+                                    Liquidación y Honorarios de Médicos Tratantes
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Pondere los servicios clínicos realizados y asigne los montos correspondientes a los médicos que participaron en este caso.</p>
+                            </div>
+                            @permiso('proformas.honorarios.gestionar')
+                                <button 
+                                    wire:click="abrirModalPagoMedico" 
+                                    wire:loading.attr="disabled"
+                                    type="button" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                >
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Asignar Honorario</span>
+                                </button>
+                            @endpermiso
                         </div>
-                        <button 
-                            wire:click="abrirModalPagoMedico" 
-                            wire:loading.attr="disabled"
-                            type="button" 
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
-                        >
-                            <i class="fas fa-plus-circle"></i>
-                            <span>Asignar Honorario</span>
-                        </button>
-                    </div>
 
                     <!-- Banner de Estado de la Proforma -->
                     @if ($proforma->estado === 'Pagada')
@@ -1420,14 +1542,16 @@
                                             </div>
                                         </div>
 
-                                        <button 
-                                            type="button" 
-                                            wire:click="abrirModalPagoMedico({{ $med->id }})" 
-                                            class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900 border border-violet-200 dark:border-violet-800 text-[11px] font-semibold transition"
-                                            title="Asignar honorario a este médico"
-                                        >
-                                            <i class="fas fa-plus text-[10px] me-1"></i> Asignar
-                                        </button>
+                                        @permiso('proformas.honorarios.gestionar')
+                                            <button 
+                                                type="button" 
+                                                wire:click="abrirModalPagoMedico({{ $med->id }})" 
+                                                class="shrink-0 px-2.5 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900 border border-violet-200 dark:border-violet-800 text-[11px] font-semibold transition"
+                                                title="Asignar honorario a este médico"
+                                            >
+                                                <i class="fas fa-plus text-[10px] me-1"></i> Asignar
+                                            </button>
+                                        @endpermiso
                                     </div>
                                 @endforeach
                             </div>
@@ -1508,7 +1632,9 @@
                                         <th class="py-3 px-4">Detalle / Ponderación / Observación</th>
                                         <th class="py-3 px-4 text-right">Monto Honorario</th>
                                         <th class="py-3 px-4">Registrado Por</th>
-                                        <th class="py-3 px-4 text-center w-24">Acciones</th>
+                                        @anypermiso(['proformas.honorarios.gestionar', 'proformas.honorarios.eliminar'])
+                                            <th class="py-3 px-4 text-center w-24">Acciones</th>
+                                        @endanypermiso
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1538,29 +1664,35 @@
                                             <td class="py-3 px-4 text-slate-600 dark:text-slate-300 text-[11px]">
                                                 {{ $pm->user?->nombre_completo ?? 'Personal Administrativo' }}
                                             </td>
-                                            <td class="py-3 px-4 text-center">
-                                                <div class="flex items-center justify-center gap-1.5">
-                                                    <button 
-                                                        wire:click="editarPagoMedico({{ $pm->id }})" 
-                                                        type="button" 
-                                                        class="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer"
-                                                        title="Editar Honorario"
-                                                    >
-                                                        <i class="fas fa-edit text-xs"></i>
-                                                    </button>
-                                                    <button 
-                                                        wire:click="eliminarPagoMedico({{ $pm->id }})" 
-                                                        wire:confirm="¿Está seguro de eliminar este registro de honorario médico?"
-                                                        wire:loading.attr="disabled"
-                                                        type="button" 
-                                                        class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        title="Eliminar Honorario"
-                                                    >
-                                                        <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
-                                                        <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            @anypermiso(['proformas.honorarios.gestionar', 'proformas.honorarios.eliminar'])
+                                                <td class="py-3 px-4 text-center">
+                                                    <div class="flex items-center justify-center gap-1.5">
+                                                        @permiso('proformas.honorarios.gestionar')
+                                                            <button 
+                                                                wire:click="editarPagoMedico({{ $pm->id }})" 
+                                                                type="button" 
+                                                                class="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer"
+                                                                title="Editar Honorario"
+                                                            >
+                                                                <i class="fas fa-edit text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                        @permiso('proformas.honorarios.eliminar')
+                                                            <button 
+                                                                wire:click="eliminarPagoMedico({{ $pm->id }})" 
+                                                                wire:confirm="¿Está seguro de eliminar este registro de honorario médico?"
+                                                                wire:loading.attr="disabled"
+                                                                type="button" 
+                                                                class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                title="Eliminar Honorario"
+                                                            >
+                                                                <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
+                                                                <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                    </div>
+                                                </td>
+                                            @endanypermiso
                                         </tr>
                                     @empty
                                         <tr>
@@ -1568,13 +1700,15 @@
                                                 <i class="fas fa-hand-holding-medical text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                                 <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado honorarios médicos para esta proforma.</p>
                                                 <p class="text-xs text-slate-400 mt-0.5">Revise los servicios realizados arriba y pondere el monto a pagar para cada médico participante.</p>
-                                                <button 
-                                                    wire:click="abrirModalPagoMedico" 
-                                                    type="button" 
-                                                    class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 cursor-pointer shadow-md shadow-violet-500/20"
-                                                >
-                                                    <i class="fas fa-plus-circle"></i> Asignar Primer Honorario
-                                                </button>
+                                                @permiso('proformas.honorarios.gestionar')
+                                                    <button 
+                                                        wire:click="abrirModalPagoMedico" 
+                                                        type="button" 
+                                                        class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 cursor-pointer shadow-md shadow-violet-500/20"
+                                                    >
+                                                        <i class="fas fa-plus-circle"></i> Asignar Primer Honorario
+                                                    </button>
+                                                @endpermiso
                                             </td>
                                         </tr>
                                     @endforelse
@@ -1583,6 +1717,13 @@
                         </div>
                     </div>
                 </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la liquidación y honorarios médicos.</p>
+                    </div>
+                @endpermiso
             @endif
         </div>
     </div>

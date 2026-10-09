@@ -13,6 +13,7 @@
             </p>
         </div>
 
+        @permiso('sucursales.crear')
         <button 
             wire:click="abrirModalCrear" 
             wire:loading.attr="disabled"
@@ -22,6 +23,7 @@
             <i class="fas fa-plus"></i>
             <span>Nueva Sucursal</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Main Card Container (AdminLTE Style) -->
@@ -151,6 +153,7 @@
                                 </div>
                             </td>
                             <td class="py-3.5 px-4 text-center">
+                                @permiso('sucursales.eliminar')
                                 <button 
                                     wire:click="toggleEstado({{ $sucursal->id }})" 
                                     wire:loading.attr="disabled"
@@ -161,9 +164,16 @@
                                     <span class="w-1.5 h-1.5 rounded-full {{ $sucursal->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                                     {{ $sucursal->estado ? 'Activa' : 'Inactiva' }}
                                 </button>
+                                @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold {{ $sucursal->estado ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $sucursal->estado ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                    {{ $sucursal->estado ? 'Activa' : 'Inactiva' }}
+                                </span>
+                                @endpermiso
                             </td>
                             <td class="py-3.5 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    @permiso('sucursales.editar')
                                     <button 
                                         wire:click="abrirModalEditar({{ $sucursal->id }})" 
                                         type="button" 
@@ -172,7 +182,9 @@
                                     >
                                         <i class="fas fa-edit text-sm"></i>
                                     </button>
+                                    @endpermiso
 
+                                    @permiso('sucursales.eliminar')
                                     <button 
                                         type="button" 
                                         @click="$dispatch('swal:confirm', {
@@ -191,6 +203,7 @@
                                     >
                                         <i class="fas fa-trash-alt text-sm"></i>
                                     </button>
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>

@@ -34,7 +34,7 @@ class InstitucionesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:2|max:150|unique:instituciones,nombre,'.$this->institucionId.',id,deleted_at,NULL',
+            'nombre' => 'required|string|min:2|max:150|unique:instituciones,nombre,' . $this->institucionId . ',id,deleted_at,NULL',
             'descripcion' => 'nullable|string|max:500',
             'estado' => 'required|string|in:Activo,Inactivo',
         ];
@@ -67,6 +67,16 @@ class InstitucionesIndex extends Component
 
     public function abrirModal(?int $id = null): void
     {
+        if (! Auth::user()?->tienePermiso('instituciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar instituciones y convenios.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->institucionId = $id;
 
@@ -96,6 +106,16 @@ class InstitucionesIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('instituciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar instituciones y convenios.',
+            ]);
+
+            return;
+        }
+
         $this->validate();
 
         if ($this->institucionId) {
@@ -128,6 +148,16 @@ class InstitucionesIndex extends Component
 
     public function toggleEstado(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('instituciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar instituciones y convenios.',
+            ]);
+
+            return;
+        }
+
         $institucion = Institucion::findOrFail($id);
         $institucion->estado = ($institucion->estado === 'Activo' || $institucion->estado === null) ? 'Inactivo' : 'Activo';
         $institucion->save();
@@ -142,6 +172,16 @@ class InstitucionesIndex extends Component
     #[On('eliminarInstitucion')]
     public function eliminarInstitucion(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('instituciones.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para administrar instituciones y convenios.',
+            ]);
+
+            return;
+        }
+
         $institucion = Institucion::withCount('pacientes')->findOrFail($id);
 
         if ($institucion->pacientes_count > 0) {

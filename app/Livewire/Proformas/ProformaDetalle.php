@@ -158,6 +158,35 @@ class ProformaDetalle extends Component
 
     public ?int $editando_pago_medico_id = null;
 
+    /**
+     * Mapeo de permisos requeridos para visualizar cada pestaña clínica.
+     */
+    public static array $tabPermissions = [
+        'servicios' => 'proformas.servicios.ver',
+        'solicitudes' => 'proformas.solicitudes.ver',
+        'calendario' => 'proformas.cronograma.ver',
+        'recetas' => 'proformas.recetas.ver',
+        'consumos' => 'proformas.consumos.ver',
+        'despachos' => 'despachar-farmacia',
+        'pagos_medicos' => 'proformas.honorarios.ver',
+    ];
+
+    public function autorizarAccion(string $permiso, string $mensaje = 'No cuenta con autorización para realizar esta acción.'): bool
+    {
+        $user = Auth::user();
+        if (! $user || ! $user->tienePermiso($permiso)) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Restringido',
+                'text' => $mensaje,
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
     public function mount(Proforma $proforma): void
     {
         $this->proforma = $proforma->load([
@@ -181,10 +210,34 @@ class ProformaDetalle extends Component
         ]);
 
         $this->proforma->recalcularTotal();
+
+        // Si el usuario no tiene permiso para la pestaña por defecto, cambiar a la primera que tenga permitida
+        $user = Auth::user();
+        if ($user && isset(self::$tabPermissions[$this->tab]) && ! $user->tienePermiso(self::$tabPermissions[$this->tab])) {
+            foreach (self::$tabPermissions as $tabKey => $perm) {
+                if ($user->tienePermiso($perm)) {
+                    $this->tab = $tabKey;
+                    break;
+                }
+            }
+        }
     }
 
     public function cambiarTab(string $tab): void
     {
+        if (isset(self::$tabPermissions[$tab])) {
+            $user = Auth::user();
+            if ($user && ! $user->tienePermiso(self::$tabPermissions[$tab])) {
+                $this->dispatch('swal', [
+                    'icon' => 'warning',
+                    'title' => 'Acceso Restringido',
+                    'text' => 'No dispone de permisos para acceder a esta pestaña clínica.',
+                ]);
+
+                return;
+            }
+        }
+
         $this->tab = $tab;
     }
 
@@ -208,6 +261,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalEditarCabecera(): void
     {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para editar los datos de cabecera de la proforma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -229,6 +286,10 @@ class ProformaDetalle extends Component
 
     public function guardarCabecera(): void
     {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para editar los datos de cabecera de la proforma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -268,6 +329,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalServicio(): void
     {
+        if (! $this->autorizarAccion('proformas.servicios.agregar', 'No cuenta con autorización para agregar servicios a la proforma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -349,6 +414,10 @@ class ProformaDetalle extends Component
 
     public function agregarServicio(): void
     {
+        if (! $this->autorizarAccion('proformas.servicios.agregar', 'No cuenta con autorización para agregar servicios a la proforma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -391,6 +460,10 @@ class ProformaDetalle extends Component
     #[On('eliminarServicioProforma')]
     public function eliminarServicioProforma(int $id): void
     {
+        if (! $this->autorizarAccion('proformas.servicios.eliminar', 'No cuenta con autorización para eliminar servicios de la proforma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -412,6 +485,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalSolicitud(): void
     {
+        if (! $this->autorizarAccion('proformas.solicitudes.agregar', 'No cuenta con autorización para solicitar exámenes clínicos.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -462,6 +539,10 @@ class ProformaDetalle extends Component
 
     public function agregarSolicitud(): void
     {
+        if (! $this->autorizarAccion('proformas.solicitudes.agregar', 'No cuenta con autorización para solicitar exámenes clínicos.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -508,6 +589,10 @@ class ProformaDetalle extends Component
     #[On('eliminarSolicitudProforma')]
     public function eliminarSolicitudProforma(int $id): void
     {
+        if (! $this->autorizarAccion('proformas.solicitudes.eliminar', 'No cuenta con autorización para eliminar solicitudes de examen.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -529,6 +614,10 @@ class ProformaDetalle extends Component
 
     public function abrirModalSubirArchivo(int $solicitudId): void
     {
+        if (! $this->autorizarAccion('proformas.solicitudes.agregar', 'No cuenta con autorización para adjuntar archivos a la solicitud.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -550,6 +639,10 @@ class ProformaDetalle extends Component
 
     public function guardarArchivoSolicitud(): void
     {
+        if (! $this->autorizarAccion('proformas.solicitudes.agregar', 'No cuenta con autorización para adjuntar archivos a la solicitud.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -585,6 +678,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalCalendario(): void
     {
+        if (! $this->autorizarAccion('proformas.cronograma.agregar', 'No cuenta con autorización para programar citas en el cronograma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -632,6 +729,10 @@ class ProformaDetalle extends Component
 
     public function agregarEventoCalendario(): void
     {
+        if (! $this->autorizarAccion('proformas.cronograma.agregar', 'No cuenta con autorización para programar citas en el cronograma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -673,6 +774,10 @@ class ProformaDetalle extends Component
 
     public function toggleEstadoEvento(int $id): void
     {
+        if (! $this->autorizarAccion('proformas.cronograma.gestionar', 'No cuenta con autorización para modificar actividades del cronograma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -691,6 +796,10 @@ class ProformaDetalle extends Component
     #[On('eliminarEventoCalendario')]
     public function eliminarEventoCalendario(int $id): void
     {
+        if (! $this->autorizarAccion('proformas.cronograma.gestionar', 'No cuenta con autorización para eliminar actividades del cronograma.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -710,6 +819,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalReceta(): void
     {
+        if (! $this->autorizarAccion('emitir-receta', 'No cuenta con autorización para prescribir recetas médicas.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -773,6 +886,10 @@ class ProformaDetalle extends Component
 
     public function prescribirReceta(): void
     {
+        if (! $this->autorizarAccion('emitir-receta', 'No cuenta con autorización para emitir recetas médicas.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -824,6 +941,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalConsumo(): void
     {
+        if (! $this->autorizarAccion('proformas.consumos.agregar', 'No cuenta con autorización para registrar consumos e insumos.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -1058,6 +1179,10 @@ class ProformaDetalle extends Component
 
     public function registrarConsumoExtra(): void
     {
+        if (! $this->autorizarAccion('proformas.consumos.agregar', 'No cuenta con autorización para registrar consumos e insumos.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -1169,6 +1294,10 @@ class ProformaDetalle extends Component
     #[On('eliminarConsumoExtra')]
     public function eliminarConsumoExtra(int $id): void
     {
+        if (! $this->autorizarAccion('proformas.consumos.eliminar', 'No cuenta con autorización para eliminar consumos extras.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -1219,6 +1348,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalDespacho(): void
     {
+        if (! $this->autorizarAccion('despachar-farmacia', 'No cuenta con autorización para dispensar medicamentos de farmacia.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -1573,6 +1706,10 @@ class ProformaDetalle extends Component
 
     public function procesarDespacho(): void
     {
+        if (! $this->autorizarAccion('despachar-farmacia', 'No cuenta con autorización para dispensar medicamentos de farmacia.')) {
+            return;
+        }
+
         if (! $this->asegurarProformaModificable()) {
             return;
         }
@@ -1724,6 +1861,10 @@ class ProformaDetalle extends Component
     // =========================================================================
     public function abrirModalPagoMedico(?int $medicoId = null): void
     {
+        if (! $this->autorizarAccion('proformas.honorarios.gestionar', 'No cuenta con autorización para gestionar honorarios médicos.')) {
+            return;
+        }
+
         $this->resetValidation();
         $this->editando_pago_medico_id = null;
         $this->pago_medico_id = $medicoId;
@@ -1748,6 +1889,10 @@ class ProformaDetalle extends Component
 
     public function editarPagoMedico(int $pagoId): void
     {
+        if (! $this->autorizarAccion('proformas.honorarios.gestionar', 'No cuenta con autorización para gestionar honorarios médicos.')) {
+            return;
+        }
+
         $this->resetValidation();
         $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
 
@@ -1761,6 +1906,10 @@ class ProformaDetalle extends Component
 
     public function guardarPagoMedico(): void
     {
+        if (! $this->autorizarAccion('proformas.honorarios.gestionar', 'No cuenta con autorización para gestionar honorarios médicos.')) {
+            return;
+        }
+
         $this->validate([
             'pago_medico_id' => ['required', 'exists:users,id'],
             'pago_medico_monto' => ['required', 'numeric', 'min:0.01'],
@@ -1808,6 +1957,10 @@ class ProformaDetalle extends Component
 
     public function eliminarPagoMedico(int $pagoId): void
     {
+        if (! $this->autorizarAccion('proformas.honorarios.eliminar', 'No cuenta con autorización para eliminar pagos de honorarios médicos.')) {
+            return;
+        }
+
         $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
         $pago->delete();
 

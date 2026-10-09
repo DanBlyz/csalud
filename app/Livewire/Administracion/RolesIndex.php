@@ -4,6 +4,7 @@ namespace App\Livewire\Administracion;
 
 use App\Models\Rol;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -29,7 +30,7 @@ class RolesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:3|max:100|unique:roles,nombre,'.$this->rolId,
+            'nombre' => 'required|string|min:3|max:100|unique:roles,nombre,' . $this->rolId,
             'descripcion' => 'nullable|string|max:255',
         ];
     }
@@ -51,6 +52,16 @@ class RolesIndex extends Component
 
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('roles.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar roles.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset(['rolId', 'nombre', 'descripcion']);
         $this->modalOpen = true;
@@ -58,6 +69,16 @@ class RolesIndex extends Component
 
     public function abrirModalEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('roles.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar roles.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $rol = Rol::findOrFail($id);
 
@@ -75,6 +96,16 @@ class RolesIndex extends Component
 
     public function guardar(): void
     {
+        if (! Auth::user()?->tienePermiso('roles.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para gestionar roles.',
+            ]);
+
+            return;
+        }
+
         $validated = $this->validate();
 
         if ($this->rolId) {
@@ -115,6 +146,16 @@ class RolesIndex extends Component
     #[On('eliminarRol')]
     public function eliminar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('roles.gestionar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para eliminar roles.',
+            ]);
+
+            return;
+        }
+
         $rol = Rol::withCount('users')->findOrFail($id);
 
         if ($rol->nombre === 'Admin') {

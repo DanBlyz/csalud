@@ -27,4 +27,34 @@ class Permiso extends Model
         return $this->belongsToMany(User::class, 'permiso_usuario', 'permiso_id', 'user_id')
             ->withTimestamps();
     }
+
+    /**
+     * Módulo al que pertenece el permiso según su ID y prefijo.
+     */
+    public function getModuloAttribute(): string
+    {
+        $id = (int) $this->id;
+
+        if (in_array($id, [1, 2, 3, 4], true) || ($id >= 11 && $id <= 21)) {
+            return 'Administración y Sistema';
+        }
+
+        if ($id === 5 || ($id >= 22 && $id <= 26)) {
+            return 'Pacientes e Instituciones';
+        }
+
+        if (in_array($id, [6, 7, 8], true) || ($id >= 27 && $id <= 46)) {
+            return 'Proformas Clínicas y Admisión';
+        }
+
+        if ($id === 9 || ($id >= 47 && $id <= 59)) {
+            return 'Farmacia e Inventario';
+        }
+
+        if ($id === 10 || ($id >= 60 && $id <= 70)) {
+            return 'Caja y Finanzas';
+        }
+
+        return 'General';
+    }
 }

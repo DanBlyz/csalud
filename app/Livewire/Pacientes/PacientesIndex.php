@@ -115,6 +115,16 @@ class PacientesIndex extends Component
 
     public function abrirModalCrear(): void
     {
+        if (! Auth::user()?->tienePermiso('pacientes.crear')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para registrar nuevos pacientes.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $this->reset([
             'pacienteId',
@@ -137,6 +147,16 @@ class PacientesIndex extends Component
 
     public function abrirModalEditar(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('pacientes.editar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para editar datos de pacientes.',
+            ]);
+
+            return;
+        }
+
         $this->resetValidation();
         $paciente = Paciente::findOrFail($id);
 
@@ -165,6 +185,17 @@ class PacientesIndex extends Component
 
     public function guardar(): void
     {
+        $permiso = $this->pacienteId ? 'pacientes.editar' : 'pacientes.crear';
+        if (! Auth::user()?->tienePermiso($permiso)) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para ' . ($this->pacienteId ? 'editar' : 'registrar') . ' pacientes.',
+            ]);
+
+            return;
+        }
+
         $validated = $this->validate();
 
         if ($this->pacienteId) {
@@ -207,6 +238,16 @@ class PacientesIndex extends Component
     #[On('eliminarPaciente')]
     public function eliminarPaciente(int $id): void
     {
+        if (! Auth::user()?->tienePermiso('pacientes.eliminar')) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para dar de baja o eliminar pacientes.',
+            ]);
+
+            return;
+        }
+
         $paciente = Paciente::findOrFail($id);
 
         // Validar si tiene proformas activas en curso
@@ -239,7 +280,7 @@ class PacientesIndex extends Component
                 $q->where('estado', 'En Curso');
             }])
             ->when($this->search !== '', function ($q) {
-                $term = '%'.trim($this->search).'%';
+                $term = '%' . trim($this->search) . '%';
                 $q->where(function ($sub) use ($term) {
                     $sub->where('nombres', 'like', $term)
                         ->orWhere('apellido_paterno', 'like', $term)

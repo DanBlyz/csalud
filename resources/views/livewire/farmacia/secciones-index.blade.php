@@ -20,6 +20,7 @@
             </p>
         </div>
 
+        @permiso('farmacia.secciones.gestionar')
         <button 
             type="button" 
             wire:click="abrirModal" 
@@ -28,6 +29,7 @@
             <i class="fas fa-plus text-xs"></i>
             <span>Nueva Sección / Área</span>
         </button>
+        @endpermiso
     </div>
 
     <!-- Métricas Rápidas -->
@@ -185,6 +187,7 @@
                                 {{ number_format((int) ($sec->stock_total ?? 0)) }} <span class="text-[10px] font-normal text-slate-400">un.</span>
                             </td>
                             <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                @permiso('farmacia.secciones.gestionar')
                                 <button 
                                     type="button" 
                                     wire:click="toggleActivo({{ $sec->id }})" 
@@ -195,9 +198,16 @@
                                     <i class="fas {{ $sec->activo ? 'fa-check-circle text-emerald-600' : 'fa-times-circle text-slate-400' }}"></i>
                                     <span>{{ $sec->activo ? 'Activa' : 'Inactiva' }}</span>
                                 </button>
+                                @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $sec->activo ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' }}">
+                                    <i class="fas {{ $sec->activo ? 'fa-check-circle text-emerald-600' : 'fa-times-circle text-slate-400' }}"></i>
+                                    <span>{{ $sec->activo ? 'Activa' : 'Inactiva' }}</span>
+                                </span>
+                                @endpermiso
                             </td>
                             <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1">
+                                    @permiso('farmacia.secciones.gestionar')
                                     <button 
                                         type="button" 
                                         wire:click="abrirModal({{ $sec->id }})" 
@@ -227,6 +237,7 @@
                                             <i class="fas fa-trash-alt text-xs"></i>
                                         </button>
                                     @endif
+                                    @endpermiso
                                 </div>
                             </td>
                         </tr>
@@ -235,6 +246,7 @@
                             <td colspan="7" class="py-12 px-4 text-center text-slate-400">
                                 <i class="fas fa-sitemap text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                 <p class="font-medium text-slate-600 dark:text-slate-300">No se encontraron secciones o áreas registradas.</p>
+                                @permiso('farmacia.secciones.gestionar')
                                 <button 
                                     wire:click="abrirModal" 
                                     type="button" 
@@ -242,6 +254,7 @@
                                 >
                                     <i class="fas fa-plus"></i> Crear Primera Sección
                                 </button>
+                                @endpermiso
                             </td>
                         </tr>
                     @endforelse
