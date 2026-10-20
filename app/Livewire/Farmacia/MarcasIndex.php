@@ -4,6 +4,7 @@ namespace App\Livewire\Farmacia;
 
 use App\Models\Marca;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -29,7 +30,7 @@ class MarcasIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:2|max:150|unique:marcas,nombre,' . $this->marcaId . ',id,deleted_at,NULL',
+            'nombre' => 'required|string|min:2|max:150|unique:marcas,nombre,'.$this->marcaId.',id,deleted_at,NULL',
             'descripcion' => 'nullable|string|max:500',
         ];
     }

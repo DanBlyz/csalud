@@ -4,6 +4,7 @@ namespace App\Livewire\Farmacia;
 
 use App\Models\Proveedor;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -44,7 +45,7 @@ class ProveedoresIndex extends Component
     protected function rules(): array
     {
         return [
-            'razon_social' => 'required|string|min:3|max:191|unique:proveedores,razon_social,' . $this->proveedorId . ',id,deleted_at,NULL',
+            'razon_social' => 'required|string|min:3|max:191|unique:proveedores,razon_social,'.$this->proveedorId.',id,deleted_at,NULL',
             'nit_ruc' => 'nullable|string|max:50',
             'contacto_nombre' => 'nullable|string|max:150',
             'telefono' => 'nullable|string|max:30',

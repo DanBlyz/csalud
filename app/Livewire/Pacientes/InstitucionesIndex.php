@@ -4,6 +4,7 @@ namespace App\Livewire\Pacientes;
 
 use App\Models\Institucion;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -34,7 +35,7 @@ class InstitucionesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:2|max:150|unique:instituciones,nombre,' . $this->institucionId . ',id,deleted_at,NULL',
+            'nombre' => 'required|string|min:2|max:150|unique:instituciones,nombre,'.$this->institucionId.',id,deleted_at,NULL',
             'descripcion' => 'nullable|string|max:500',
             'estado' => 'required|string|in:Activo,Inactivo',
         ];

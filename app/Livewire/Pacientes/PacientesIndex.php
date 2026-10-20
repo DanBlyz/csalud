@@ -6,6 +6,7 @@ use App\Models\Institucion;
 use App\Models\Paciente;
 use App\Models\Proforma;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -190,7 +191,7 @@ class PacientesIndex extends Component
             $this->dispatch('swal', [
                 'icon' => 'error',
                 'title' => 'Acceso Denegado',
-                'text' => 'No tiene permiso para ' . ($this->pacienteId ? 'editar' : 'registrar') . ' pacientes.',
+                'text' => 'No tiene permiso para '.($this->pacienteId ? 'editar' : 'registrar').' pacientes.',
             ]);
 
             return;
@@ -280,7 +281,7 @@ class PacientesIndex extends Component
                 $q->where('estado', 'En Curso');
             }])
             ->when($this->search !== '', function ($q) {
-                $term = '%' . trim($this->search) . '%';
+                $term = '%'.trim($this->search).'%';
                 $q->where(function ($sub) use ($term) {
                     $sub->where('nombres', 'like', $term)
                         ->orWhere('apellido_paterno', 'like', $term)

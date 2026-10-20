@@ -7,6 +7,7 @@ use App\Models\Producto;
 use App\Models\Seccion;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -112,7 +113,7 @@ class ProductosIndex extends Component
             $this->dispatch('swal', [
                 'type' => 'error',
                 'title' => 'Acceso Denegado',
-                'message' => 'No tiene permiso para ' . ($id ? 'editar' : 'crear') . ' medicamentos o insumos.',
+                'message' => 'No tiene permiso para '.($id ? 'editar' : 'crear').' medicamentos o insumos.',
             ]);
 
             return;
@@ -154,7 +155,7 @@ class ProductosIndex extends Component
             $this->dispatch('swal', [
                 'type' => 'error',
                 'title' => 'Acceso Denegado',
-                'message' => 'No tiene permiso para ' . ($this->productoId ? 'editar' : 'crear') . ' medicamentos o insumos.',
+                'message' => 'No tiene permiso para '.($this->productoId ? 'editar' : 'crear').' medicamentos o insumos.',
             ]);
 
             return;
@@ -263,7 +264,7 @@ class ProductosIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $search = '%' . trim($this->search) . '%';
+            $search = '%'.trim($this->search).'%';
             $query->where(function (Builder $q) use ($search) {
                 $q->where('nombre', 'like', $search)
                     ->orWhere('descripcion', 'like', $search)
@@ -308,9 +309,9 @@ class ProductosIndex extends Component
             ->get(['id', 'stock_minimo']);
 
         $totalProductos = $productosTotales->count();
-        $totalStockNormal = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) > $p->stock_minimo)->count();
-        $totalStockCritico = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) > 0 && ($p->stock_total ?? 0) <= $p->stock_minimo)->count();
-        $totalStockAgotado = $productosTotales->filter(fn($p) => ($p->stock_total ?? 0) <= 0)->count();
+        $totalStockNormal = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > $p->stock_minimo)->count();
+        $totalStockCritico = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) > 0 && ($p->stock_total ?? 0) <= $p->stock_minimo)->count();
+        $totalStockAgotado = $productosTotales->filter(fn ($p) => ($p->stock_total ?? 0) <= 0)->count();
 
         $marcas = Marca::orderBy('nombre')->get();
         $secciones = Seccion::where('activo', true)->orderBy('es_almacen_principal', 'desc')->orderBy('nombre')->get();

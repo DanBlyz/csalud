@@ -267,7 +267,7 @@
                                     @endpermiso
 
                                     <!-- Eliminar (con swal:confirm) -->
-                                    @if ($user->id !== auth()->id())
+                                    @if ($user->id !== Auth::id())
                                         @permiso('usuarios.eliminar')
                                         <button 
                                             type="button" 

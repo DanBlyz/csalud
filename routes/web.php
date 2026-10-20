@@ -13,6 +13,7 @@ use App\Livewire\Administracion\SucursalesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
 use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Caja\CierresIndex;
+use App\Livewire\DashboardIndex;
 use App\Livewire\Farmacia\DespachosIndex;
 use App\Livewire\Farmacia\LotesIndex;
 use App\Livewire\Farmacia\MarcasIndex;
@@ -31,9 +32,7 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardIndex::class)->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
