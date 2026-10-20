@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // 2. Médico de Prueba
+        /* // 2. Médico de Prueba
         $medico = User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
@@ -64,6 +64,6 @@ class UserSeeder extends Seeder
         );
 
         // Asignar permisos básicos al médico (5: gestion-pacientes, 7: gestionar-proforma, 8: emitir-receta)
-        $medico->permisos()->syncWithoutDetaching([5, 7, 8]);
+        $medico->permisos()->syncWithoutDetaching([5, 7, 8]); */
     }
 }

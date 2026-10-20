@@ -14,9 +14,9 @@ class CategoriaSeeder extends Seeder
     {
         $categorias = [
             ['nombre' => 'Consultas Médicas', 'descripcion' => 'Atenciones médicas ambulatorias', 'estado' => true],
-            ['nombre' => 'Procedimientos Menores', 'descripcion' => 'Suturas, curaciones y vendajes', 'estado' => true],
+            /* ['nombre' => 'Procedimientos Menores', 'descripcion' => 'Suturas, curaciones y vendajes', 'estado' => true],
             ['nombre' => 'Servicios de Enfermería', 'descripcion' => 'Inyectables, sueros y tomas de signos', 'estado' => true],
-            ['nombre' => 'Laboratorio y Diagnóstico', 'descripcion' => 'Exámenes y análisis clínicos', 'estado' => true],
+            ['nombre' => 'Laboratorio y Diagnóstico', 'descripcion' => 'Exámenes y análisis clínicos', 'estado' => true], */
         ];
 
         foreach ($categorias as $cat) {

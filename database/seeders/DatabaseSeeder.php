@@ -17,15 +17,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SucursalSeeder::class,
             RolSeeder::class,
-            EspecialidadSeeder::class,
+            //EspecialidadSeeder::class,
             PermisoSeeder::class,
             UserSeeder::class,
             CategoriaSeeder::class,
-            TipoSolicitudSeeder::class,
-            MarcaSeeder::class,
-            ProveedorSeeder::class,
-            ServicioSeeder::class,
-            ProductoSeeder::class,
+            //TipoSolicitudSeeder::class,
+            //MarcaSeeder::class,
+            //ProveedorSeeder::class,
+            //ServicioSeeder::class,
+            //ProductoSeeder::class,
             SeccionSeeder::class,
         ]);
     }

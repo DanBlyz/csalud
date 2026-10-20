@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # ==============================================================================
+  # Servicio Principal: Aplicación Laravel (PHP 8.3 FPM + Nginx)
+  # ==============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: csalud-app:latest
+    container_name: csalud_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    environment:
+      APP_NAME: "${APP_NAME:-Centro de Salud}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_KEY: "${APP_KEY}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:-http://localhost}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-csalud}"
+      DB_USERNAME: "${DB_USERNAME:-csalud_user}"
+      DB_PASSWORD: "${DB_PASSWORD:-csalud_secret}"
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: sync
+      FILESYSTEM_DISK: public
+      RUN_MIGRATIONS: "true"
+    volumes:
+      # VOLUMEN PERSISTENTE CRÍTICO:
+      # Preserva todas las imágenes, documentos clínicos, recetas y reportes subidos
+      - csalud_storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - csalud_network
+
+  # ==============================================================================
+  # Servicio de Base de Datos: MySQL 8.0
+  # ==============================================================================
+  db:
+    image: mysql:8.0
+    container_name: csalud_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root_secret}"
+      MYSQL_DATABASE: "${DB_DATABASE:-csalud}"
+      MYSQL_USER: "${DB_USERNAME:-csalud_user}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-csalud_secret}"
+    volumes:
+      # Persistencia de los datos de la base de datos
+      - csalud_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - csalud_network
+
+# ==============================================================================
+# Volúmenes Persistentes Nombrados
+# ==============================================================================
+volumes:
+  # Almacenamiento persistente de Laravel (fotos, documentos, escaneos, firmas, logs)
+  csalud_storage:
+    name: csalud_storage
+  # Datos estructurados del motor MySQL
+  csalud_db_data:
+    name: csalud_db_data
+
+# ==============================================================================
+# Red Interna Aislada
+# ==============================================================================
+networks:
+  csalud_network:
+    name: csalud_network
+    driver: bridge

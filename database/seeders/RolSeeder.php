@@ -14,11 +14,6 @@ class RolSeeder extends Seeder
     {
         $roles = [
             'Admin' => 'Superadministrador con acceso total al sistema',
-            'Médico' => 'Atención clínica, prescripción de recetas y solicitudes',
-            'Enfermería' => 'Triaje, control de piso y consumos extras',
-            'Farmacia' => 'Control de lotes y despacho de medicamentos',
-            'Caja' => 'Liquidación de proformas y cobros',
-            'Recepción' => 'Admisión de pacientes y apertura de proformas',
         ];
 
         foreach ($roles as $nombre => $descripcion) {
