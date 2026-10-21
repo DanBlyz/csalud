@@ -29,5 +29,4 @@ bootstrap/cache/*
 !bootstrap/cache/.gitignore
 database/*.sqlite
 database/*.sqlite-journal
-Dockerfile*
 docker-compose*
