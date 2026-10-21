@@ -22,13 +22,15 @@ RUN npm run build
 # ==============================================================================
 # ETAPA 2: Entorno de Producción PHP 8.3 FPM + Nginx + Supervisor
 # ==============================================================================
-FROM php:8.3-fpm-alpine
+# Se fija la versión parchada 8.3.36 que resuelve CVE-2026-109618 y CVE-2026-109619
+FROM php:8.3.36-fpm-alpine
 
 LABEL maintainer="Centro de Salud <soporte@csalud.local>"
 LABEL description="Contenedor optimizado de producción para Centro de Salud en Dokploy"
 
-# Instalar utilitarios del sistema y servidores
-RUN apk add --no-cache \
+# Actualizar todos los paquetes de Alpine para parches de seguridad del SO e instalar utilitarios
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
     nginx \
     supervisor \
     curl \
