@@ -15,6 +15,7 @@ class Permiso extends Model
     protected $table = 'permisos';
 
     protected $fillable = [
+        'id',
         'nombre',
         'descripcion',
         'usuario_creador_id',

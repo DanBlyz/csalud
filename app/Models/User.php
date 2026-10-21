@@ -106,35 +106,45 @@ class User extends Authenticatable
         }
 
         if (is_numeric($permiso)) {
-            return $this->permisos()->where('permisos.id', (int) $permiso)->exists();
+            $permisoId = (int) $permiso;
+
+            // Verificación directa por ID numérico en la tabla pivote
+            if ($this->permisos()->where('permisos.id', $permisoId)->exists()) {
+                return true;
+            }
+
+            // Si es un ID de módulo legado (1 al 10), permitir acceso a la ruta si posee al menos un permiso granular en ese módulo
+            return $this->tieneAccesoModuloPorId($permisoId);
         }
 
-        if ($this->permisos()->where('permisos.nombre', $permiso)->exists()) {
-            return true;
-        }
+        // Verificación estricta por slug/nombre de permiso granular (ej. 'instituciones.gestionar', 'pacientes.crear')
+        return $this->permisos()->where('permisos.nombre', $permiso)->exists();
+    }
 
-        // Retrocompatibilidad con permisos generales/módulos base (IDs 1 al 10)
-        $legacyPrefixMap = [
-            'usuarios.' => [1, 'gestion-usuarios'],
-            'sucursales.' => [2, 'gestion-sucursales'],
-            'roles.' => [3, 'gestion-roles'],
-            'catalogos.' => [4, 'gestion-catalogos'],
-            'pacientes.' => [5, 'gestion-pacientes'],
-            'instituciones.' => [5, 'gestion-pacientes'],
-            'farmacia.' => [9, 'despachar-farmacia'],
-            'caja.' => [10, 'cobro-caja'],
+    /**
+     * Verifica si el usuario tiene acceso a un módulo legado (IDs 1 al 10)
+     * mediante la posesión de al menos un permiso granular perteneciente a dicho módulo.
+     */
+    public function tieneAccesoModuloPorId(int $moduloId): bool
+    {
+        $rangoModulos = [
+            1 => [11, 12, 13, 14, 20, 21], // usuarios y reportes
+            2 => [15, 16, 17],             // sucursales
+            3 => [18],                     // roles
+            4 => [19],                     // especialidades y servicios
+            5 => [22, 23, 24, 25, 26],     // pacientes e instituciones
+            6 => [6, 27],                  // crear proforma
+            7 => range(27, 46),            // proformas
+            8 => [8, 39, 40],              // recetas
+            9 => range(47, 59),            // farmacia
+            10 => range(60, 70),           // caja
         ];
 
-        foreach ($legacyPrefixMap as $prefix => $legacyIdentifiers) {
-            if (str_starts_with($permiso, $prefix)) {
-                return $this->permisos()->where(function ($q) use ($legacyIdentifiers) {
-                    $q->whereIn('permisos.id', array_filter($legacyIdentifiers, 'is_int'))
-                        ->orWhereIn('permisos.nombre', array_filter($legacyIdentifiers, 'is_string'));
-                })->exists();
-            }
+        if (! isset($rangoModulos[$moduloId])) {
+            return false;
         }
 
-        return false;
+        return $this->permisos()->whereIn('permisos.id', $rangoModulos[$moduloId])->exists();
     }
 
     /**

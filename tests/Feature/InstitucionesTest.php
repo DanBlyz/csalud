@@ -184,3 +184,25 @@ test('se puede asignar institucion a un paciente desde pacientes-index', functio
         'institucion_id' => $inst->id,
     ]);
 });
+
+test('usuario sin permiso de instituciones.gestionar no ve el boton de nueva institucion y se bloquea la accion', function () {
+    $rolRecepcion = Rol::create(['nombre' => 'Recepción']);
+    $user = User::factory()->create([
+        'rol_id' => $rolRecepcion->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    // Asignar solo permiso para ver (ID 25) y permiso de módulo (ID 5), pero NO instituciones.gestionar (ID 26)
+    $permVer = Permiso::firstOrCreate(['id' => 25], [
+        'nombre' => 'instituciones.ver',
+        'descripcion' => 'Ver instituciones',
+    ]);
+    $user->permisos()->attach([5, $permVer->id]);
+
+    Livewire::actingAs($user)
+        ->test(InstitucionesIndex::class)
+        ->assertDontSee('Nueva Institución')
+        ->call('guardar')
+        ->assertDispatched('swal');
+});

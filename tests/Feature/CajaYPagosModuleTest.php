@@ -14,8 +14,8 @@ use App\Models\Rol;
 use App\Models\Servicio;
 use App\Models\Sucursal;
 use App\Models\User;
+use Database\Seeders\PermisoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -31,13 +31,7 @@ beforeEach(function () {
         ['descripcion' => 'Encargado de Caja y Cobros']
     );
 
-    DB::table('permisos')->insertOrIgnore([
-        'id' => 10,
-        'nombre' => 'cobro-caja',
-        'descripcion' => 'Cobro y liquidación en caja',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    (new PermisoSeeder)->run();
     $this->permisoCaja = Permiso::find(10);
 
     $this->sucursal = Sucursal::create([
@@ -60,7 +54,7 @@ beforeEach(function () {
         'sucursal_id' => $this->sucursal->id,
         'activo' => true,
     ]);
-    $this->cajero->permisos()->sync([$this->permisoCaja->id]);
+    $this->cajero->permisos()->sync(array_merge([10], range(60, 70)));
 
     $this->usuarioSinPermiso = User::factory()->create([
         'rol_id' => $this->rolCajero->id,

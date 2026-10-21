@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Permiso;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PermisoSeeder extends Seeder
 {
@@ -125,11 +125,13 @@ class PermisoSeeder extends Seeder
         ];
 
         foreach ($permisos as $id => $permiso) {
-            Permiso::updateOrCreate(
+            DB::table('permisos')->updateOrInsert(
                 ['id' => $id],
                 [
                     'nombre' => $permiso['nombre'],
                     'descripcion' => $permiso['descripcion'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]
             );
         }

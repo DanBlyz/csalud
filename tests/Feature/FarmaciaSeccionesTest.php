@@ -18,8 +18,8 @@ use App\Models\Rol;
 use App\Models\Seccion;
 use App\Models\Sucursal;
 use App\Models\User;
+use Database\Seeders\PermisoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -35,13 +35,7 @@ beforeEach(function () {
         ['descripcion' => 'Encargado de Farmacia e Inventario']
     );
 
-    DB::table('permisos')->insertOrIgnore([
-        'id' => 9,
-        'nombre' => 'despachar-farmacia',
-        'descripcion' => 'Despacho de medicamentos y control de lotes',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    (new PermisoSeeder)->run();
     $this->permisoFarmacia = Permiso::find(9);
 
     $this->sucursal = Sucursal::create([
@@ -58,7 +52,7 @@ beforeEach(function () {
         'sucursal_id' => $this->sucursal->id,
         'activo' => true,
     ]);
-    $this->farmaceutico->permisos()->sync([$this->permisoFarmacia->id]);
+    $this->farmaceutico->permisos()->sync(array_merge([9], range(47, 59)));
 
     $this->usuarioSinPermiso = User::factory()->create([
         'rol_id' => $this->rolFarmacia->id,
