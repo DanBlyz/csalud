@@ -1,6 +1,6 @@
 <footer class="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 py-3 px-4 sm:px-6 text-xs text-gray-500 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 mt-auto transition-colors duration-200">
     <div class="flex items-center space-x-1">
-        <span class="font-semibold text-gray-700 dark:text-slate-200">Centro de Salud</span>
+        <span class="font-semibold text-gray-700 dark:text-slate-200">MoonCore Tech</span>
         <span>&copy; {{ date('Y') }} - Sistema de Gestión Hospitalaria.</span>
         <span class="hidden md:inline text-gray-400 dark:text-slate-500">Todos los derechos reservados.</span>
     </div>

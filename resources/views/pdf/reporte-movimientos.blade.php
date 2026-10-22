@@ -238,7 +238,7 @@
     <table class="header-table">
         <tr>
             <td style="width: 60%; vertical-align: top;">
-                <div class="clinic-title">CENTRO MÉDICO DE SALUD</div>
+                <div class="clinic-title">CLINICA BOLIVIANA AMERICANA</div>
                 <div class="clinic-subtitle">
                     {{ $sucursal->nombre ?? 'Todas las Sucursales' }} 
                     @if($sucursal && $sucursal->ciudad) - {{ $sucursal->ciudad }} @endif

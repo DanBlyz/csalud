@@ -9,7 +9,7 @@
                 <i class="fas fa-heartbeat text-sm"></i>
             </span>
             <span class="truncate">
-                <span class="text-blue-400 font-extrabold">CENTRO</span><span class="text-white font-light">SALUD</span>
+                <span class="text-blue-400 font-extrabold">CLI.BO.</span><span class="text-white font-light">AMERICANA</span>
             </span>
         </a>
         <!-- Close button on mobile -->

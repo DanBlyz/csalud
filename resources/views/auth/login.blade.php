@@ -7,7 +7,7 @@
                 <i class="fas fa-hospital-alt text-2xl"></i>
             </div>
             <h1 class="text-2xl font-bold tracking-tight">
-                <span class="text-blue-600 font-extrabold">CENTRO</span><span class="text-slate-800 dark:text-white font-light">SALUD</span>
+                <span class="text-blue-600 font-extrabold">CLI.BO.</span><span class="text-slate-800 dark:text-white font-light">AMERICANA</span>
             </h1>
             <p class="text-xs text-gray-500 dark:text-slate-400 mt-1 font-medium">Portal Institucional de Atención Médica</p>
         </div>

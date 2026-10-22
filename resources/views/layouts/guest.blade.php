@@ -70,7 +70,7 @@
 
         <!-- Footer note -->
         <div class="mt-8 text-center text-xs text-slate-500 dark:text-slate-400">
-            <p><b class="text-slate-700 dark:text-slate-300">Centro de Salud</b> &copy; {{ date('Y') }} - Sistema de Gestión Hospitalaria</p>
+            <p><b class="text-slate-700 dark:text-slate-300">CLINICA BOLIVIANA AMERICANA</b> &copy; {{ date('Y') }} - Sistema de Gestión Hospitalaria</p>
             <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Acceso restringido únicamente para personal autorizado.</p>
         </div>
 

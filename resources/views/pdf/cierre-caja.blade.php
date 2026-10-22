@@ -169,7 +169,7 @@
     <table class="header-table">
         <tr>
             <td style="width: 60%; vertical-align: top;">
-                <div class="clinic-title">Centro de Salud</div>
+                <div class="clinic-title">CLINICA BOLIVIANA AMERICANA</div>
                 <div class="clinic-subtitle">
                     <strong>Sucursal:</strong> {{ $caja->sucursal->nombre ?? 'Principal' }}<br>
                     <strong>Dirección:</strong> {{ $caja->sucursal->direccion ?? 'Av. Principal #123' }} &bull; 
