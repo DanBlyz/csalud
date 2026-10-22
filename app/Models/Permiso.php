@@ -36,7 +36,7 @@ class Permiso extends Model
     {
         $id = (int) $this->id;
 
-        if (in_array($id, [1, 2, 3, 4], true) || ($id >= 11 && $id <= 21)) {
+        if (in_array($id, [1, 2, 3, 4], true) || ($id >= 11 && $id <= 21) || ($id >= 71 && $id <= 72)) {
             return 'Administración y Sistema';
         }
 

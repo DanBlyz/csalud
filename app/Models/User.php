@@ -131,7 +131,7 @@ class User extends Authenticatable
             1 => [11, 12, 13, 14, 20, 21], // usuarios y reportes
             2 => [15, 16, 17],             // sucursales
             3 => [18],                     // roles
-            4 => [19],                     // especialidades y servicios
+            4 => [19, 71, 72],             // especialidades, servicios y tipos de solicitud
             5 => [22, 23, 24, 25, 26],     // pacientes e instituciones
             6 => [6, 27],                  // crear proforma
             7 => range(27, 46),            // proformas

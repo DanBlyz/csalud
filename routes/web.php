@@ -10,6 +10,7 @@ use App\Livewire\Administracion\ReportesIndex;
 use App\Livewire\Administracion\RolesIndex;
 use App\Livewire\Administracion\ServiciosIndex;
 use App\Livewire\Administracion\SucursalesIndex;
+use App\Livewire\Administracion\TiposSolicitudesIndex;
 use App\Livewire\Administracion\UsuariosIndex;
 use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Caja\CierresIndex;
@@ -60,6 +61,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/servicios', ServiciosIndex::class)
             ->middleware('permiso:4')
             ->name('servicios');
+
+        Route::get('/tipos-solicitudes', TiposSolicitudesIndex::class)
+            ->middleware('permiso:4')
+            ->name('tipos-solicitudes');
 
         Route::get('/reportes', ReportesIndex::class)
             ->middleware('permiso:1')

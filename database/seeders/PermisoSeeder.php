@@ -37,6 +37,9 @@ class PermisoSeeder extends Seeder
             20 => ['nombre' => 'reportes.ver', 'descripcion' => 'Visualización de reportes, estadísticas y flujo de caja'],
             21 => ['nombre' => 'reportes.exportar', 'descripcion' => 'Exportar reportes del sistema en formatos PDF y Excel'],
 
+            71 => ['nombre' => 'tipos-solicitudes.ver', 'descripcion' => 'Consultar listado de tipos de solicitudes y exámenes médicos'],
+            72 => ['nombre' => 'tipos-solicitudes.gestionar', 'descripcion' => 'Crear, editar y eliminar tipos de solicitudes médicas'],
+
             // ==========================================
             // MÓDULO 2: PACIENTES E INSTITUCIONES (5, 22-26)
             // ==========================================
