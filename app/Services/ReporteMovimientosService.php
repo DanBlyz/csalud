@@ -115,7 +115,7 @@ class ReporteMovimientosService
         // Obtener catálogo de secciones activas de la sucursal (o todas si sucursalId es null)
         $seccionesList = Seccion::query()
             ->where('activo', true)
-            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+            ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
             ->orderBy('es_almacen_principal', 'desc')
             ->orderBy('nombre', 'asc')
             ->get();
@@ -129,7 +129,7 @@ class ReporteMovimientosService
             $movsPrevios = MovimientoInventario::query()
                 ->where('producto_id', $prod->id)
                 ->where('created_at', '<', $inicio)
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->get(['tipo_movimiento', 'cantidad']);
 
             $entradasPrevias = 0;
@@ -147,7 +147,7 @@ class ReporteMovimientosService
             $movimientosPeriodo = MovimientoInventario::query()
                 ->where('producto_id', $prod->id)
                 ->whereBetween('created_at', [$inicio, $fin])
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->with(['lote', 'user', 'proforma.paciente', 'receta', 'seccionOrigen', 'seccionDestino'])
                 ->orderBy('created_at', 'asc')
                 ->orderBy('id', 'asc')
@@ -215,7 +215,7 @@ class ReporteMovimientosService
             $ultimoLote = Lote::query()
                 ->where('producto_id', $prod->id)
                 ->where('created_at', '<=', $fin)
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->latest('id')
                 ->first();
 
@@ -244,11 +244,11 @@ class ReporteMovimientosService
                 ->join('lotes', 'lotes.id', '=', 'lote_secciones.lote_id')
                 ->where('lotes.producto_id', $prod->id)
                 ->whereNull('lotes.deleted_at')
-                ->when($sucursalId, fn($q) => $q->where('lotes.sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('lotes.sucursal_id', $sucursalId))
                 ->groupBy('lote_secciones.seccion_id')
                 ->select('lote_secciones.seccion_id', DB::raw('SUM(lote_secciones.cantidad_actual) as total_cantidad'))
                 ->pluck('total_cantidad', 'seccion_id')
-                ->map(fn($val) => (int) $val)
+                ->map(fn ($val) => (int) $val)
                 ->toArray();
 
             // Stock de lotes huérfanos sin fila en lote_secciones (fallback legacy)
@@ -256,7 +256,7 @@ class ReporteMovimientosService
                 ->where('producto_id', $prod->id)
                 ->whereNull('deleted_at')
                 ->where('cantidad_actual', '>', 0)
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))
                         ->from('lote_secciones')
@@ -295,7 +295,7 @@ class ReporteMovimientosService
                     ->where('producto_id', $prod->id)
                     ->whereNull('deleted_at')
                     ->where('cantidad_actual', '>', 0)
-                    ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                    ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                     ->sum('cantidad_actual');
 
                 $seccionesStock[] = [

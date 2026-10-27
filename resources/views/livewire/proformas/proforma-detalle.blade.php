@@ -2052,18 +2052,46 @@
                                 <input type="text" id="nuevo_solicitud_observaciones" wire:model="nuevo_solicitud_observaciones" placeholder="Detalles de la orden o informe..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
                             </div>
 
-                            <div>
+                            <div
+                                x-data="{ uploading: false, progress: 0 }"
+                                x-on:livewire-upload-start="uploading = true"
+                                x-on:livewire-upload-finish="uploading = false"
+                                x-on:livewire-upload-error="uploading = false"
+                                x-on:livewire-upload-progress="progress = $event.detail.progress"
+                            >
                                 <label for="nuevo_solicitud_archivo" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                                     Adjuntar Archivo Digital (PDF / JPG - Opcional)
                                 </label>
-                                <input type="file" id="nuevo_solicitud_archivo" wire:model="nuevo_solicitud_archivo" class="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <input 
+                                    type="file" 
+                                    id="nuevo_solicitud_archivo" 
+                                    wire:model="nuevo_solicitud_archivo" 
+                                    accept="application/pdf,image/*" 
+                                    class="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-950 dark:file:text-blue-300 p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer"
+                                >
+
+                                <div x-show="uploading" class="mt-1" style="display: none;">
+                                    <span class="text-[11px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+                                        <i class="fas fa-spinner fa-spin"></i> Subiendo archivo (<span x-text="progress + '%'"></span>)...
+                                    </span>
+                                </div>
+
+                                @if ($nuevo_solicitud_archivo && ! $errors->has('nuevo_solicitud_archivo'))
+                                    <div class="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Archivo listo: {{ method_exists($nuevo_solicitud_archivo, 'getClientOriginalName') ? $nuevo_solicitud_archivo->getClientOriginalName() : 'Adjunto cargado' }}</span>
+                                    </div>
+                                @endif
+                                @error('nuevo_solicitud_archivo') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                             </div>
 
                             <div class="flex justify-end pt-1">
                                 <button 
                                     type="button" 
                                     wire:click="agregarSolicitudACola" 
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
+                                    wire:loading.attr="disabled"
+                                    wire:target="nuevo_solicitud_archivo, agregarSolicitudACola"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <i class="fas fa-plus"></i>
                                     <span>Añadir a la cola</span>
@@ -2110,13 +2138,13 @@
                             <button 
                                 type="submit" 
                                 wire:loading.attr="disabled"
-                                wire:target="agregarSolicitud"
+                                wire:target="nuevo_solicitud_archivo, agregarSolicitud"
                                 class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                                <span wire:loading.remove wire:target="agregarSolicitud">
+                                <span wire:loading.remove wire:target="nuevo_solicitud_archivo, agregarSolicitud">
                                     <i class="fas fa-save me-1"></i> Guardar {{ count($cola_solicitudes) > 1 ? count($cola_solicitudes).' Solicitudes' : 'Solicitud' }}
                                 </span>
-                                <span wire:loading wire:target="agregarSolicitud">
+                                <span wire:loading wire:target="nuevo_solicitud_archivo, agregarSolicitud">
                                     <i class="fas fa-spinner fa-spin"></i> Guardando...
                                 </span>
                             </button>
@@ -2149,7 +2177,13 @@
                             <span class="font-semibold text-slate-900 dark:text-white">{{ $solicitud_estudio_nombre }}</span>
                         </div>
 
-                        <div>
+                        <div 
+                            x-data="{ uploading: false, progress: 0 }"
+                            x-on:livewire-upload-start="uploading = true"
+                            x-on:livewire-upload-finish="uploading = false"
+                            x-on:livewire-upload-error="uploading = false"
+                            x-on:livewire-upload-progress="progress = $event.detail.progress"
+                        >
                             <label for="solicitud_nuevo_archivo" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                                 Seleccionar Archivo Digital <span class="text-rose-500">*</span>
                             </label>
@@ -2163,11 +2197,33 @@
                             <p class="text-[11px] text-slate-400 mt-1">
                                 <i class="fas fa-info-circle me-1"></i> Formatos aceptados: <strong>PDF, JPG, PNG, WEBP</strong> (Máx. 10MB).
                             </p>
-                            @error('solicitud_nuevo_archivo') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
 
-                            <div wire:loading wire:target="solicitud_nuevo_archivo" class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                <i class="fas fa-spinner fa-spin me-1"></i> Procesando archivo...
+                            <!-- Barra de progreso interactiva Alpine -->
+                            <div x-show="uploading" class="mt-2" style="display: none;">
+                                <div class="flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 mb-1">
+                                    <span class="flex items-center gap-1.5 font-medium">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando archivo...
+                                    </span>
+                                    <span x-text="progress + '%'" class="font-bold"></span>
+                                </div>
+                                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-150" :style="'width: ' + progress + '%'"></div>
+                                </div>
                             </div>
+
+                            @if ($solicitud_nuevo_archivo && ! $errors->has('solicitud_nuevo_archivo'))
+                                <div class="mt-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
+                                    <span class="truncate flex items-center gap-2 font-medium">
+                                        <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400"></i>
+                                        {{ method_exists($solicitud_nuevo_archivo, 'getClientOriginalName') ? $solicitud_nuevo_archivo->getClientOriginalName() : 'Archivo preparado' }}
+                                    </span>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">
+                                        {{ method_exists($solicitud_nuevo_archivo, 'getSize') ? round($solicitud_nuevo_archivo->getSize() / 1024, 1) . ' KB' : '' }}
+                                    </span>
+                                </div>
+                            @endif
+
+                            @error('solicitud_nuevo_archivo') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
@@ -2177,13 +2233,13 @@
                             <button 
                                 type="submit" 
                                 wire:loading.attr="disabled"
-                                wire:target="guardarArchivoSolicitud"
+                                wire:target="solicitud_nuevo_archivo, guardarArchivoSolicitud"
                                 class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                                <span wire:loading.remove wire:target="guardarArchivoSolicitud">
+                                <span wire:loading.remove wire:target="solicitud_nuevo_archivo, guardarArchivoSolicitud">
                                     <i class="fas fa-cloud-arrow-up me-1"></i> Guardar Archivo
                                 </span>
-                                <span wire:loading wire:target="guardarArchivoSolicitud">
+                                <span wire:loading wire:target="solicitud_nuevo_archivo, guardarArchivoSolicitud">
                                     <i class="fas fa-spinner fa-spin"></i> Subiendo...
                                 </span>
                             </button>

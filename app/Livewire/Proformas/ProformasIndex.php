@@ -144,7 +144,7 @@ class ProformasIndex extends Component
                 $q->where('tipo_atencion', $this->filtroTipo);
             })
             ->when($this->search !== '', function ($q) {
-                $term = '%' . trim($this->search) . '%';
+                $term = '%'.trim($this->search).'%';
                 $q->where(function ($sub) use ($term) {
                     $sub->where('id', 'like', $term)
                         ->orWhere('pieza', 'like', $term)
@@ -167,10 +167,10 @@ class ProformasIndex extends Component
 
         // Métricas de estado
         $sucursalId = $this->filtroSucursal;
-        $totalEnCurso = Proforma::when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'En Curso')->count();
-        $totalInternados = Proforma::when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'En Curso')->where('tipo_atencion', 'Internacion')->count();
-        $totalAmbulatoriasHoy = Proforma::when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))->where('tipo_atencion', 'Ambulatoria')->whereDate('fecha_ingreso', today())->count();
-        $totalPagadas = Proforma::when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'Pagada')->count();
+        $totalEnCurso = Proforma::when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'En Curso')->count();
+        $totalInternados = Proforma::when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'En Curso')->where('tipo_atencion', 'Internacion')->count();
+        $totalAmbulatoriasHoy = Proforma::when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))->where('tipo_atencion', 'Ambulatoria')->whereDate('fecha_ingreso', today())->count();
+        $totalPagadas = Proforma::when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))->where('estado', 'Pagada')->count();
 
         $sucursales = Sucursal::where('estado', true)->get();
 

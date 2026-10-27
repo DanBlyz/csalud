@@ -624,9 +624,9 @@ class ReportesIndex extends Component
             ->orderBy('nombre', 'asc');
 
         if (! empty($this->buscarProducto)) {
-            $search = '%' . trim($this->buscarProducto) . '%';
+            $search = '%'.trim($this->buscarProducto).'%';
             $productosQuery->where('nombre', 'like', $search)
-                ->orWhereHas('marca', fn($m) => $m->where('nombre', 'like', $search));
+                ->orWhereHas('marca', fn ($m) => $m->where('nombre', 'like', $search));
         }
 
         $productos = $productosQuery->get(['id', 'nombre', 'marca_id', 'unidad_medida']);

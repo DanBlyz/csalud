@@ -210,7 +210,7 @@ class ServiciosIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Modificado',
-            'text' => "El servicio '{$servicio->nombre}' ahora está " . ($servicio->estado ? 'activo' : 'inactivo') . '.',
+            'text' => "El servicio '{$servicio->nombre}' ahora está ".($servicio->estado ? 'activo' : 'inactivo').'.',
         ]);
     }
 
@@ -366,7 +366,7 @@ class ServiciosIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Modificado',
-            'text' => "La categoría '{$cat->nombre}' ahora está " . ($cat->estado ? 'activa' : 'inactiva') . '.',
+            'text' => "La categoría '{$cat->nombre}' ahora está ".($cat->estado ? 'activa' : 'inactiva').'.',
         ]);
     }
 

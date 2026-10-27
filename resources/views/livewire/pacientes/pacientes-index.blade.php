@@ -219,13 +219,13 @@
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <!-- Abrir Proforma -->
-                                    <a 
+                                    {{-- <a 
                                         href="{{ route('proformas.crear', ['paciente_id' => $paciente->id]) }}" 
                                         class="p-1.5 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-md transition-colors"
                                         title="Abrir Nueva Proforma"
                                     >
                                         <i class="fas fa-file-medical text-sm"></i>
-                                    </a>
+                                    </a> --}}
 
                                     <!-- Ver Historial de Proformas -->
                                     <button 
@@ -251,24 +251,26 @@
 
                                     <!-- Eliminar -->
                                     @permiso('pacientes.eliminar')
-                                    <button 
-                                        type="button" 
-                                        @click="$dispatch('swal:confirm', {
-                                            title: '¿Eliminar a \'{{ addslashes($paciente->nombre_completo) }}\'?',
-                                            text: 'Se verificará que no posea atenciones clínicas en curso.',
-                                            icon: 'warning',
-                                            confirmButtonText: 'Sí, eliminar',
-                                            cancelButtonText: 'Cancelar',
-                                            event: 'eliminarPaciente',
-                                            componentId: '{{ $this->getId() }}',
-                                            method: 'eliminarPaciente',
-                                            params: [{{ $paciente->id }}]
-                                        })"
-                                        class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
-                                        title="Eliminar Paciente"
-                                    >
-                                        <i class="fas fa-trash-alt text-sm"></i>
-                                    </button>
+                                        @if ($paciente->proformas_count == 0)
+                                            <button 
+                                                type="button" 
+                                                @click="$dispatch('swal:confirm', {
+                                                    title: '¿Eliminar a \'{{ addslashes($paciente->nombre_completo) }}\'?',
+                                                    text: 'Se verificará que no posea atenciones clínicas en curso.',
+                                                    icon: 'warning',
+                                                    confirmButtonText: 'Sí, eliminar',
+                                                    cancelButtonText: 'Cancelar',
+                                                    event: 'eliminarPaciente',
+                                                    componentId: '{{ $this->getId() }}',
+                                                    method: 'eliminarPaciente',
+                                                    params: [{{ $paciente->id }}]
+                                                })"
+                                                class="p-1.5 text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+                                                title="Eliminar Paciente"
+                                            >
+                                                <i class="fas fa-trash-alt text-sm"></i>
+                                            </button>
+                                        @endif
                                     @endpermiso
                                 </div>
                             </td>

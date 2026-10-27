@@ -255,8 +255,8 @@ class CierresIndex extends Component
         $pagosQuery = Pago::whereBetween('created_at', [$inicio, $fin]);
         if ($sucursalId) {
             $pagosQuery->where(function ($q) use ($sucursalId) {
-                $q->whereHas('caja', fn($c) => $c->where('sucursal_id', $sucursalId))
-                    ->orWhereHas('proforma', fn($p) => $p->where('sucursal_id', $sucursalId));
+                $q->whereHas('caja', fn ($c) => $c->where('sucursal_id', $sucursalId))
+                    ->orWhereHas('proforma', fn ($p) => $p->where('sucursal_id', $sucursalId));
             });
         }
 
@@ -312,7 +312,7 @@ class CierresIndex extends Component
         // 2. EGRESOS CLÍNICOS: Honorarios Médicos (ProformaPagoMedico)
         $honorariosQuery = ProformaPagoMedico::whereBetween('fecha_pago', [$cierre->fecha_inicio, $cierre->fecha_fin]);
         if ($sucursalId) {
-            $honorariosQuery->whereHas('proforma', fn($q) => $q->where('sucursal_id', $sucursalId));
+            $honorariosQuery->whereHas('proforma', fn ($q) => $q->where('sucursal_id', $sucursalId));
         }
 
         $honorarios = $honorariosQuery->with(['medico.especialidad', 'proforma.paciente'])->get();
@@ -721,11 +721,11 @@ class CierresIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $search = '%' . trim($this->search) . '%';
+            $search = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($search) {
                 $q->where('observaciones', 'like', $search)
-                    ->orWhereHas('sucursal', fn($s) => $s->where('nombre', 'like', $search))
-                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', $search));
+                    ->orWhereHas('sucursal', fn ($s) => $s->where('nombre', 'like', $search))
+                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $search));
             });
         }
 
@@ -750,7 +750,7 @@ class CierresIndex extends Component
             $cierreSeleccionado = CierreMensual::with([
                 'sucursal',
                 'user',
-                'detalles' => fn($q) => $q->orderBy('fecha', 'desc')->orderBy('id', 'desc'),
+                'detalles' => fn ($q) => $q->orderBy('fecha', 'desc')->orderBy('id', 'desc'),
             ])->find($this->cierreSeleccionadoId);
         }
 

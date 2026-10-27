@@ -545,6 +545,13 @@ test('puede subir y actualizar el archivo digital de una solicitud en proforma d
     expect($solicitudFinal->archivo)->not->toBe($archivoViejo);
     Storage::disk('public')->assertExists($solicitudFinal->archivo);
     Storage::disk('public')->assertMissing($archivoViejo); // El archivo viejo fue limpiado
+
+    // Validar rechazo de archivos no admitidos (e.g. .exe)
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalSubirArchivo', $solicitud->id)
+        ->set('solicitud_nuevo_archivo', UploadedFile::fake()->create('script_malicioso.exe', 100))
+        ->call('guardarArchivoSolicitud')
+        ->assertHasErrors(['solicitud_nuevo_archivo' => 'mimes']);
 });
 
 test('puede buscar y seleccionar reactivamente en modales de servicios, recetas y consumos de proforma detalle', function () {

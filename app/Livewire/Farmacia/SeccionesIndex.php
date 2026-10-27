@@ -126,7 +126,7 @@ class SeccionesIndex extends Component
         // Si se marca como almacén principal, desmarcar otros en la misma sucursal
         if ($this->es_almacen_principal) {
             Seccion::where('sucursal_id', $this->sucursal_id)
-                ->when($this->seccionId, fn($q) => $q->where('id', '!=', $this->seccionId))
+                ->when($this->seccionId, fn ($q) => $q->where('id', '!=', $this->seccionId))
                 ->update(['es_almacen_principal' => false]);
         }
 
@@ -192,7 +192,7 @@ class SeccionesIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Estado Actualizado',
-            'text' => "El área {$seccion->nombre} ahora se encuentra " . ($seccion->activo ? 'Activa' : 'Inactiva') . '.',
+            'text' => "El área {$seccion->nombre} ahora se encuentra ".($seccion->activo ? 'Activa' : 'Inactiva').'.',
         ]);
     }
 
@@ -251,7 +251,7 @@ class SeccionesIndex extends Component
         }
 
         if (! empty($this->search)) {
-            $term = '%' . trim($this->search) . '%';
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('nombre', 'like', $term)
                     ->orWhere('descripcion', 'like', $term);

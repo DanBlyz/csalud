@@ -83,19 +83,29 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    sed -i 's/user nginx;/user www-data;/g' /etc/nginx/nginx.conf
 
-# Preparar estructura de directorios para almacenamiento persistente y caché
-RUN mkdir -p storage/app/public \
-             storage/app/private \
+# Preparar estructura de directorios para almacenamiento persistente, subidas Livewire y caché
+RUN mkdir -p storage/app/public/solicitudes_clinicas \
+             storage/app/public/livewire-tmp \
+             storage/app/private/livewire-tmp \
+             storage/app/livewire-tmp \
              storage/framework/cache/data \
              storage/framework/sessions \
              storage/framework/views \
              storage/logs \
              bootstrap/cache \
              /var/log/supervisor \
-    && chown -R www-data:www-data storage bootstrap/cache /var/log/supervisor /var/lib/nginx \
-    && chmod -R 775 storage bootstrap/cache
+             /var/lib/nginx/tmp/client_body \
+             /var/lib/nginx/tmp/proxy \
+             /var/lib/nginx/tmp/fastcgi \
+             /var/lib/nginx/tmp/uwsgi \
+             /var/lib/nginx/tmp/scgi \
+             /var/log/nginx \
+             /run/nginx \
+    && chown -R www-data:www-data storage bootstrap/cache /var/log/supervisor /var/lib/nginx /var/log/nginx /run/nginx \
+    && chmod -R 775 storage bootstrap/cache /var/lib/nginx /var/log/nginx /run/nginx
 
 # Declarar el volumen persistente para conservar imágenes, documentos y reportes
 VOLUME ["/var/www/html/storage"]

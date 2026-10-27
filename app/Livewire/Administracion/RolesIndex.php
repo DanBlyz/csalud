@@ -30,7 +30,7 @@ class RolesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:3|max:100|unique:roles,nombre,' . $this->rolId,
+            'nombre' => 'required|string|min:3|max:100|unique:roles,nombre,'.$this->rolId,
             'descripcion' => 'nullable|string|max:255',
         ];
     }

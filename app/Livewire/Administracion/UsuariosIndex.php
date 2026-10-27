@@ -402,7 +402,7 @@ class UsuariosIndex extends Component
 
         $this->permisosUsuarioId = $user->id;
         $this->permisosUsuarioNombre = $user->nombre_completo ?? $user->name;
-        $this->permisosSeleccionados = $user->permisos->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = $user->permisos->pluck('id')->map(fn ($id) => (string) $id)->toArray();
 
         $this->modalPermisosOpen = true;
     }
@@ -414,7 +414,7 @@ class UsuariosIndex extends Component
 
     public function seleccionarTodosPermisos(): void
     {
-        $this->permisosSeleccionados = Permiso::pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $this->permisosSeleccionados = Permiso::pluck('id')->map(fn ($id) => (string) $id)->toArray();
     }
 
     public function deseleccionarTodosPermisos(): void
@@ -424,13 +424,13 @@ class UsuariosIndex extends Component
 
     public function seleccionarPermisosModulo(string $modulo): void
     {
-        $idsModulo = Permiso::all()->filter(fn($p) => $p->modulo === $modulo)->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $idsModulo = Permiso::all()->filter(fn ($p) => $p->modulo === $modulo)->pluck('id')->map(fn ($id) => (string) $id)->toArray();
         $this->permisosSeleccionados = array_values(array_unique(array_merge($this->permisosSeleccionados, $idsModulo)));
     }
 
     public function deseleccionarPermisosModulo(string $modulo): void
     {
-        $idsModulo = Permiso::all()->filter(fn($p) => $p->modulo === $modulo)->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        $idsModulo = Permiso::all()->filter(fn ($p) => $p->modulo === $modulo)->pluck('id')->map(fn ($id) => (string) $id)->toArray();
         $this->permisosSeleccionados = array_values(array_diff($this->permisosSeleccionados, $idsModulo));
     }
 

@@ -452,7 +452,7 @@
                 <tr>
                     <td colspan="2"></td>
                     <td style="text-align: right; border-top: 1px solid #cbd5e1; padding-top: 6px;">
-                        <span class="param-label">Valorización Total Compra:</span>
+                        <span class="param-label">Valorización Total Existencia:</span>
                         <div class="font-bold" style="font-size: 12px; color: #334155;">
                             Bs. {{ number_format($reporte['resumen_general']['gran_total_valor_compra'], 2) }}
                         </div>

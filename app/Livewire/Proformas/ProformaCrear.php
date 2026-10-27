@@ -148,7 +148,7 @@ class ProformaCrear extends Component
             return collect();
         }
 
-        $term = '%' . trim($this->pacienteSearch) . '%';
+        $term = '%'.trim($this->pacienteSearch).'%';
 
         return Paciente::query()
             ->with('institucion')
@@ -279,16 +279,16 @@ class ProformaCrear extends Component
             return collect();
         }
 
-        $term = '%' . trim($this->medicoSearch) . '%';
+        $term = '%'.trim($this->medicoSearch).'%';
 
         return User::where('activo', true)
             ->whereNotIn('id', $this->medicos_seleccionados)
-            ->whereHas('rol', fn($r) => $r->whereIn('nombre', ['Médico', 'Admin']))
+            ->whereHas('rol', fn ($r) => $r->whereIn('nombre', ['Médico', 'Admin']))
             ->where(function ($q) use ($term) {
                 $q->where('nombres', 'like', $term)
                     ->orWhere('apellido_paterno', 'like', $term)
                     ->orWhere('apellido_materno', 'like', $term)
-                    ->orWhereHas('especialidad', fn($e) => $e->where('nombre', 'like', $term));
+                    ->orWhereHas('especialidad', fn ($e) => $e->where('nombre', 'like', $term));
             })
             ->with(['especialidad', 'rol'])
             ->take(6)
@@ -314,7 +314,7 @@ class ProformaCrear extends Component
 
     public function eliminarMedico(int $id): void
     {
-        $this->medicos_seleccionados = array_values(array_filter($this->medicos_seleccionados, fn($mId) => $mId !== $id));
+        $this->medicos_seleccionados = array_values(array_filter($this->medicos_seleccionados, fn ($mId) => $mId !== $id));
     }
 
     // =========================================================================
@@ -326,12 +326,12 @@ class ProformaCrear extends Component
             return collect();
         }
 
-        $term = '%' . trim($this->servicioSearch) . '%';
+        $term = '%'.trim($this->servicioSearch).'%';
 
         return Servicio::where('estado', true)
             ->where(function ($q) use ($term) {
                 $q->where('nombre', 'like', $term)
-                    ->orWhereHas('categoria', fn($c) => $c->where('nombre', 'like', $term));
+                    ->orWhereHas('categoria', fn ($c) => $c->where('nombre', 'like', $term));
             })
             ->with('categoria')
             ->take(6)
@@ -427,7 +427,7 @@ class ProformaCrear extends Component
             return collect();
         }
 
-        $term = '%' . trim($this->medicamentoSearch) . '%';
+        $term = '%'.trim($this->medicamentoSearch).'%';
 
         return Producto::where(function ($q) use ($term) {
             $q->where('nombre', 'like', $term)
@@ -464,8 +464,8 @@ class ProformaCrear extends Component
 
     public function getTotalEstimadoProperty(): float
     {
-        $totalServicios = collect($this->servicios_agregados)->sum(fn($s) => (float) ($s['costo_final'] ?? 0));
-        $totalMedicamentos = collect($this->receta_medicamentos)->sum(fn($m) => ((int) ($m['cantidad'] ?? 0)) * ((float) ($m['precio'] ?? 0)));
+        $totalServicios = collect($this->servicios_agregados)->sum(fn ($s) => (float) ($s['costo_final'] ?? 0));
+        $totalMedicamentos = collect($this->receta_medicamentos)->sum(fn ($m) => ((int) ($m['cantidad'] ?? 0)) * ((float) ($m['precio'] ?? 0)));
 
         return $totalServicios + $totalMedicamentos;
     }
@@ -598,7 +598,7 @@ class ProformaCrear extends Component
     {
         $tiposSolicitudes = TipoSolicitud::orderBy('nombre')->get();
         $medicosParaReceta = User::where('activo', true)
-            ->whereHas('rol', fn($r) => $r->whereIn('nombre', ['Médico', 'Admin']))
+            ->whereHas('rol', fn ($r) => $r->whereIn('nombre', ['Médico', 'Admin']))
             ->get();
         $instituciones = Institucion::where('estado', 'Activo')->orderBy('nombre')->get();
 

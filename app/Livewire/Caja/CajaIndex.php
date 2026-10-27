@@ -106,7 +106,7 @@ class CajaIndex extends Component
         $sucursalId = $this->sucursalId ?? Auth::user()->sucursal_id;
 
         return Caja::where('user_id', Auth::id())
-            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+            ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
             ->where('estado', 'Abierta')
             ->latest('fecha_apertura')
             ->first();
@@ -197,7 +197,7 @@ class CajaIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => '¡Caja Aperturada con Éxito!',
-            'text' => 'Se ha abierto la caja con un fondo inicial de Bs. ' . number_format((float) $this->monto_apertura, 2) . '. Ya puede registrar cobros y movimientos.',
+            'text' => 'Se ha abierto la caja con un fondo inicial de Bs. '.number_format((float) $this->monto_apertura, 2).'. Ya puede registrar cobros y movimientos.',
         ]);
     }
 
@@ -295,7 +295,7 @@ class CajaIndex extends Component
                 $this->dispatch('swal', [
                     'icon' => 'error',
                     'title' => 'Saldo Insuficiente en Caja',
-                    'text' => 'No puede retirar Bs. ' . number_format($monto, 2) . ' porque solo dispone de Bs. ' . number_format($saldoEfectivo, 2) . ' en efectivo en esta caja.',
+                    'text' => 'No puede retirar Bs. '.number_format($monto, 2).' porque solo dispone de Bs. '.number_format($saldoEfectivo, 2).' en efectivo en esta caja.',
                 ]);
 
                 return;
@@ -319,7 +319,7 @@ class CajaIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => $this->mov_tipo_movimiento === 'Ingreso Extra' ? '¡Ingreso Extra Registrado!' : '¡Salida de Caja Registrada!',
-            'text' => "Se asentó {$this->mov_tipo_movimiento} por Bs. " . number_format($monto, 2) . '.',
+            'text' => "Se asentó {$this->mov_tipo_movimiento} por Bs. ".number_format($monto, 2).'.',
         ]);
     }
 
@@ -417,8 +417,8 @@ class CajaIndex extends Component
             }
 
             return $dif > 0
-                ? "{$nombre}: Sobrante (+Bs. " . number_format($dif, 2) . ')'
-                : "{$nombre}: Faltante (-Bs. " . number_format(abs($dif), 2) . ')';
+                ? "{$nombre}: Sobrante (+Bs. ".number_format($dif, 2).')'
+                : "{$nombre}: Faltante (-Bs. ".number_format(abs($dif), 2).')';
         };
 
         $resumenDif = implode(' | ', [
@@ -647,7 +647,7 @@ class CajaIndex extends Component
             $this->dispatch('swal', [
                 'icon' => 'error',
                 'title' => 'Monto Excedido',
-                'text' => 'La suma de pagos (Bs. ' . number_format($totalCobro, 2) . ') no puede superar el saldo pendiente (Bs. ' . number_format($saldoPendiente, 2) . ').',
+                'text' => 'La suma de pagos (Bs. '.number_format($totalCobro, 2).') no puede superar el saldo pendiente (Bs. '.number_format($saldoPendiente, 2).').',
                 'toast' => false,
             ]);
 
@@ -690,7 +690,7 @@ class CajaIndex extends Component
             $this->dispatch('swal', [
                 'icon' => 'success',
                 'title' => '¡Cobro registrado con éxito!',
-                'text' => 'Se registraron los pagos por un total de Bs. ' . number_format($totalCobro, 2) . '. Puede imprimir el recibo de caja y el detalle de cuenta.',
+                'text' => 'Se registraron los pagos por un total de Bs. '.number_format($totalCobro, 2).'. Puede imprimir el recibo de caja y el detalle de cuenta.',
                 'toast' => false,
             ]);
         } catch (\Throwable $e) {
@@ -739,8 +739,8 @@ class CajaIndex extends Component
         $pagosHoyQuery = Pago::whereDate('created_at', today())
             ->where(function ($q) use ($sucursalId) {
                 if ($sucursalId) {
-                    $q->whereHas('caja', fn($c) => $c->where('sucursal_id', $sucursalId))
-                        ->orWhereHas('proforma', fn($p) => $p->where('sucursal_id', $sucursalId));
+                    $q->whereHas('caja', fn ($c) => $c->where('sucursal_id', $sucursalId))
+                        ->orWhereHas('proforma', fn ($p) => $p->where('sucursal_id', $sucursalId));
                 }
             });
 
@@ -785,7 +785,7 @@ class CajaIndex extends Component
         if ($this->activeTab === 'pendientes' || $this->activeTab === 'pagadas') {
             $proformasQuery = Proforma::with(['paciente', 'sucursal', 'pagos', 'servicios', 'movimientosInventario', 'consumosExtras'])
                 ->where('estado', '!=', 'Anulada')
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
                         $q->where('id', 'like', "%{$this->search}%")
@@ -814,7 +814,7 @@ class CajaIndex extends Component
                     $q->where('caja_id', $this->cajaActiva->id);
                 }, function ($q) use ($sucursalId) {
                     if ($sucursalId) {
-                        $q->whereHas('caja', fn($c) => $c->where('sucursal_id', $sucursalId));
+                        $q->whereHas('caja', fn ($c) => $c->where('sucursal_id', $sucursalId));
                     }
                 })
                 ->when($this->search, function ($query) {
@@ -823,7 +823,7 @@ class CajaIndex extends Component
                             ->orWhere('categoria', 'like', "%{$this->search}%")
                             ->orWhere('numero_referencia', 'like', "%{$this->search}%")
                             ->orWhere('tipo_pago', 'like', "%{$this->search}%")
-                            ->orWhereHas('user', fn($qu) => $qu->where('name', 'like', "%{$this->search}%"));
+                            ->orWhereHas('user', fn ($qu) => $qu->where('name', 'like', "%{$this->search}%"));
                     });
                 })
                 ->orderBy('created_at', 'desc');
@@ -832,12 +832,12 @@ class CajaIndex extends Component
         } else {
             // Tab arqueo: Historial de sesiones de caja
             $cajasHistoricasQuery = Caja::with(['user', 'sucursal'])
-                ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+                ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
                         $q->where('id', 'like', "%{$this->search}%")
                             ->orWhere('observaciones_cierre', 'like', "%{$this->search}%")
-                            ->orWhereHas('user', fn($qu) => $qu->where('name', 'like', "%{$this->search}%"));
+                            ->orWhereHas('user', fn ($qu) => $qu->where('name', 'like', "%{$this->search}%"));
                     });
                 })
                 ->orderBy('created_at', 'desc');

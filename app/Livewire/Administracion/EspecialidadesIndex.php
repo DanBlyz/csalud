@@ -30,7 +30,7 @@ class EspecialidadesIndex extends Component
     protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|min:3|max:100|unique:especialidades,nombre,' . $this->especialidadId,
+            'nombre' => 'required|string|min:3|max:100|unique:especialidades,nombre,'.$this->especialidadId,
             'descripcion' => 'nullable|string|max:255',
         ];
     }

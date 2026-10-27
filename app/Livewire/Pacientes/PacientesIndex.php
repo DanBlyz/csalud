@@ -280,6 +280,7 @@ class PacientesIndex extends Component
             ->withCount(['proformas as proformas_activas_count' => function ($q) {
                 $q->where('estado', 'En Curso');
             }])
+            ->withCount('proformas')
             ->when($this->search !== '', function ($q) {
                 $term = '%'.trim($this->search).'%';
                 $q->where(function ($sub) use ($term) {
