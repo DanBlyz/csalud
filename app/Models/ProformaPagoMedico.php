@@ -18,8 +18,12 @@ class ProformaPagoMedico extends Model
 
     protected $fillable = [
         'proforma_id',
+        'caja_id',
+        'pago_id',
         'medico_id',
         'monto',
+        'tipo_pago',
+        'numero_referencia',
         'observaciones',
         'fecha_pago',
         'user_id',
@@ -39,6 +43,16 @@ class ProformaPagoMedico extends Model
     public function proforma(): BelongsTo
     {
         return $this->belongsTo(Proforma::class, 'proforma_id');
+    }
+
+    public function caja(): BelongsTo
+    {
+        return $this->belongsTo(Caja::class, 'caja_id');
+    }
+
+    public function pago(): BelongsTo
+    {
+        return $this->belongsTo(Pago::class, 'pago_id');
     }
 
     public function medico(): BelongsTo

@@ -255,23 +255,38 @@
     <div class="section-title">3. Medicamentos e Insumos Despachados por Farmacia</div>
     @php
         $costoFinalFarmacia = (float) $proforma->totalDespachosFarmacia();
-        $totalItemsFarmacia = $proforma->movimientosInventario->count();
+        $entregasFarmacia = $proforma->movimientosInventario->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia']);
+        $devolucionesFarmacia = $proforma->movimientosInventario->whereIn('tipo_movimiento', ['Devolución', 'Devolucion', 'Devolución Farmacia', 'Devolucion Farmacia']);
+        $totalEntregas = $entregasFarmacia->count();
+        $totalDevoluciones = $devolucionesFarmacia->count();
     @endphp
-    @if($totalItemsFarmacia > 0)
+    @if($totalEntregas > 0 || $totalDevoluciones > 0)
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width: 5%; text-align: center;">#</th>
-                    <th style="width: 55%;">Concepto</th>
-                    <th style="width: 20%; text-align: center;">Total Despachos</th>
-                    <th style="width: 20%; text-align: right;">Costo Final</th>
+                    <th style="width: 50%;">Concepto</th>
+                    <th style="width: 25%; text-align: center;">Total Despachos</th>
+                    <th style="width: 20%; text-align: right;">Costo Final Neto</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td class="text-center">1</td>
-                    <td class="font-bold">Despacho Consolidado de Medicamentos, Fármacos e Insumos Clínicos</td>
-                    <td class="text-center font-bold">{{ $totalItemsFarmacia }} {{ $totalItemsFarmacia === 1 ? 'ítem entregado' : 'ítems entregados' }}</td>
+                    <td>
+                        <span class="font-bold">Despacho Consolidado de Medicamentos, Fármacos e Insumos Clínicos</span>
+                        @if($totalDevoluciones > 0)
+                            <div style="font-size: 8.5px; color: #6b21a8; font-style: italic; margin-top: 2px;">
+                                * Incluye {{ $totalDevoluciones }} {{ $totalDevoluciones === 1 ? 'devolución acreditada' : 'devoluciones acreditadas' }}
+                            </div>
+                        @endif
+                    </td>
+                    <td class="text-center font-bold">
+                        {{ $totalEntregas }} {{ $totalEntregas === 1 ? 'entrega' : 'entregas' }}
+                        @if($totalDevoluciones > 0)
+                            <span style="color: #6b21a8; font-size: 9px; font-weight: normal;">(-{{ $totalDevoluciones }} dev.)</span>
+                        @endif
+                    </td>
                     <td class="text-right font-bold font-mono">Bs. {{ number_format($costoFinalFarmacia, 2) }}</td>
                 </tr>
             </tbody>

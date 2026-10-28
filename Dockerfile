@@ -107,10 +107,7 @@ RUN mkdir -p storage/app/public/solicitudes_clinicas \
     && chown -R www-data:www-data storage bootstrap/cache /var/log/supervisor /var/lib/nginx /var/log/nginx /run/nginx \
     && chmod -R 775 storage bootstrap/cache /var/lib/nginx /var/log/nginx /run/nginx
 
-# Declarar el volumen persistente para conservar imágenes, documentos y reportes
-VOLUME ["/var/www/html/storage"]
-
-# Puerto expuesto para tráfico HTTP
+# Puerto expuesto para tráfico HTTP (la persistencia se gestiona vía Dokploy Volumes)
 EXPOSE 80
 
 # Script de entrada para enlaces simbólicos, permisos y migraciones automáticas

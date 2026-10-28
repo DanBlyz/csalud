@@ -152,6 +152,19 @@
         .status-proceso { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
         .status-confirmada { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
         .status-borrador { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .badge-dev {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8.5px;
+            font-weight: bold;
+            background-color: #f3e8ff;
+            color: #6b21a8;
+            border: 1px solid #d8b4fe;
+        }
+        .row-dev {
+            background-color: #faf5ff;
+        }
     </style>
 </head>
 <body>
@@ -254,35 +267,73 @@
     @endif
 
     <!-- 3. Medicamentos e Insumos Despachados por Farmacia -->
-    <div class="section-title">3. Medicamentos e Insumos Despachados por Farmacia (Entregas Reales)</div>
-    @if($proforma->movimientosInventario->count() > 0)
+    <div class="section-title">3. Medicamentos e Insumos Despachados por Farmacia (Entregas Reales y Devoluciones)</div>
+    @php
+        $movimientosFarmacia = $proforma->movimientosInventario;
+    @endphp
+    @if($movimientosFarmacia->count() > 0)
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 15%;">Fecha/Hora</th>
-                    <th style="width: 40%;">Medicamento / Material</th>
-                    <th style="width: 15%; text-align: center;">Cantidad</th>
-                    <th style="width: 15%;">Precio Uni.</th>
-                    <th style="width: 15%; text-align: right;">Subtotal</th>
+                    <th style="width: 12%;">Fecha/Hora</th>
+                    <th style="width: 14%;">Tipo / Mov.</th>
+                    <th style="width: 38%;">Medicamento / Material</th>
+                    <th style="width: 10%; text-align: center;">Cantidad</th>
+                    <th style="width: 12%; text-align: right;">Precio Uni.</th>
+                    <th style="width: 14%; text-align: right;">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
                 @php $subtotalFarmacia = 0; @endphp
-                @foreach($proforma->movimientosInventario as $mov)
+                @foreach($movimientosFarmacia as $mov)
                     @php
+                        $esDevolucion = in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion', 'Devolución Farmacia', 'Devolucion Farmacia']);
                         $precioVenta = (float) ($mov->producto->ultimo_precio_venta ?? 0);
                         $sub = $mov->cantidad * $precioVenta;
-                        $subtotalFarmacia += $sub;
+                        if ($esDevolucion) {
+                            $subtotalFarmacia -= $sub;
+                        } else {
+                            $subtotalFarmacia += $sub;
+                        }
                     @endphp
-                    <tr>
+                    <tr @if($esDevolucion) class="row-dev" @endif>
                         <td>{{ $mov->created_at ? $mov->created_at->format('d/m H:i') : '-' }}</td>
-                        <td class="font-bold">{{ $mov->producto->nombre ?? 'Producto S/N' }}</td>
-                        <td class="text-center font-bold">{{ $mov->cantidad }}</td>
+                        <td>
+                            @if($esDevolucion)
+                                <span class="badge-dev">DEVOLUCIÓN</span>
+                            @else
+                                <span style="font-size: 9.5px; font-weight: bold; color: #0284c7;">ENTREGA</span>
+                            @endif
+                        </td>
+                        <td>
+                            <span class="font-bold">{{ $mov->producto->nombre ?? 'Producto S/N' }}</span>
+                            @if($mov->lote)
+                                <span style="font-size: 8.5px; color: #64748b;">(Lote: {{ $mov->lote->codigo_lote }})</span>
+                            @endif
+                            @if($esDevolucion && $mov->observaciones)
+                                <div style="font-size: 8.5px; color: #6b21a8; font-style: italic; margin-top: 2px;">
+                                    {{ $mov->observaciones }}
+                                </div>
+                            @endif
+                        </td>
+                        <td class="text-center font-bold" @if($esDevolucion) style="color: #6b21a8;" @endif>
+                            {{ $esDevolucion ? '-' . $mov->cantidad : $mov->cantidad }}
+                        </td>
                         <td class="text-right font-mono">Bs. {{ number_format($precioVenta, 2) }}</td>
-                        <td class="text-right font-mono">Bs. {{ number_format($sub, 2) }}</td>
+                        <td class="text-right font-mono font-bold" @if($esDevolucion) style="color: #6b21a8;" @endif>
+                            {{ $esDevolucion ? '-Bs. ' . number_format($sub, 2) : 'Bs. ' . number_format($sub, 2) }}
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
+            <tfoot>
+                <tr style="background-color: #f8fafc; font-weight: bold; border-top: 1.5px solid #cbd5e1;">
+                    <td colspan="5" class="text-right" style="padding: 5px 8px; font-size: 10px;">Subtotal Neto Farmacia:</td>
+                    <td class="text-right font-mono font-bold" style="padding: 5px 8px; font-size: 10px; color: #0284c7;">
+                        Bs. {{ number_format($proforma->totalDespachosFarmacia(), 2) }}
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     @else
         <p style="font-size: 10px; color: #64748b; font-style: italic; margin: 4px 8px;">No se registraron despachos de farmacia.</p>

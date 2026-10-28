@@ -50,6 +50,8 @@ class LotesIndex extends Component
 
     public ?int $cantidad_ingresada = null;
 
+    public ?string $fecha_compra = null;
+
     public ?string $fecha_vencimiento = null;
 
     public string $precio_compra = '';
@@ -58,6 +60,33 @@ class LotesIndex extends Component
 
     // Buscador interactivo de producto en el modal
     public string $buscarProducto = '';
+
+    // Modal Editar / Corregir Lote
+    public bool $modalEditarLoteOpen = false;
+
+    public ?int $loteEdicionId = null;
+
+    public ?string $edit_producto_nombre = '';
+
+    public ?string $edit_producto_unidad = '';
+
+    public ?string $edit_sucursal_nombre = '';
+
+    public ?int $edit_proveedor_id = null;
+
+    public string $edit_codigo_lote = '';
+
+    public ?string $edit_fecha_compra = null;
+
+    public ?string $edit_fecha_vencimiento = null;
+
+    public string $edit_precio_compra = '';
+
+    public string $edit_precio_venta = '';
+
+    public int $edit_cantidad_actual = 0;
+
+    public int $edit_cantidad_ingresada = 0;
 
     // Modal Ajuste / Merma de Lote
     public bool $modalAjusteOpen = false;
@@ -93,6 +122,7 @@ class LotesIndex extends Component
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'codigo_lote' => 'required|string|max:100',
             'cantidad_ingresada' => 'required|integer|min:1',
+            'fecha_compra' => 'required|date',
             'fecha_vencimiento' => 'nullable|date',
             'precio_compra' => 'required|numeric|min:0',
             'precio_venta' => 'required|numeric|min:0',
@@ -155,6 +185,7 @@ class LotesIndex extends Component
         $this->proveedor_id = null;
         $this->codigo_lote = 'LOT-'.strtoupper(substr(uniqid(), -6));
         $this->cantidad_ingresada = null;
+        $this->fecha_compra = now()->toDateString();
         $this->fecha_vencimiento = null;
         $this->precio_compra = '';
         $this->precio_venta = '';
@@ -223,6 +254,7 @@ class LotesIndex extends Component
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'codigo_lote' => 'required|string|max:100',
             'cantidad_ingresada' => 'required|integer|min:1',
+            'fecha_compra' => 'required|date',
             'fecha_vencimiento' => 'nullable|date',
             'precio_compra' => 'required|numeric|min:0',
             'precio_venta' => 'required|numeric|min:0',
@@ -237,6 +269,7 @@ class LotesIndex extends Component
                 'codigo_lote' => trim($this->codigo_lote),
                 'cantidad_ingresada' => $this->cantidad_ingresada,
                 'cantidad_actual' => $this->cantidad_ingresada,
+                'fecha_compra' => $this->fecha_compra ?: now()->toDateString(),
                 'fecha_vencimiento' => $this->fecha_vencimiento,
                 'precio_compra' => (float) $this->precio_compra,
                 'precio_venta' => (float) $this->precio_venta,
@@ -287,6 +320,111 @@ class LotesIndex extends Component
             'type' => 'success',
             'title' => '¡Lote Registrado!',
             'message' => 'Lote ingresado y stock incorporado al inventario con su asiento en Kardex.',
+        ]);
+    }
+
+    public function abrirModalEdicion(int $loteId): void
+    {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.editar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para editar o corregir lotes de inventario.',
+            ]);
+
+            return;
+        }
+
+        $lote = Lote::with(['producto.marca', 'sucursal', 'proveedor'])->findOrFail($loteId);
+
+        $this->loteEdicionId = $lote->id;
+        $this->edit_producto_nombre = $lote->producto->nombre ?? 'Producto no especificado';
+        $this->edit_producto_unidad = ($lote->producto?->unidad_medida ?? 'Unidad').' • '.($lote->producto?->marca->nombre ?? 'Genérico');
+        $this->edit_sucursal_nombre = $lote->sucursal->nombre ?? 'Sede Central';
+        $this->edit_proveedor_id = $lote->proveedor_id;
+        $this->edit_codigo_lote = $lote->codigo_lote ?? '';
+        $this->edit_fecha_compra = $lote->fecha_compra ? $lote->fecha_compra->format('Y-m-d') : null;
+        $this->edit_fecha_vencimiento = $lote->fecha_vencimiento ? $lote->fecha_vencimiento->format('Y-m-d') : null;
+        $this->edit_precio_compra = (string) $lote->precio_compra;
+        $this->edit_precio_venta = (string) $lote->precio_venta;
+        $this->edit_cantidad_actual = (int) $lote->cantidad_actual;
+        $this->edit_cantidad_ingresada = (int) $lote->cantidad_ingresada;
+
+        $this->resetValidation();
+        $this->modalEditarLoteOpen = true;
+    }
+
+    public function cerrarModalEdicion(): void
+    {
+        $this->modalEditarLoteOpen = false;
+        $this->loteEdicionId = null;
+        $this->edit_producto_nombre = '';
+        $this->edit_producto_unidad = '';
+        $this->edit_sucursal_nombre = '';
+        $this->edit_proveedor_id = null;
+        $this->edit_codigo_lote = '';
+        $this->edit_fecha_compra = null;
+        $this->edit_fecha_vencimiento = null;
+        $this->edit_precio_compra = '';
+        $this->edit_precio_venta = '';
+        $this->edit_cantidad_actual = 0;
+        $this->edit_cantidad_ingresada = 0;
+        $this->resetValidation();
+    }
+
+    public function actualizarLote(): void
+    {
+        if (! Auth::user()?->tienePermiso('farmacia.lotes.editar')) {
+            $this->dispatch('swal', [
+                'type' => 'error',
+                'title' => 'Acceso Denegado',
+                'text' => 'No tiene permiso para editar o corregir lotes de inventario.',
+            ]);
+
+            return;
+        }
+
+        $this->validate([
+            'loteEdicionId' => 'required|exists:lotes,id',
+            'edit_codigo_lote' => 'required|string|max:100',
+            'edit_proveedor_id' => 'nullable|exists:proveedores,id',
+            'edit_fecha_compra' => 'required|date',
+            'edit_fecha_vencimiento' => 'nullable|date',
+            'edit_precio_compra' => 'required|numeric|min:0',
+            'edit_precio_venta' => 'required|numeric|min:0',
+        ], [
+            'edit_codigo_lote.required' => 'El código o número de lote es obligatorio.',
+            'edit_precio_compra.required' => 'El precio de compra unitario es obligatorio.',
+            'edit_precio_venta.required' => 'El precio de venta unitario es obligatorio.',
+        ]);
+
+        $lote = Lote::with('producto')->findOrFail($this->loteEdicionId);
+
+        DB::transaction(function () use ($lote) {
+            $lote->update([
+                'codigo_lote' => trim($this->edit_codigo_lote),
+                'proveedor_id' => $this->edit_proveedor_id,
+                'fecha_compra' => $this->edit_fecha_compra,
+                'fecha_vencimiento' => $this->edit_fecha_vencimiento,
+                'precio_compra' => (float) $this->edit_precio_compra,
+                'precio_venta' => (float) $this->edit_precio_venta,
+            ]);
+
+            // Si es el lote más reciente del producto, actualizar también el catálogo general
+            $ultimoLote = Lote::where('producto_id', $lote->producto_id)->latest('id')->first();
+            if ($ultimoLote && $ultimoLote->id === $lote->id && (float) $this->edit_precio_venta > 0) {
+                $lote->producto?->update([
+                    'ultimo_precio_venta' => (float) $this->edit_precio_venta,
+                ]);
+            }
+        });
+
+        $this->cerrarModalEdicion();
+
+        $this->dispatch('swal', [
+            'type' => 'success',
+            'title' => '¡Lote Actualizado!',
+            'message' => 'Los datos del lote y sus valores económicos han sido corregidos satisfactoriamente.',
         ]);
     }
 

@@ -6,6 +6,7 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MovimientoInventario extends Model
@@ -22,9 +23,11 @@ class MovimientoInventario extends Model
         'tipo_movimiento',
         'receta_id',
         'proforma_id',
+        'movimiento_origen_id',
         'seccion_origen_id',
         'seccion_destino_id',
         'user_id',
+        'observaciones',
         'usuario_creador_id',
         'usuario_modificador_id',
         'usuario_eliminador_id',
@@ -73,6 +76,16 @@ class MovimientoInventario extends Model
         return $this->belongsTo(Proforma::class, 'proforma_id');
     }
 
+    public function movimientoOrigen(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'movimiento_origen_id');
+    }
+
+    public function devoluciones(): HasMany
+    {
+        return $this->hasMany(self::class, 'movimiento_origen_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -81,5 +94,43 @@ class MovimientoInventario extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Calcula la cantidad total devuelta vinculada a este movimiento.
+     */
+    public function totalDevuelto(): int
+    {
+        return (int) $this->devoluciones()
+            ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion'])
+            ->sum('cantidad');
+    }
+
+    /**
+     * Calcula la cantidad restante que aún puede devolverse de este movimiento.
+     */
+    public function cantidadDisponibleParaDevolucion(): int
+    {
+        return max(0, (int) $this->cantidad - $this->totalDevuelto());
+    }
+
+    /**
+     * Determina si el movimiento está habilitado para procesar una devolución.
+     */
+    public function puedeSerDevuelto(): bool
+    {
+        if (! $this->proforma_id || ! $this->proforma) {
+            return false;
+        }
+
+        if ($this->proforma->estado !== 'En Curso') {
+            return false;
+        }
+
+        if (! in_array($this->tipo_movimiento, ['Salida Receta', 'Consumo Extra'], true)) {
+            return false;
+        }
+
+        return $this->cantidadDisponibleParaDevolucion() > 0;
     }
 }

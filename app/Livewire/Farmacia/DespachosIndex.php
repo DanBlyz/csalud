@@ -331,12 +331,18 @@ class DespachosIndex extends Component
         $this->buscarExtraProducto = '';
 
         foreach ($receta->detalles as $det) {
-            // Calcular unidades ya despachadas por MovimientoInventario
-            $despachadasPrevias = (int) MovimientoInventario::where('receta_id', $receta->id)
+            // Calcular unidades ya despachadas netas por MovimientoInventario (salidas menos devoluciones)
+            $salidas = (int) MovimientoInventario::where('receta_id', $receta->id)
                 ->where('producto_id', $det->producto_id)
                 ->where('tipo_movimiento', 'Salida Receta')
                 ->sum('cantidad');
 
+            $devoluciones = (int) MovimientoInventario::where('receta_id', $receta->id)
+                ->where('producto_id', $det->producto_id)
+                ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion'])
+                ->sum('cantidad');
+
+            $despachadasPrevias = max(0, $salidas - $devoluciones);
             $saldoPendiente = max(0, $det->cantidad - $despachadasPrevias);
 
             // Determinar la sección inicial (preferir la sección por defecto si tiene stock, sino la primera con stock)
@@ -533,17 +539,22 @@ class DespachosIndex extends Component
                     Auth::id()
                 );
 
-                // Verificar si se completó la totalidad de la prescripción para este detalle
+                // Verificar si se completó la totalidad de la prescripción para este detalle (neto de devoluciones)
                 $detalle = RecetaDetalle::find($detId);
                 if ($detalle) {
-                    $totalAcumulado = (int) MovimientoInventario::where('receta_id', $receta->id)
+                    $totalSalidas = (int) MovimientoInventario::where('receta_id', $receta->id)
                         ->where('producto_id', $detalle->producto_id)
                         ->where('tipo_movimiento', 'Salida Receta')
                         ->sum('cantidad');
 
-                    if ($totalAcumulado >= $detalle->cantidad) {
-                        $detalle->update(['despachado' => true]);
-                    }
+                    $totalDevoluciones = (int) MovimientoInventario::where('receta_id', $receta->id)
+                        ->where('producto_id', $detalle->producto_id)
+                        ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion'])
+                        ->sum('cantidad');
+
+                    $totalNeto = max(0, $totalSalidas - $totalDevoluciones);
+
+                    $detalle->update(['despachado' => $totalNeto >= $detalle->cantidad]);
                 }
             }
 

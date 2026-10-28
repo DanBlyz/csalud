@@ -368,3 +368,79 @@ test('puede registrar y revertir consumo extra asignando área hospitalaria en p
     expect($lote->fresh()->stockEnSeccion($this->seccionEmergencias->id))->toBe(15);
     expect($lote->fresh()->cantidad_actual)->toBe(40);
 });
+
+test('puede registrar lote con fecha_compra y visualizarlo en el listado', function () {
+    $this->actingAs($this->farmaceutico);
+
+    Livewire::test(LotesIndex::class)
+        ->call('abrirModalLote')
+        ->assertSet('modalLoteOpen', true)
+        ->set('sucursal_id', $this->sucursal->id)
+        ->set('producto_id', $this->producto->id)
+        ->set('codigo_lote', 'LOT-COMPRA-2026')
+        ->set('cantidad_ingresada', 50)
+        ->set('fecha_compra', '2026-10-15')
+        ->set('fecha_vencimiento', '2027-10-15')
+        ->set('precio_compra', '12.50')
+        ->set('precio_venta', '25.00')
+        ->call('guardarLote')
+        ->assertDispatched('swal');
+
+    $lote = Lote::where('codigo_lote', 'LOT-COMPRA-2026')->first();
+    expect($lote)->not->toBeNull();
+    expect($lote->fecha_compra?->toDateString())->toBe('2026-10-15');
+    expect((float) $lote->precio_compra)->toBe(12.50);
+    expect((float) $lote->precio_venta)->toBe(25.00);
+
+    Livewire::test(LotesIndex::class)
+        ->assertSee('LOT-COMPRA-2026')
+        ->assertSee('Compra: 15/10/2026');
+});
+
+test('puede editar y corregir datos de un lote con autorizacion farmacia.lotes.editar', function () {
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'codigo_lote' => 'LOT-ERRONEO',
+        'cantidad_ingresada' => 30,
+        'cantidad_actual' => 30,
+        'fecha_compra' => '2026-09-01',
+        'fecha_vencimiento' => '2027-01-01',
+        'precio_compra' => 5.00,
+        'precio_venta' => 10.00,
+    ]);
+
+    // 1. Usuario sin permiso es denegado
+    $this->actingAs($this->usuarioSinPermiso);
+
+    Livewire::test(LotesIndex::class)
+        ->call('abrirModalEdicion', $lote->id)
+        ->assertSet('modalEditarLoteOpen', false)
+        ->assertDispatched('swal');
+
+    // 2. Usuario con permiso farmacia.lotes.editar puede abrir y actualizar
+    $this->actingAs($this->farmaceutico);
+
+    Livewire::test(LotesIndex::class)
+        ->call('abrirModalEdicion', $lote->id)
+        ->assertSet('modalEditarLoteOpen', true)
+        ->assertSet('edit_codigo_lote', 'LOT-ERRONEO')
+        ->set('edit_codigo_lote', 'LOT-CORREGIDO-OK')
+        ->set('edit_fecha_compra', '2026-10-20')
+        ->set('edit_fecha_vencimiento', '2028-05-15')
+        ->set('edit_precio_compra', '8.50')
+        ->set('edit_precio_venta', '18.00')
+        ->call('actualizarLote')
+        ->assertDispatched('swal')
+        ->assertSet('modalEditarLoteOpen', false);
+
+    $loteActualizado = $lote->fresh();
+    expect($loteActualizado->codigo_lote)->toBe('LOT-CORREGIDO-OK');
+    expect($loteActualizado->fecha_compra->toDateString())->toBe('2026-10-20');
+    expect($loteActualizado->fecha_vencimiento->toDateString())->toBe('2028-05-15');
+    expect((float) $loteActualizado->precio_compra)->toBe(8.50);
+    expect((float) $loteActualizado->precio_venta)->toBe(18.00);
+
+    // Comprobar que sincronizó ultimo_precio_venta en el producto
+    expect((float) $this->producto->fresh()->ultimo_precio_venta)->toBe(18.00);
+});

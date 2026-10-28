@@ -21,8 +21,9 @@ class ProformaPdfController extends Controller
             'consumosExtras.producto',
             'recetaActiva.detalles.producto',
             'movimientosInventario' => function ($query) {
-                $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
-                    ->with(['producto', 'lote']);
+                $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia', 'Devolución', 'Devolucion'])
+                    ->with(['producto', 'lote'])
+                    ->orderBy('created_at', 'asc');
             },
             'pagos.user',
         ]);
@@ -47,8 +48,9 @@ class ProformaPdfController extends Controller
             'servicios.servicio.categoria',
             'consumosExtras',
             'movimientosInventario' => function ($query) {
-                $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
-                    ->with(['producto']);
+                $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia', 'Devolución', 'Devolucion'])
+                    ->with(['producto'])
+                    ->orderBy('created_at', 'asc');
             },
             'pagos.user',
         ]);

@@ -28,6 +28,7 @@ class Lote extends Model
         'fecha_vencimiento',
         'precio_compra',
         'precio_venta',
+        'fecha_compra',
         'usuario_creador_id',
         'usuario_modificador_id',
         'usuario_eliminador_id',
@@ -41,6 +42,7 @@ class Lote extends Model
             'precio_venta' => 'decimal:2',
             'cantidad_ingresada' => 'integer',
             'cantidad_actual' => 'integer',
+            'fecha_compra' => 'date',
         ];
     }
 

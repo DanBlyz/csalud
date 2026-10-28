@@ -320,9 +320,25 @@
                             </div>
                             <div class="flex items-center gap-3 text-xs">
                                 <span class="text-slate-500">Saldo Inicial: <strong class="text-slate-800 dark:text-slate-200 font-mono">{{ number_format($item['saldo_inicial']) }}</strong></span>
-                                <span class="text-slate-500">Saldo Final: <strong class="text-blue-600 dark:text-blue-400 font-mono font-bold">{{ number_format($item['saldo_final']) }}</strong></span>
+                                <span class="text-slate-500">Stock Final (Todas las Áreas): <strong class="text-blue-600 dark:text-blue-400 font-mono font-bold">{{ number_format($item['saldo_final']) }}</strong></span>
                             </div>
                         </div>
+
+                        <!-- Desglose de Saldo Inicial por Sección -->
+                        @if (!empty($item['secciones_saldo_inicial']))
+                            <div class="px-3 py-1.5 bg-slate-100/70 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-1.5 text-xs">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1 me-1">
+                                    <i class="fas fa-play-circle text-teal-600 dark:text-teal-400"></i>
+                                    <span>Saldo Inicial por Área:</span>
+                                </span>
+                                @foreach ($item['secciones_saldo_inicial'] as $secIni)
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium {{ $secIni['cantidad'] > 0 ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700' : 'bg-slate-100 dark:bg-slate-900/50 text-slate-400' }}">
+                                        <span>{{ $secIni['seccion_nombre'] }}:</span>
+                                        <strong class="font-bold font-mono">{{ number_format($secIni['cantidad']) }}</strong>
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
 
                         <!-- Tabla de Movimientos del Producto -->
                         <div class="overflow-x-auto">
@@ -340,13 +356,40 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <!-- Fila de Saldo Inicial al Corte -->
+                                    <tr class="bg-slate-50/90 dark:bg-slate-850/60 font-semibold text-slate-700 dark:text-slate-300">
+                                        <td class="py-2 px-3 font-mono text-[11px] text-slate-500">{{ Carbon\Carbon::parse($datosReporte['fecha_inicio'])->format('d/m/Y') }} 00:00</td>
+                                        <td class="py-2 px-3" colspan="4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                                                    SALDO INICIAL AL CORTE
+                                                </span>
+                                                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
+                                                    (Existencias acumuladas antes de la fecha inicial)
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="py-2 px-3 text-right text-slate-400">-</td>
+                                        <td class="py-2 px-3 text-right text-slate-400">-</td>
+                                        <td class="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">
+                                            {{ number_format($item['saldo_inicial']) }}
+                                        </td>
+                                    </tr>
+
                                     @forelse ($item['movimientos'] as $mov)
                                         <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
                                             <td class="py-2 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">{{ $mov['fecha'] }}</td>
                                             <td class="py-2 px-3">
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold {{ $mov['es_entrada'] ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' }}">
-                                                    {{ $mov['tipo_movimiento'] }}
-                                                </span>
+                                                @if (str_contains($mov['tipo_movimiento'], 'Transferencia'))
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold {{ $mov['es_entrada'] ? 'bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800' : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800' }}">
+                                                        <i class="fas {{ $mov['es_entrada'] ? 'fa-arrow-down' : 'fa-arrow-up' }} text-[9px]"></i>
+                                                        {{ $mov['tipo_movimiento'] }}
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold {{ $mov['es_entrada'] ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' }}">
+                                                        {{ $mov['tipo_movimiento'] }}
+                                                    </span>
+                                                @endif
                                             </td>
                                             <td class="py-2 px-3 font-mono text-[11px]">
                                                 {{ $mov['lote_codigo'] }}
@@ -354,7 +397,11 @@
                                                     <span class="text-[10px] text-slate-400 block">{{ $mov['lote_vencimiento'] }}</span>
                                                 @endif
                                             </td>
-                                            <td class="py-2 px-3 text-slate-600 dark:text-slate-400">{{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}</td>
+                                            <td class="py-2 px-3 text-slate-600 dark:text-slate-400">
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                                                    {{ $mov['seccion_nombre'] ?? 'Farmacia Central' }}
+                                                </span>
+                                            </td>
                                             <td class="py-2 px-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">{{ $mov['referencia'] }}</td>
                                             <td class="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                                 {{ $mov['cantidad_entrada'] > 0 ? '+'.number_format($mov['cantidad_entrada']) : '-' }}
@@ -369,7 +416,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="8" class="text-center py-4 text-slate-400 text-xs italic">
-                                                Sin movimientos en el período seleccionado. Saldo inicial conservado.
+                                                Sin movimientos adicionales en el período seleccionado. Saldo inicial conservado.
                                             </td>
                                         </tr>
                                     @endforelse

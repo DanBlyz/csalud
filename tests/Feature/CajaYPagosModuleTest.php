@@ -5,11 +5,15 @@ use App\Livewire\Caja\CierresIndex;
 use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\CierreMensual;
+use App\Models\Lote;
+use App\Models\MovimientoInventario;
 use App\Models\Paciente;
 use App\Models\Pago;
 use App\Models\Permiso;
+use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\ProformaServicio;
+use App\Models\Receta;
 use App\Models\Rol;
 use App\Models\Servicio;
 use App\Models\Sucursal;
@@ -640,4 +644,109 @@ test('puede aperturar un cierre mensual, registrar egresos y finalizar el period
     $component->call('cambiarEstadoCierre', 'Borrador');
     $cierre->refresh();
     expect($cierre->estado)->toBe('Borrador');
+});
+
+test('los reportes pdf de detalle y resumen de proforma reflejan devoluciones de medicamentos correctamente', function () {
+    $this->actingAs($this->cajero);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $this->paciente->id,
+        'tipo_atencion' => 'Hospitalaria',
+        'pieza' => 'Sala 204',
+        'fecha_ingreso' => now(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $producto = Producto::create([
+        'nombre' => 'Paracetamol 1g Inyectable',
+        'unidad_medida' => 'Ampolla',
+        'ultimo_precio_venta' => 20.00,
+        'stock_minimo' => 5,
+    ]);
+
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'PAR-DEV-01',
+        'cantidad_ingresada' => 10,
+        'cantidad_actual' => 7,
+        'fecha_vencimiento' => now()->addMonths(6),
+        'precio_compra' => 10.00,
+        'precio_venta' => 20.00,
+    ]);
+
+    $receta = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->cajero->id,
+        'activo' => true,
+    ]);
+
+    // Movimiento 1: Salida de 3 ampollas (3 * 20 = 60 Bs)
+    $movSalida = MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'tipo_movimiento' => 'Salida Receta',
+        'cantidad' => 3,
+        'user_id' => $this->cajero->id,
+        'proforma_id' => $proforma->id,
+        'receta_id' => $receta->id,
+    ]);
+
+    // Movimiento 2: Devolución clínica de 1 ampolla (1 * 20 = 20 Bs)
+    MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'tipo_movimiento' => 'Devolución',
+        'cantidad' => 1,
+        'user_id' => $this->cajero->id,
+        'proforma_id' => $proforma->id,
+        'receta_id' => $receta->id,
+        'movimiento_origen_id' => $movSalida->id,
+        'observaciones' => 'Dosis suspendida por indicación médica',
+    ]);
+
+    $proforma->recalcularTotal();
+    expect((float) $proforma->fresh()->costo_total)->toBe(40.00);
+
+    // 1. Probar descarga y contenido de PDF Detalle
+    $resDetalle = $this->get(route('proformas.pdf.detalle', $proforma->id));
+    $resDetalle->assertOk();
+    $resDetalle->assertHeader('content-type', 'application/pdf');
+
+    $proforma->load([
+        'movimientosInventario' => function ($q) {
+            $q->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia', 'Devolución', 'Devolucion'])
+                ->with(['producto', 'lote']);
+        },
+        'servicios.servicio.categoria',
+        'consumosExtras.producto',
+    ]);
+
+    $htmlDetalle = view('pdf.proforma-detalle', [
+        'proforma' => $proforma,
+        'fechaEmision' => now()->format('d/m/Y H:i'),
+    ])->render();
+
+    expect($htmlDetalle)->toContain('DEVOLUCIÓN')
+        ->and($htmlDetalle)->toContain('-1')
+        ->and($htmlDetalle)->toContain('-Bs. 20.00')
+        ->and($htmlDetalle)->toContain('Bs. 40.00')
+        ->and($htmlDetalle)->toContain('Dosis suspendida por indicación médica');
+
+    // 2. Probar descarga y contenido de PDF Resumen
+    $resResumen = $this->get(route('proformas.pdf.resumen', $proforma->id));
+    $resResumen->assertOk();
+    $resResumen->assertHeader('content-type', 'application/pdf');
+
+    $htmlResumen = view('pdf.proforma-resumen', [
+        'proforma' => $proforma,
+        'fechaEmision' => now()->format('d/m/Y H:i'),
+    ])->render();
+
+    expect($htmlResumen)->toContain('Bs. 40.00')
+        ->and($htmlResumen)->toContain('1 devolución acreditada');
 });

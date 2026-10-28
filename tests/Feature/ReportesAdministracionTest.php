@@ -336,3 +336,157 @@ test('reporte de movimientos muestra el desglose de existencias por seccion y el
 
     $response->assertOk();
 });
+
+test('reporte de kardex muestra saldo inicial desglosado por seccion y registra tanto salida como ingreso en transferencias internas', function () {
+    $this->actingAs($this->admin);
+
+    $farmacia = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Farmacia Central',
+        'es_almacen_principal' => true,
+        'activo' => true,
+    ]);
+
+    $emergencias = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Emergencias',
+        'es_almacen_principal' => false,
+        'activo' => true,
+    ]);
+
+    // 1. Movimiento previo al rango: 50 a Farmacia y 20 a Emergencias
+    MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'lote_id' => $this->lote->id,
+        'cantidad' => 50,
+        'tipo_movimiento' => 'Entrada Compra',
+        'seccion_destino_id' => $farmacia->id,
+        'user_id' => $this->admin->id,
+        'created_at' => Carbon::parse('2026-08-15 10:00:00'),
+    ]);
+
+    MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'lote_id' => $this->lote->id,
+        'cantidad' => 20,
+        'tipo_movimiento' => 'Entrada Compra',
+        'seccion_destino_id' => $emergencias->id,
+        'user_id' => $this->admin->id,
+        'created_at' => Carbon::parse('2026-08-20 10:00:00'),
+    ]);
+
+    // 2. Movimiento en el rango (Septiembre): Transferencia de 15 unidades de Farmacia a Emergencias
+    MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'lote_id' => $this->lote->id,
+        'cantidad' => 15,
+        'tipo_movimiento' => 'Transferencia Interna',
+        'seccion_origen_id' => $farmacia->id,
+        'seccion_destino_id' => $emergencias->id,
+        'user_id' => $this->admin->id,
+        'created_at' => Carbon::parse('2026-09-10 11:00:00'),
+    ]);
+
+    // Reflejar existencias físicas actuales en lote_secciones (35 en Farmacia, 35 en Emergencias = 70 total)
+    $this->lote->update(['cantidad_actual' => 70]);
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $farmacia->id,
+        'cantidad_actual' => 35,
+    ]);
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $emergencias->id,
+        'cantidad_actual' => 35,
+    ]);
+
+    $service = new ReporteMovimientosService;
+    $reporte = $service->generar(
+        fechaInicio: '2026-09-01',
+        fechaFin: '2026-09-30',
+        productoId: $this->producto->id,
+        sucursalId: $this->sucursal->id
+    );
+
+    $item = $reporte['items'][0];
+
+    // Saldo Inicial = 70 (50 en Farmacia + 20 en Emergencias)
+    expect($item['saldo_inicial'])->toBe(70);
+    $iniSecMap = collect($item['secciones_saldo_inicial'])->pluck('cantidad', 'seccion_nombre');
+    expect($iniSecMap['Farmacia Central'])->toBe(50);
+    expect($iniSecMap['Emergencias'])->toBe(20);
+
+    // Movimientos del período: La transferencia debe generar DOS filas (Salida e Ingreso)
+    expect($item['movimientos'])->toHaveCount(2);
+
+    // Fila 1: Transferencia Salida de Farmacia Central
+    expect($item['movimientos'][0]['tipo_movimiento'])->toBe('Transferencia (Salida)');
+    expect($item['movimientos'][0]['seccion_nombre'])->toBe('Farmacia Central');
+    expect($item['movimientos'][0]['cantidad_salida'])->toBe(15);
+    expect($item['movimientos'][0]['cantidad_entrada'])->toBe(0);
+
+    // Fila 2: Transferencia Ingreso a Emergencias
+    expect($item['movimientos'][1]['tipo_movimiento'])->toBe('Transferencia (Ingreso)');
+    expect($item['movimientos'][1]['seccion_nombre'])->toBe('Emergencias');
+    expect($item['movimientos'][1]['cantidad_entrada'])->toBe(15);
+    expect($item['movimientos'][1]['cantidad_salida'])->toBe(0);
+
+    // El saldo acumulado final del producto no se altera por la transferencia interna
+    expect($item['movimientos'][1]['saldo_acumulado'])->toBe(70);
+    expect($item['saldo_final'])->toBe(70);
+});
+
+test('reporte consolida valorizaciones de compra y venta tomando en cuenta todas las secciones del producto', function () {
+    $this->actingAs($this->admin);
+
+    $central = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Farmacia Central',
+        'es_almacen_principal' => true,
+        'activo' => true,
+    ]);
+
+    $quirofano = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Quirófano',
+        'es_almacen_principal' => false,
+        'activo' => true,
+    ]);
+
+    // Asignar 30 en Central y 20 en Quirófano = 50 total en todas las secciones
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $central->id,
+        'cantidad_actual' => 30,
+    ]);
+    LoteSeccion::create([
+        'lote_id' => $this->lote->id,
+        'seccion_id' => $quirofano->id,
+        'cantidad_actual' => 20,
+    ]);
+
+    $service = new ReporteMovimientosService;
+    $reporte = $service->generar(
+        fechaInicio: Carbon::now()->startOfMonth()->toDateString(),
+        fechaFin: Carbon::now()->toDateString(),
+        productoId: $this->producto->id,
+        sucursalId: $this->sucursal->id
+    );
+
+    $item = $reporte['items'][0];
+    expect($item['total_stock_secciones'])->toBe(50);
+    expect($item['saldo_final'])->toBe(50);
+
+    // Val. Compra: 50 * 10 = 500 Bs. (todas las secciones)
+    // Val. Venta: 50 * 15 = 750 Bs. (todas las secciones)
+    expect($item['valor_total_compra'])->toBe(500.0);
+    expect($item['valor_total_venta'])->toBe(750.0);
+
+    // Resumen General
+    expect($reporte['resumen_general']['gran_total_saldo_final'])->toBe(50);
+    expect($reporte['resumen_general']['gran_total_valor_compra'])->toBe(500.0);
+    expect($reporte['resumen_general']['gran_total_valor_venta'])->toBe(750.0);
+});

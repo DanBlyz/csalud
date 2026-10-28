@@ -1326,6 +1326,10 @@
                                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50">
                                                     <i class="fas fa-box-open text-[9px]"></i> Insumo Extra
                                                 </span>
+                                            @elseif (in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion']))
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50">
+                                                    <i class="fas fa-undo-alt text-[9px]"></i> Devolución
+                                                </span>
                                             @else
                                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
                                                     <i class="fas fa-pills text-[9px]"></i> {{ $mov->tipo_movimiento }}
@@ -1342,12 +1346,24 @@
                                                     • {{ $mov->producto->marca->nombre }}
                                                 @endif
                                             </div>
+                                            @if ($mov->observaciones)
+                                                <div class="text-[10px] text-purple-600 dark:text-purple-400 italic mt-0.5 flex items-center gap-1">
+                                                    <i class="fas fa-comment-dots text-[9px]"></i> {{ $mov->observaciones }}
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="py-3 px-4">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                                <i class="fas fa-layer-group text-[9px] text-teal-500"></i>
-                                                {{ $mov->seccionOrigen?->nombre ?? 'Almacén Central' }}
-                                            </span>
+                                            @if (in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion']))
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                                    <i class="fas fa-arrow-down text-[9px] text-purple-500"></i>
+                                                    Reingreso a: {{ $mov->seccionDestino?->nombre ?? ($mov->seccionOrigen?->nombre ?? 'Almacén Central') }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                                    <i class="fas fa-layer-group text-[9px] text-teal-500"></i>
+                                                    {{ $mov->seccionOrigen?->nombre ?? 'Almacén Central' }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="font-mono font-bold text-slate-700 dark:text-slate-300 text-xs">
@@ -1357,11 +1373,19 @@
                                                 Vto: {{ $mov->lote?->fecha_vencimiento?->format('d/m/Y') ?? 'S/F' }}
                                             </div>
                                         </td>
-                                        <td class="py-3 px-4 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                                            {{ $mov->cantidad }}
+                                        <td class="py-3 px-4 text-center font-mono font-bold text-xs {{ in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion']) ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-400' }}">
+                                            @if (in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion']))
+                                                +{{ $mov->cantidad }}
+                                            @else
+                                                {{ $mov->cantidad }}
+                                            @endif
                                         </td>
                                         <td class="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
-                                            <div class="font-bold">Bs. {{ number_format($subtotalMov, 2) }}</div>
+                                            @if (in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion']))
+                                                <div class="font-bold text-purple-600 dark:text-purple-400">-Bs. {{ number_format($subtotalMov, 2) }}</div>
+                                            @else
+                                                <div class="font-bold">Bs. {{ number_format($subtotalMov, 2) }}</div>
+                                            @endif
                                             <div class="text-[10px] text-slate-400">@ Bs. {{ number_format($precioUnit, 2) }}</div>
                                         </td>
                                         <td class="py-3 px-4 text-center">
@@ -1629,6 +1653,7 @@
                                         <th class="py-3 px-4 w-12 text-center">#</th>
                                         <th class="py-3 px-4">Fecha Pago / Liquidación</th>
                                         <th class="py-3 px-4">Médico Beneficiario</th>
+                                        <th class="py-3 px-4">Caja / Salida</th>
                                         <th class="py-3 px-4">Detalle / Ponderación / Observación</th>
                                         <th class="py-3 px-4 text-right">Monto Honorario</th>
                                         <th class="py-3 px-4">Registrado Por</th>
@@ -1652,6 +1677,34 @@
                                                 <div class="text-[11px] text-slate-400 mt-0.5">
                                                     {{ $pm->medico?->especialidad?->nombre ?? 'Medicina General' }}
                                                 </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="flex items-center gap-1.5">
+                                                    @if ($pm->caja_id)
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                                            <i class="fas fa-cash-register me-1 text-emerald-500"></i>Caja #{{ $pm->caja_id }}
+                                                        </span>
+                                                    @else
+                                                        <span class="text-slate-400 text-[11px] italic">Sin caja</span>
+                                                    @endif
+
+                                                    @php
+                                                        $tipoBadge = match($pm->tipo_pago) {
+                                                            'Efectivo' => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800',
+                                                            'Transferencia' => 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800',
+                                                            'QR' => 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800',
+                                                            default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                                                        };
+                                                    @endphp
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border {{ $tipoBadge }}">
+                                                        {{ $pm->tipo_pago ?? 'Efectivo' }}
+                                                    </span>
+                                                </div>
+                                                @if ($pm->numero_referencia)
+                                                    <div class="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5">
+                                                        Ref: {{ $pm->numero_referencia }}
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="py-3 px-4">
                                                 <div class="text-xs text-slate-800 dark:text-slate-200">
@@ -1680,11 +1733,11 @@
                                                         @permiso('proformas.honorarios.eliminar')
                                                             <button 
                                                                 wire:click="eliminarPagoMedico({{ $pm->id }})" 
-                                                                wire:confirm="¿Está seguro de eliminar este registro de honorario médico?"
+                                                                wire:confirm="¿Está seguro de revertir este honorario médico y su salida de caja asociada?"
                                                                 wire:loading.attr="disabled"
                                                                 type="button" 
                                                                 class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                title="Eliminar Honorario"
+                                                                title="Revertir Honorario y Egreso de Caja"
                                                             >
                                                                 <i class="fas fa-trash-alt text-xs" wire:loading.remove wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
                                                                 <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarPagoMedico({{ $pm->id }})"></i>
@@ -1696,7 +1749,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="py-12 px-4 text-center text-slate-400">
+                                            <td colspan="8" class="py-12 px-4 text-center text-slate-400">
                                                 <i class="fas fa-hand-holding-medical text-4xl mb-2 text-slate-300 dark:text-slate-600"></i>
                                                 <p class="font-medium text-slate-600 dark:text-slate-300">Aún no se han registrado honorarios médicos para esta proforma.</p>
                                                 <p class="text-xs text-slate-400 mt-0.5">Revise los servicios realizados arriba y pondere el monto a pagar para cada médico participante.</p>
@@ -3249,6 +3302,91 @@
                             @error('pago_medico_id')
                                 <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        <!-- Selección de Caja y Canal de Desembolso -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <i class="fas fa-cash-register text-emerald-500"></i>
+                                    Origen de Fondos (Caja y Canal de Desembolso)
+                                </span>
+                                @if ($this->saldoCajaSeleccionada > 0)
+                                    <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                                        Disp. {{ $pago_medico_tipo_pago }}: Bs. {{ number_format($this->saldoCajaSeleccionada, 2) }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <!-- Caja Abierta -->
+                                <div>
+                                    <label for="pago_medico_caja_id" class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                        Caja de Desembolso <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select 
+                                        id="pago_medico_caja_id" 
+                                        wire:model.live="pago_medico_caja_id" 
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2 shadow-2xs"
+                                    >
+                                        <option value="">-- Seleccionar Caja Abierta --</option>
+                                        @foreach ($this->cajasAbiertas as $cAbierta)
+                                            <option value="{{ $cAbierta->id }}">
+                                                Caja #{{ $cAbierta->id }} - {{ $cAbierta->user->nombre_completo ?? 'Usuario' }} (Apertura: {{ $cAbierta->fecha_apertura?->format('d/m/Y H:i') }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('pago_medico_caja_id')
+                                        <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                                    @enderror
+                                    @if ($this->cajasAbiertas->isEmpty())
+                                        <p class="text-amber-600 dark:text-amber-400 text-[11px] mt-1">
+                                            <i class="fas fa-exclamation-triangle me-1"></i> No hay cajas abiertas en el sistema para registrar el egreso.
+                                        </p>
+                                    @endif
+                                </div>
+
+                                <!-- Tipo de Pago / Canal -->
+                                <div>
+                                    <label for="pago_medico_tipo_pago" class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                        Método de Pago / Canal <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select 
+                                        id="pago_medico_tipo_pago" 
+                                        wire:model.live="pago_medico_tipo_pago" 
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2 shadow-2xs"
+                                    >
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia Bancaria</option>
+                                        <option value="QR">Pago QR</option>
+                                    </select>
+                                    @error('pago_medico_tipo_pago')
+                                        <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- N° Referencia / Comprobante de Desembolso -->
+                            <div>
+                                <label for="pago_medico_numero_referencia" class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                                    N° de Comprobante / Referencia Bancaria
+                                    @if (in_array($pago_medico_tipo_pago, ['Transferencia', 'QR']))
+                                        <span class="text-rose-500">*</span>
+                                    @else
+                                        <span class="text-slate-400 font-normal">(Opcional para efectivo)</span>
+                                    @endif
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="pago_medico_numero_referencia" 
+                                    wire:model="pago_medico_numero_referencia" 
+                                    placeholder="{{ in_array($pago_medico_tipo_pago, ['Transferencia', 'QR']) ? 'Ej. REF-849204, Transf. Banco Unión...' : 'Ej. Recibo N° 00451' }}"
+                                    class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 p-2 shadow-2xs"
+                                >
+                                @error('pago_medico_numero_referencia')
+                                    <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <!-- Fila: Monto y Fecha -->

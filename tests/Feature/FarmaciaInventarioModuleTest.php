@@ -6,6 +6,7 @@ use App\Livewire\Farmacia\MovimientosIndex;
 use App\Livewire\Farmacia\ProductosIndex;
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
+use App\Models\LoteSeccion;
 use App\Models\Marca;
 use App\Models\MovimientoInventario;
 use App\Models\Paciente;
@@ -15,8 +16,10 @@ use App\Models\Proveedor;
 use App\Models\Receta;
 use App\Models\RecetaDetalle;
 use App\Models\Rol;
+use App\Models\Seccion;
 use App\Models\Sucursal;
 use App\Models\User;
+use App\Services\ReporteMovimientosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -656,4 +659,408 @@ test('muestra metricas del catalogo de productos y permite filtrar interactivame
         ->assertSee('Paracetamol 500mg Normal')
         ->assertDontSee('Omeprazol 20mg Critico')
         ->assertDontSee('Loratadina 10mg Agotado');
+});
+
+test('accion de devolucion reingresa stock al lote y seccion y reduce el costo de la proforma en curso', function () {
+    $this->actingAs($this->admin);
+
+    $seccion = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Farmacia Central',
+        'es_almacen_principal' => true,
+        'activo' => true,
+    ]);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Carlos',
+        'apellido_paterno' => 'Gutiérrez',
+        'cedula' => '9876543',
+        'fecha_nacimiento' => '1990-01-01',
+        'genero' => 'Masculino',
+        'telefono' => '71112233',
+        'direccion' => 'Calle Murillo #10',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'user_id' => $this->admin->id,
+        'fecha_ingreso' => now()->toDateString(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $producto = Producto::create([
+        'nombre' => 'Amoxicilina 500mg',
+        'unidad_medida' => 'Cápsula',
+        'ultimo_precio_venta' => 20.00,
+        'stock_minimo' => 5,
+    ]);
+
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'AMX-001',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 10,
+        'fecha_vencimiento' => now()->addYear(),
+        'precio_compra' => 10.00,
+        'precio_venta' => 20.00,
+    ]);
+
+    $receta = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->admin->id,
+        'observaciones' => 'Tratamiento por 10 días',
+        'activo' => true,
+    ]);
+
+    $detalle = RecetaDetalle::create([
+        'receta_id' => $receta->id,
+        'producto_id' => $producto->id,
+        'cantidad' => 10,
+        'indicaciones' => '1 cap cada 8 horas',
+        'despachado' => true,
+    ]);
+
+    // Simular despacho previo de 10 unidades
+    $movDespacho = MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'cantidad' => 10,
+        'tipo_movimiento' => 'Salida Receta',
+        'receta_id' => $receta->id,
+        'proforma_id' => $proforma->id,
+        'seccion_origen_id' => $seccion->id,
+        'user_id' => $this->admin->id,
+    ]);
+
+    // Costo de proforma = 10 * 20 = 200.00 Bs.
+    $proforma->recalcularTotal();
+    expect((float) $proforma->fresh()->costo_total)->toBe(200.00);
+
+    // 1. Abrir modal y procesar devolución parcial de 4 unidades (alta médica anticipada)
+    Livewire::test(MovimientosIndex::class)
+        ->assertSee('AMX-001')
+        ->assertSee('Devolver')
+        ->call('abrirModalDevolucion', $movDespacho->id)
+        ->assertSet('modalDevolucionOpen', true)
+        ->assertSet('dev_cantidad_disponible', 10)
+        ->set('devolucion_cantidad', 4)
+        ->set('devolucion_seccion_id', $seccion->id)
+        ->set('devolucion_motivo', 'Alta médica antes de completar dosis')
+        ->call('procesarDevolucion')
+        ->assertDispatched('swal')
+        ->assertSet('modalDevolucionOpen', false);
+
+    // 2. Verificar reingreso al Lote y a LoteSeccion (+4)
+    expect($lote->fresh()->cantidad_actual)->toBe(14);
+    expect($lote->stockEnSeccion($seccion->id))->toBe(14);
+
+    // 3. Verificar recálculo de la proforma: 6 unidades netas * 20.00 = 120.00 Bs.
+    expect((float) $proforma->fresh()->costo_total)->toBe(120.00);
+    expect((float) $proforma->totalDespachosFarmacia())->toBe(120.00);
+
+    // 4. Detalle de receta ya no está completado al 100%
+    expect($detalle->fresh()->despachado)->toBeFalse();
+
+    // 5. El movimiento original ahora tiene 6 disponibles para devolver
+    expect($movDespacho->fresh()->cantidadDisponibleParaDevolucion())->toBe(6);
+    expect($movDespacho->fresh()->totalDevuelto())->toBe(4);
+
+    // 6. Asiento de devolución en Kardex
+    $movDev = MovimientoInventario::where('movimiento_origen_id', $movDespacho->id)->first();
+    expect($movDev)->not->toBeNull();
+    expect($movDev->tipo_movimiento)->toBe('Devolución');
+    expect($movDev->cantidad)->toBe(4);
+    expect($movDev->seccion_destino_id)->toBe($seccion->id);
+    expect($movDev->observaciones)->toContain('Alta médica antes de completar dosis');
+});
+
+test('devolucion no se permite si la proforma no esta en curso o el usuario no tiene permisos', function () {
+    $rolPersonal = Rol::firstOrCreate(['nombre' => 'Personal'], ['descripcion' => 'Personal Sin Permiso']);
+    $personal = User::factory()->create([
+        'rol_id' => $rolPersonal->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Lucía',
+        'apellido_paterno' => 'Paredes',
+        'cedula' => '11223344',
+        'fecha_nacimiento' => '1995-03-20',
+        'genero' => 'Femenino',
+    ]);
+
+    $proformaCerrada = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'user_id' => $this->admin->id,
+        'fecha_ingreso' => now()->toDateString(),
+        'estado' => 'Completado',
+        'costo_total' => 100.00,
+    ]);
+
+    $producto = Producto::create([
+        'nombre' => 'Diclofenaco 75mg',
+        'unidad_medida' => 'Ampolla',
+        'ultimo_precio_venta' => 15.00,
+    ]);
+
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'DICLO-01',
+        'cantidad_ingresada' => 20,
+        'cantidad_actual' => 5,
+        'fecha_vencimiento' => now()->addMonths(6),
+        'precio_compra' => 8.00,
+        'precio_venta' => 15.00,
+    ]);
+
+    $mov = MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'cantidad' => 3,
+        'tipo_movimiento' => 'Salida Receta',
+        'proforma_id' => $proformaCerrada->id,
+        'user_id' => $this->admin->id,
+    ]);
+
+    // Intento con usuario administrador pero proforma cerrada
+    $this->actingAs($this->admin);
+    expect($mov->puedeSerDevuelto())->toBeFalse();
+
+    Livewire::test(MovimientosIndex::class)
+        ->call('abrirModalDevolucion', $mov->id)
+        ->assertDispatched('swal')
+        ->assertSet('modalDevolucionOpen', false);
+
+    // Intento con usuario sin permiso de farmacia
+    $this->actingAs($personal);
+    Livewire::test(MovimientosIndex::class)
+        ->call('abrirModalDevolucion', $mov->id)
+        ->assertDispatched('swal')
+        ->assertSet('modalDevolucionOpen', false);
+});
+
+test('puede procesar devolucion de consumos extras reduciendo la cantidad en la proforma', function () {
+    $this->actingAs($this->admin);
+
+    $seccion = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Quirófano',
+        'es_almacen_principal' => false,
+        'activo' => true,
+    ]);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Raúl',
+        'apellido_paterno' => 'Flores',
+        'cedula' => '55667788',
+        'fecha_nacimiento' => '1988-10-10',
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'user_id' => $this->admin->id,
+        'fecha_ingreso' => now()->toDateString(),
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $producto = Producto::create([
+        'nombre' => 'Sutura Catgut 3-0',
+        'unidad_medida' => 'Pieza',
+        'ultimo_precio_venta' => 25.00,
+    ]);
+
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'SUT-30',
+        'cantidad_ingresada' => 20,
+        'cantidad_actual' => 15,
+        'fecha_vencimiento' => now()->addYears(2),
+        'precio_compra' => 15.00,
+        'precio_venta' => 25.00,
+    ]);
+
+    LoteSeccion::firstOrCreate(
+        ['lote_id' => $lote->id, 'seccion_id' => $seccion->id],
+        ['cantidad_actual' => 5]
+    );
+
+    // Consumo extra de 3 piezas en proforma
+    $consumo = ConsumoExtra::create([
+        'proforma_id' => $proforma->id,
+        'producto_id' => $producto->id,
+        'cantidad' => 3,
+        'precio_unitario' => 25.00,
+        'user_id' => $this->admin->id,
+        'observaciones' => '[Quirófano] Material utilizado en cirugía',
+    ]);
+
+    $movConsumo = MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'cantidad' => 3,
+        'tipo_movimiento' => 'Consumo Extra',
+        'proforma_id' => $proforma->id,
+        'seccion_origen_id' => $seccion->id,
+        'user_id' => $this->admin->id,
+    ]);
+
+    // Costo proforma inicial: 3 * 25.00 = 75.00 Bs.
+    $proforma->recalcularTotal();
+    expect((float) $proforma->fresh()->costo_total)->toBe(75.00);
+
+    // Devolver 1 pieza sobrante
+    Livewire::test(MovimientosIndex::class)
+        ->call('abrirModalDevolucion', $movConsumo->id)
+        ->assertSet('modalDevolucionOpen', true)
+        ->set('devolucion_cantidad', 1)
+        ->set('devolucion_seccion_id', $seccion->id)
+        ->set('devolucion_motivo', 'Material no utilizado en procedimiento')
+        ->call('procesarDevolucion')
+        ->assertDispatched('swal');
+
+    // 1. Stock se restituye (+1)
+    expect($lote->fresh()->cantidad_actual)->toBe(16);
+    expect($lote->stockEnSeccion($seccion->id))->toBe(16);
+
+    // 2. Registro de consumo en proforma se reduce a 2 unidades
+    expect($consumo->fresh()->cantidad)->toBe(2);
+
+    // 3. Proforma se recalcula: 2 * 25.00 = 50.00 Bs.
+    expect((float) $proforma->fresh()->costo_total)->toBe(50.00);
+
+    // 4. Saldo disponible en el movimiento = 2
+    expect($movConsumo->fresh()->cantidadDisponibleParaDevolucion())->toBe(2);
+});
+
+test('devolucion actualiza el saldo pendiente en la bandeja de despachos y en el reporte de kardex', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Fernando',
+        'apellido_paterno' => 'Quiroga',
+        'cedula' => 'CI-DEV-001',
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'paciente_id' => $paciente->id,
+        'sucursal_id' => $this->sucursal->id,
+        'tipo_atencion' => 'Internacion',
+        'costo_total' => 0.00,
+        'estado' => 'En Curso',
+        'fecha_ingreso' => now(),
+    ]);
+
+    $seccion = Seccion::create([
+        'sucursal_id' => $this->sucursal->id,
+        'nombre' => 'Farmacia Piso 3',
+        'es_almacen_principal' => true,
+        'activo' => true,
+    ]);
+
+    $producto = Producto::create([
+        'nombre' => 'Omeprazol 40mg IV',
+        'unidad_medida' => 'Frasco',
+        'ultimo_precio_venta' => 20.00,
+        'stock_minimo' => 5,
+    ]);
+
+    $lote = Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'codigo_lote' => 'OME-001',
+        'cantidad_ingresada' => 10,
+        'cantidad_actual' => 10,
+        'fecha_vencimiento' => now()->addMonths(12),
+        'precio_compra' => 10.00,
+        'precio_venta' => 20.00,
+    ]);
+
+    LoteSeccion::firstOrCreate(
+        ['lote_id' => $lote->id, 'seccion_id' => $seccion->id],
+        ['cantidad_actual' => 10]
+    );
+
+    $receta = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->admin->id,
+        'activo' => true,
+    ]);
+
+    $detalle = RecetaDetalle::create([
+        'receta_id' => $receta->id,
+        'producto_id' => $producto->id,
+        'cantidad' => 5,
+        'despachado' => false,
+    ]);
+
+    // Despachar 5
+    $movDespacho = MovimientoInventario::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $producto->id,
+        'lote_id' => $lote->id,
+        'seccion_origen_id' => $seccion->id,
+        'tipo_movimiento' => 'Salida Receta',
+        'cantidad' => 5,
+        'user_id' => $this->admin->id,
+        'proforma_id' => $proforma->id,
+        'receta_id' => $receta->id,
+    ]);
+    $lote->decrement('cantidad_actual', 5);
+    LoteSeccion::where('lote_id', $lote->id)->where('seccion_id', $seccion->id)->decrement('cantidad_actual', 5);
+    $detalle->update(['despachado' => true]);
+
+    // Verificar que DespachosIndex ve 0 pendientes
+    Livewire::test(DespachosIndex::class)
+        ->call('abrirModalDespacho', $receta->id)
+        ->assertSet('despachosItems.'.$detalle->id.'.saldo_pendiente', 0)
+        ->assertSet('despachosItems.'.$detalle->id.'.despachadas_previas', 5);
+
+    // Procesar Devolución de 2 unidades en MovimientosIndex
+    Livewire::test(MovimientosIndex::class)
+        ->call('abrirModalDevolucion', $movDespacho->id)
+        ->set('devolucion_cantidad', 2)
+        ->set('devolucion_seccion_id', $seccion->id)
+        ->set('devolucion_motivo', 'Paciente suspendió tratamiento')
+        ->call('procesarDevolucion')
+        ->assertDispatched('swal');
+
+    // DespachosIndex ahora debe reflejar saldo_pendiente = 2 y despachadas_previas = 3
+    Livewire::test(DespachosIndex::class)
+        ->call('abrirModalDespacho', $receta->id)
+        ->assertSet('despachosItems.'.$detalle->id.'.saldo_pendiente', 2)
+        ->assertSet('despachosItems.'.$detalle->id.'.despachadas_previas', 3);
+
+    // Verificar en ReporteMovimientosService
+    expect(ReporteMovimientosService::esEntrada('Devolución'))->toBeTrue();
+
+    $reporteService = app(ReporteMovimientosService::class);
+    $datosReporte = $reporteService->generar(
+        now()->subDay()->format('Y-m-d'),
+        now()->addDay()->format('Y-m-d'),
+        $producto->id,
+        $this->sucursal->id
+    );
+
+    expect($datosReporte['items'])->not->toBeEmpty();
+    $itemOmeprazol = $datosReporte['items'][0];
+    $movs = collect($itemOmeprazol['movimientos']);
+    $movDev = $movs->firstWhere('tipo_movimiento', 'Devolución');
+    expect($movDev)->not->toBeNull();
+    expect($movDev['es_entrada'])->toBeTrue();
+    expect($movDev['cantidad_entrada'])->toBe(2);
+    expect($movDev['referencia'])->toContain('Paciente suspendió tratamiento');
 });

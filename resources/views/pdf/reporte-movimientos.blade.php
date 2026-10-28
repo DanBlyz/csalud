@@ -325,14 +325,25 @@
                         <!-- Fila de Saldo Inicial a la Fecha de Inicio -->
                         <tr class="row-saldo-inicial">
                             <td>{{ $fechaInicioFormato }} 00:00</td>
-                            <td class="text-center">-</td>
+                            <td class="text-center font-bold text-muted">-</td>
                             <td colspan="3">
                                 <strong>SALDO INICIAL AL CORTE</strong>
-                                <span class="text-muted" style="font-size: 8px;">(Cálculo acumulado previo a la fecha inicial)</span>
+                                @if(!empty($item['secciones_saldo_inicial']))
+                                    <div style="font-size: 7.5px; color: #475569; margin-top: 2px;">
+                                        <span style="font-weight: bold; text-transform: uppercase;">Por Área:</span>
+                                        @foreach($item['secciones_saldo_inicial'] as $secIni)
+                                            <span style="display: inline-block; background-color: #e2e8f0; color: #1e293b; padding: 1px 4px; border-radius: 3px; margin-right: 3px;">
+                                                {{ $secIni['seccion_nombre'] }}: <strong>{{ number_format($secIni['cantidad']) }}</strong>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-muted" style="font-size: 8px;">(Cálculo acumulado previo a la fecha inicial)</span>
+                                @endif
                             </td>
-                            <td class="text-right">-</td>
-                            <td class="text-right">-</td>
-                            <td class="text-right font-bold">{{ number_format($item['saldo_inicial']) }}</td>
+                            <td class="text-right text-muted">-</td>
+                            <td class="text-right text-muted">-</td>
+                            <td class="text-right font-bold" style="font-size: 9.5px; color: #0f172a;">{{ number_format($item['saldo_inicial']) }}</td>
                         </tr>
 
                         @if(empty($item['movimientos']))
@@ -450,16 +461,21 @@
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2"></td>
+                    <td colspan="2" style="border-top: 1px solid #cbd5e1; padding-top: 6px;">
+                        <span class="param-label">Saldo Inicial Total Acumulado:</span>
+                        <div class="font-bold" style="font-size: 11px; color: #475569;">
+                            {{ number_format($reporte['resumen_general']['gran_total_saldo_inicial']) }} unidades
+                        </div>
+                    </td>
                     <td style="text-align: right; border-top: 1px solid #cbd5e1; padding-top: 6px;">
-                        <span class="param-label">Valorización Total Existencia:</span>
-                        <div class="font-bold" style="font-size: 12px; color: #334155;">
+                        <span class="param-label">Val. Total Compra (Todas las Secciones):</span>
+                        <div class="font-bold" style="font-size: 11px; color: #334155;">
                             Bs. {{ number_format($reporte['resumen_general']['gran_total_valor_compra'], 2) }}
                         </div>
                     </td>
                     <td style="text-align: right; border-top: 1px solid #cbd5e1; padding-top: 6px;">
-                        <span class="param-label">Valorización Total Venta:</span>
-                        <div class="font-bold" style="font-size: 12px; color: #0f172a;">
+                        <span class="param-label">Val. Total Venta (Todas las Secciones):</span>
+                        <div class="font-bold" style="font-size: 11px; color: #0f172a;">
                             Bs. {{ number_format($reporte['resumen_general']['gran_total_valor_venta'], 2) }}
                         </div>
                     </td>
@@ -467,8 +483,8 @@
                 @if(!empty($reporte['resumen_general']['stock_por_seccion']))
                     <tr>
                         <td colspan="4" style="border-top: 1px solid #cbd5e1; padding-top: 6px;">
-                            <span class="param-label" style="text-transform: uppercase; font-size: 8.5px; margin-right: 6px;">
-                                Distribución Total de Existencias por Sección:
+                            <span class="param-label" style="text-transform: uppercase; font-size: 8px; margin-right: 6px;">
+                                Existencias Físicas Totales por Área al Corte:
                             </span>
                             @foreach($reporte['resumen_general']['stock_por_seccion'] as $secNom => $cantSec)
                                 <span class="badge-sec-stock {{ $cantSec > 0 ? 'badge-sec-active' : 'badge-sec-zero' }}">
@@ -476,7 +492,7 @@
                                 </span>
                             @endforeach
                             <span class="badge-sec-total">
-                                Total Global: <strong>{{ number_format(array_sum($reporte['resumen_general']['stock_por_seccion'])) }} unids.</strong>
+                                Total Físico Consolidado: <strong>{{ number_format($reporte['resumen_general']['gran_total_saldo_final']) }} unids.</strong>
                             </span>
                         </td>
                     </tr>
@@ -486,7 +502,7 @@
     @endif
 
     <!-- Firma y Pie de Documento -->
-    <table class="footer-table">
+    {{-- <table class="footer-table">
         <tr>
             <td style="width: 50%;">
                 Documento administrativo generado electrónicamente por el Sistema de Gestión Clínica y Farmacia.
@@ -495,7 +511,7 @@
                 Válido para auditorías de inventario y fiscalización interna.
             </td>
         </tr>
-    </table>
+    </table> --}}
 
 </body>
 </html>

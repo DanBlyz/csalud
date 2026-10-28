@@ -20,7 +20,8 @@ class ReporteMovimientosService
 
         return str_starts_with($tipoLower, 'entrada') ||
             str_contains($tipoLower, 'positivo') ||
-            str_contains($tipoLower, 'ingreso');
+            str_contains($tipoLower, 'ingreso') ||
+            str_contains($tipoLower, 'devoluci');
     }
 
     /**
@@ -111,6 +112,7 @@ class ReporteMovimientosService
         $granTotalValorCompra = 0.0;
         $granTotalValorVenta = 0.0;
         $granTotalPorSeccion = [];
+        $granTotalSaldoInicialPorSeccion = [];
 
         // Obtener catálogo de secciones activas de la sucursal (o todas si sucursalId es null)
         $seccionesList = Seccion::query()
@@ -120,28 +122,76 @@ class ReporteMovimientosService
             ->orderBy('nombre', 'asc')
             ->get();
 
+        $seccionPrincipal = $seccionesList->firstWhere('es_almacen_principal', true) ?? $seccionesList->first();
+        $seccionPrincipalId = $seccionPrincipal?->id;
+
         foreach ($seccionesList as $sec) {
             $granTotalPorSeccion[$sec->nombre] = 0;
+            $granTotalSaldoInicialPorSeccion[$sec->nombre] = 0;
         }
 
         foreach ($productos as $prod) {
-            // 2. Saldo Inicial: Movimientos previos a la fecha_inicio
+            // 2. Saldo Inicial: Movimientos previos a la fecha_inicio por Sección
             $movsPrevios = MovimientoInventario::query()
                 ->where('producto_id', $prod->id)
                 ->where('created_at', '<', $inicio)
                 ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
-                ->get(['tipo_movimiento', 'cantidad']);
+                ->get(['tipo_movimiento', 'cantidad', 'seccion_origen_id', 'seccion_destino_id']);
 
-            $entradasPrevias = 0;
-            $salidasPrevias = 0;
+            $saldosPreviosSec = [];
+            foreach ($seccionesList as $sec) {
+                $saldosPreviosSec[$sec->id] = 0;
+            }
+
             foreach ($movsPrevios as $mp) {
-                if (self::esEntrada($mp->tipo_movimiento)) {
-                    $entradasPrevias += $mp->cantidad;
+                $cant = (int) $mp->cantidad;
+
+                if ($mp->tipo_movimiento === 'Transferencia Interna') {
+                    $secOri = $mp->seccion_origen_id ?? ($seccionPrincipalId ?? 0);
+                    $secDes = $mp->seccion_destino_id ?? ($seccionPrincipalId ?? 0);
+                    $saldosPreviosSec[$secOri] = ($saldosPreviosSec[$secOri] ?? 0) - $cant;
+                    $saldosPreviosSec[$secDes] = ($saldosPreviosSec[$secDes] ?? 0) + $cant;
+                } elseif (self::esEntrada($mp->tipo_movimiento)) {
+                    $secDes = $mp->seccion_destino_id ?? ($mp->seccion_origen_id ?? ($seccionPrincipalId ?? 0));
+                    $saldosPreviosSec[$secDes] = ($saldosPreviosSec[$secDes] ?? 0) + $cant;
                 } else {
-                    $salidasPrevias += $mp->cantidad;
+                    $secOri = $mp->seccion_origen_id ?? ($seccionPrincipalId ?? 0);
+                    $saldosPreviosSec[$secOri] = ($saldosPreviosSec[$secOri] ?? 0) - $cant;
                 }
             }
-            $saldoInicial = $entradasPrevias - $salidasPrevias;
+
+            // Si hay movimientos sin sección (clave 0) y existen secciones, atribuirlos a la sección principal
+            if ($seccionPrincipalId && isset($saldosPreviosSec[0])) {
+                $saldosPreviosSec[$seccionPrincipalId] = ($saldosPreviosSec[$seccionPrincipalId] ?? 0) + $saldosPreviosSec[0];
+                unset($saldosPreviosSec[0]);
+            }
+
+            $seccionesSaldoInicial = [];
+            $saldoInicialTotal = 0;
+
+            if ($seccionesList->isNotEmpty()) {
+                foreach ($seccionesList as $sec) {
+                    $cantIni = max(0, $saldosPreviosSec[$sec->id] ?? 0);
+                    $seccionesSaldoInicial[] = [
+                        'seccion_id' => $sec->id,
+                        'seccion_nombre' => $sec->nombre,
+                        'es_principal' => (bool) $sec->es_almacen_principal,
+                        'cantidad' => $cantIni,
+                    ];
+                    $saldoInicialTotal += $cantIni;
+                    $granTotalSaldoInicialPorSeccion[$sec->nombre] += $cantIni;
+                }
+            } else {
+                $cantIni = max(0, array_sum($saldosPreviosSec));
+                $seccionesSaldoInicial[] = [
+                    'seccion_id' => null,
+                    'seccion_nombre' => 'Farmacia Central',
+                    'es_principal' => true,
+                    'cantidad' => $cantIni,
+                ];
+                $saldoInicialTotal = $cantIni;
+                $granTotalSaldoInicialPorSeccion['Farmacia Central'] = ($granTotalSaldoInicialPorSeccion['Farmacia Central'] ?? 0) + $cantIni;
+            }
 
             // 3. Movimientos del período
             $movimientosPeriodo = MovimientoInventario::query()
@@ -154,24 +204,16 @@ class ReporteMovimientosService
                 ->get();
 
             // Si se solicitó filtrar solo productos con actividad y no tiene saldo ni movimientos, omitir
-            if ($soloConActividad && ! $productoId && $saldoInicial === 0 && $movimientosPeriodo->isEmpty()) {
+            if ($soloConActividad && ! $productoId && $saldoInicialTotal === 0 && $movimientosPeriodo->isEmpty()) {
                 continue;
             }
 
-            $saldoCorriente = $saldoInicial;
+            $saldoCorriente = $saldoInicialTotal;
             $movimientosFormateados = [];
             $totalEntradasPeriodo = 0;
             $totalSalidasPeriodo = 0;
 
             foreach ($movimientosPeriodo as $m) {
-                $esEntrada = self::esEntrada($m->tipo_movimiento);
-                $cantEntrada = $esEntrada ? (int) $m->cantidad : 0;
-                $cantSalida = ! $esEntrada ? (int) $m->cantidad : 0;
-
-                $saldoCorriente += ($cantEntrada - $cantSalida);
-                $totalEntradasPeriodo += $cantEntrada;
-                $totalSalidasPeriodo += $cantSalida;
-
                 $referencia = '-';
                 if ($m->proforma) {
                     $paciente = $m->proforma->paciente?->nombre_completo ?? 'Paciente';
@@ -180,16 +222,72 @@ class ReporteMovimientosService
                     $referencia = "Receta #{$m->receta->id}";
                 }
 
-                $seccionNombre = '-';
-                if ($m->tipo_movimiento === 'Transferencia Interna') {
-                    $origen = $m->seccionOrigen?->nombre ?? 'Origen';
-                    $destino = $m->seccionDestino?->nombre ?? 'Destino';
-                    $seccionNombre = "{$origen} > {$destino}";
-                } elseif (! $esEntrada) {
-                    $seccionNombre = $m->seccionOrigen?->nombre ?? 'Farmacia Central';
-                } else {
-                    $seccionNombre = $m->seccionDestino?->nombre ?? ($m->seccionOrigen?->nombre ?? 'Farmacia Central');
+                if (! empty($m->observaciones)) {
+                    $referencia = $referencia !== '-' ? "{$referencia} | {$m->observaciones}" : $m->observaciones;
                 }
+
+                // Manejo de Transferencias Internas con salida e ingreso explícitos
+                if ($m->tipo_movimiento === 'Transferencia Interna') {
+                    $origenNombre = $m->seccionOrigen?->nombre ?? 'Origen';
+                    $destinoNombre = $m->seccionDestino?->nombre ?? 'Destino';
+                    $cant = (int) $m->cantidad;
+
+                    // 1. Registro de Salida de la Sección Origen
+                    $saldoCorriente -= $cant;
+                    $totalSalidasPeriodo += $cant;
+
+                    $movimientosFormateados[] = [
+                        'id' => $m->id,
+                        'fecha' => $m->created_at->format('d/m/Y H:i'),
+                        'tipo_movimiento' => 'Transferencia (Salida)',
+                        'es_entrada' => false,
+                        'lote_codigo' => $m->lote?->codigo_lote ?? 'Sin Lote',
+                        'lote_vencimiento' => $m->lote?->fecha_vencimiento ? $m->lote->fecha_vencimiento->format('d/m/Y') : null,
+                        'seccion_nombre' => $origenNombre,
+                        'seccion_origen' => $origenNombre,
+                        'seccion_destino' => $destinoNombre,
+                        'cantidad_entrada' => 0,
+                        'cantidad_salida' => $cant,
+                        'saldo_acumulado' => $saldoCorriente,
+                        'referencia' => "Traspaso hacia {$destinoNombre}".($referencia !== '-' ? " | {$referencia}" : ''),
+                        'usuario' => $m->user?->name ?? 'Sistema',
+                    ];
+
+                    // 2. Registro de Ingreso a la Sección Destino
+                    $saldoCorriente += $cant;
+                    $totalEntradasPeriodo += $cant;
+
+                    $movimientosFormateados[] = [
+                        'id' => $m->id,
+                        'fecha' => $m->created_at->format('d/m/Y H:i'),
+                        'tipo_movimiento' => 'Transferencia (Ingreso)',
+                        'es_entrada' => true,
+                        'lote_codigo' => $m->lote?->codigo_lote ?? 'Sin Lote',
+                        'lote_vencimiento' => $m->lote?->fecha_vencimiento ? $m->lote->fecha_vencimiento->format('d/m/Y') : null,
+                        'seccion_nombre' => $destinoNombre,
+                        'seccion_origen' => $origenNombre,
+                        'seccion_destino' => $destinoNombre,
+                        'cantidad_entrada' => $cant,
+                        'cantidad_salida' => 0,
+                        'saldo_acumulado' => $saldoCorriente,
+                        'referencia' => "Traspaso desde {$origenNombre}".($referencia !== '-' ? " | {$referencia}" : ''),
+                        'usuario' => $m->user?->name ?? 'Sistema',
+                    ];
+
+                    continue;
+                }
+
+                $esEntrada = self::esEntrada($m->tipo_movimiento);
+                $cantEntrada = $esEntrada ? (int) $m->cantidad : 0;
+                $cantSalida = ! $esEntrada ? (int) $m->cantidad : 0;
+
+                $saldoCorriente += ($cantEntrada - $cantSalida);
+                $totalEntradasPeriodo += $cantEntrada;
+                $totalSalidasPeriodo += $cantSalida;
+
+                $seccionNombre = ! $esEntrada
+                    ? ($m->seccionOrigen?->nombre ?? 'Farmacia Central')
+                    : ($m->seccionDestino?->nombre ?? ($m->seccionOrigen?->nombre ?? 'Farmacia Central'));
 
                 $movimientosFormateados[] = [
                     'id' => $m->id,
@@ -209,12 +307,10 @@ class ReporteMovimientosService
                 ];
             }
 
-            $saldoFinal = $saldoInicial + $totalEntradasPeriodo - $totalSalidasPeriodo;
-
             // 4. Últimos Precios de Compra y Venta del producto al corte
             $ultimoLote = Lote::query()
                 ->where('producto_id', $prod->id)
-                ->where('created_at', '<=', $fin)
+                ->where('fecha_compra', '<=', $fin)
                 ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->latest('id')
                 ->first();
@@ -232,10 +328,7 @@ class ReporteMovimientosService
                 $ultimoPrecioVenta = (float) $ultimoLote->precio_venta;
             }
 
-            $valorCompra = max(0, $saldoFinal) * $ultimoPrecioCompra;
-            $valorVenta = max(0, $saldoFinal) * $ultimoPrecioVenta;
-
-            // 5. Desglose de existencias físicas por Sección Hospitalaria para este producto
+            // 5. Desglose de existencias físicas reales por Sección Hospitalaria al corte
             $seccionesStock = [];
             $totalStockSecciones = 0;
 
@@ -312,13 +405,21 @@ class ReporteMovimientosService
                 $granTotalPorSeccion['Farmacia Central'] += $totalLotes;
             }
 
+            // El saldo final representa la existencia consolidada real de todas las secciones
+            $saldoFinal = $totalStockSecciones;
+
+            // Valorizaciones de compra y venta calculadas sobre TODAS las secciones
+            $valorCompra = max(0, $totalStockSecciones) * $ultimoPrecioCompra;
+            $valorVenta = max(0, $totalStockSecciones) * $ultimoPrecioVenta;
+
             $items[] = [
                 'producto_id' => $prod->id,
                 'producto_nombre' => $prod->nombre,
                 'marca_nombre' => $prod->marca?->nombre ?? 'Sin Marca',
                 'unidad_medida' => $prod->unidad_medida ?? 'Unidad',
                 'stock_minimo' => (int) $prod->stock_minimo,
-                'saldo_inicial' => $saldoInicial,
+                'saldo_inicial' => $saldoInicialTotal,
+                'secciones_saldo_inicial' => $seccionesSaldoInicial,
                 'movimientos' => $movimientosFormateados,
                 'total_entradas' => $totalEntradasPeriodo,
                 'total_salidas' => $totalSalidasPeriodo,
@@ -331,7 +432,7 @@ class ReporteMovimientosService
                 'valor_total_venta' => round($valorVenta, 2),
             ];
 
-            $granTotalSaldoInicial += $saldoInicial;
+            $granTotalSaldoInicial += $saldoInicialTotal;
             $granTotalEntradas += $totalEntradasPeriodo;
             $granTotalSalidas += $totalSalidasPeriodo;
             $granTotalSaldoFinal += $saldoFinal;
@@ -348,6 +449,7 @@ class ReporteMovimientosService
             'resumen_general' => [
                 'total_productos' => count($items),
                 'gran_total_saldo_inicial' => $granTotalSaldoInicial,
+                'gran_total_saldo_inicial_secciones' => $granTotalSaldoInicialPorSeccion,
                 'gran_total_entradas' => $granTotalEntradas,
                 'gran_total_salidas' => $granTotalSalidas,
                 'gran_total_saldo_final' => $granTotalSaldoFinal,

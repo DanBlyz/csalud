@@ -336,7 +336,7 @@ class CierresIndex extends Component
         }
 
         // 3. EGRESOS CLÍNICOS: Compras y Adquisición de Lotes (Lote)
-        $lotesQuery = Lote::whereBetween('created_at', [$inicio, $fin]);
+        $lotesQuery = Lote::whereBetween('fecha_compra', [$inicio, $fin]);
         if ($sucursalId) {
             $lotesQuery->where('sucursal_id', $sucursalId);
         }
@@ -358,7 +358,7 @@ class CierresIndex extends Component
                 'categoria' => 'Compra Farmacia',
                 'concepto' => "Compra Lote {$lote->codigo_lote}: {$prodNombre} ({$lote->cantidad_ingresada} unids x Bs. {$lote->precio_compra}){$provNombre}",
                 'monto' => $costoTotalLote,
-                'fecha' => $lote->created_at->toDateString(),
+                'fecha' => $lote->fecha_compra->toDateString(),
                 'comprobante_referencia' => $lote->codigo_lote,
                 'origen_tipo' => Lote::class,
                 'origen_id' => $lote->id,

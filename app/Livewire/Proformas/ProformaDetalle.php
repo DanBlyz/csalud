@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Proformas;
 
+use App\Models\Caja;
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
 use App\Models\LoteSeccion;
 use App\Models\MovimientoInventario;
+use App\Models\Pago;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\ProformaCalendario;
@@ -19,6 +21,7 @@ use App\Models\Servicio;
 use App\Models\TipoSolicitud;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -150,6 +153,12 @@ class ProformaDetalle extends Component
 
     public ?int $pago_medico_id = null;
 
+    public ?int $pago_medico_caja_id = null;
+
+    public string $pago_medico_tipo_pago = 'Efectivo';
+
+    public string $pago_medico_numero_referencia = '';
+
     public string $pago_medico_monto = '';
 
     public string $pago_medico_observaciones = '';
@@ -203,6 +212,8 @@ class ProformaDetalle extends Component
             'pagos',
             'pagosMedicos.medico.especialidad',
             'pagosMedicos.user',
+            'pagosMedicos.caja.user',
+            'pagosMedicos.pago',
             'movimientosInventario.producto.marca',
             'movimientosInventario.lote',
             'movimientosInventario.usuario',
@@ -1387,11 +1398,18 @@ class ProformaDetalle extends Component
 
         if ($this->proforma->recetaActiva) {
             foreach ($this->proforma->recetaActiva->detalles as $det) {
-                $despachadasPrevias = (int) MovimientoInventario::where('receta_id', $this->proforma->recetaActiva->id)
+                // Unidades despachadas netas (salidas menos devoluciones)
+                $salidas = (int) MovimientoInventario::where('receta_id', $this->proforma->recetaActiva->id)
                     ->where('producto_id', $det->producto_id)
                     ->where('tipo_movimiento', 'Salida Receta')
                     ->sum('cantidad');
 
+                $devoluciones = (int) MovimientoInventario::where('receta_id', $this->proforma->recetaActiva->id)
+                    ->where('producto_id', $det->producto_id)
+                    ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion'])
+                    ->sum('cantidad');
+
+                $despachadasPrevias = max(0, $salidas - $devoluciones);
                 $saldoPendiente = max(0, $det->cantidad - $despachadasPrevias);
 
                 // Determinar la sección inicial sugerida
@@ -1806,14 +1824,19 @@ class ProformaDetalle extends Component
 
                 $detalle = RecetaDetalle::find($detId);
                 if ($detalle && $receta) {
-                    $totalAcumulado = (int) MovimientoInventario::where('receta_id', $receta->id)
+                    $totalSalidas = (int) MovimientoInventario::where('receta_id', $receta->id)
                         ->where('producto_id', $detalle->producto_id)
                         ->where('tipo_movimiento', 'Salida Receta')
                         ->sum('cantidad');
 
-                    if ($totalAcumulado >= $detalle->cantidad) {
-                        $detalle->update(['despachado' => true]);
-                    }
+                    $totalDevoluciones = (int) MovimientoInventario::where('receta_id', $receta->id)
+                        ->where('producto_id', $detalle->producto_id)
+                        ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion'])
+                        ->sum('cantidad');
+
+                    $totalNeto = max(0, $totalSalidas - $totalDevoluciones);
+
+                    $detalle->update(['despachado' => $totalNeto >= $detalle->cantidad]);
                 }
             }
 
@@ -1857,11 +1880,73 @@ class ProformaDetalle extends Component
     }
 
     // =========================================================================
-    // 7. HONORARIOS Y PAGOS MÉDICOS
+    // 7. HONORARIOS Y PAGOS MÉDICOS CON CONTROL DE CAJA Y SALDO
     // =========================================================================
+
+    /**
+     * Obtiene el listado de cajas abiertas activas en la sucursal de la proforma.
+     *
+     * @return Collection<int, Caja>
+     */
+    public function getCajasAbiertasDisponibles()
+    {
+        return Caja::with('user')
+            ->where('sucursal_id', $this->proforma->sucursal_id)
+            ->where('estado', 'Abierta')
+            ->latest('fecha_apertura')
+            ->get();
+    }
+
+    public function getCajasAbiertasProperty()
+    {
+        return $this->getCajasAbiertasDisponibles();
+    }
+
+    /**
+     * Calcula en tiempo real el saldo disponible en la caja seleccionada según el tipo de pago.
+     */
+    public function getSaldoCajaSeleccionadaProperty(): float
+    {
+        if (! $this->pago_medico_caja_id) {
+            return 0.00;
+        }
+
+        $caja = Caja::find($this->pago_medico_caja_id);
+        if (! $caja || ! $caja->isAbierta()) {
+            return 0.00;
+        }
+
+        $saldo = match ($this->pago_medico_tipo_pago) {
+            'Efectivo' => $caja->saldoEsperadoEfectivo(),
+            'QR' => $caja->saldoEsperadoQr(),
+            'Transferencia' => $caja->saldoEsperadoTransferencia(),
+            default => $caja->saldoEsperadoEfectivo(),
+        };
+
+        if ($this->editando_pago_medico_id) {
+            $pagoPrevio = ProformaPagoMedico::find($this->editando_pago_medico_id);
+            if ($pagoPrevio && $pagoPrevio->caja_id === $caja->id && $pagoPrevio->tipo_pago === $this->pago_medico_tipo_pago) {
+                $saldo += (float) $pagoPrevio->monto;
+            }
+        }
+
+        return max(0.00, (float) $saldo);
+    }
+
     public function abrirModalPagoMedico(?int $medicoId = null): void
     {
         if (! $this->autorizarAccion('proformas.honorarios.gestionar', 'No cuenta con autorización para gestionar honorarios médicos.')) {
+            return;
+        }
+
+        $cajasAbiertas = $this->getCajasAbiertasDisponibles();
+        if ($cajasAbiertas->isEmpty()) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Sin Caja Abierta',
+                'text' => 'No existe ninguna caja abierta activa en esta sucursal para realizar el desembolso del honorario médico. Debe aperturar una caja previamente en el módulo de Caja.',
+            ]);
+
             return;
         }
 
@@ -1871,6 +1956,13 @@ class ProformaDetalle extends Component
         $this->pago_medico_monto = '';
         $this->pago_medico_observaciones = '';
         $this->pago_medico_fecha = now()->toDateString();
+        $this->pago_medico_tipo_pago = 'Efectivo';
+        $this->pago_medico_numero_referencia = '';
+
+        // Preseleccionar la caja del usuario logueado si tiene una abierta; si no, la primera disponible
+        $cajaUsuario = $cajasAbiertas->firstWhere('user_id', Auth::id());
+        $this->pago_medico_caja_id = $cajaUsuario?->id ?? $cajasAbiertas->first()?->id;
+
         $this->modalPagoMedicoOpen = true;
     }
 
@@ -1880,6 +1972,9 @@ class ProformaDetalle extends Component
         $this->resetValidation();
         $this->reset([
             'pago_medico_id',
+            'pago_medico_caja_id',
+            'pago_medico_tipo_pago',
+            'pago_medico_numero_referencia',
             'pago_medico_monto',
             'pago_medico_observaciones',
             'pago_medico_fecha',
@@ -1894,10 +1989,13 @@ class ProformaDetalle extends Component
         }
 
         $this->resetValidation();
-        $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
+        $pago = ProformaPagoMedico::with('caja')->where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
 
         $this->editando_pago_medico_id = $pago->id;
         $this->pago_medico_id = $pago->medico_id;
+        $this->pago_medico_caja_id = $pago->caja_id ?? $this->getCajasAbiertasDisponibles()->first()?->id;
+        $this->pago_medico_tipo_pago = $pago->tipo_pago ?? 'Efectivo';
+        $this->pago_medico_numero_referencia = $pago->numero_referencia ?? '';
         $this->pago_medico_monto = number_format((float) $pago->monto, 2, '.', '');
         $this->pago_medico_observaciones = $pago->observaciones ?? '';
         $this->pago_medico_fecha = $pago->fecha_pago ? $pago->fecha_pago->toDateString() : now()->toDateString();
@@ -1912,46 +2010,155 @@ class ProformaDetalle extends Component
 
         $this->validate([
             'pago_medico_id' => ['required', 'exists:users,id'],
+            'pago_medico_caja_id' => ['required', 'exists:cajas,id'],
+            'pago_medico_tipo_pago' => ['required', 'in:Efectivo,QR,Transferencia'],
             'pago_medico_monto' => ['required', 'numeric', 'min:0.01'],
             'pago_medico_fecha' => ['required', 'date'],
+            'pago_medico_numero_referencia' => ['nullable', 'string', 'max:100'],
             'pago_medico_observaciones' => ['nullable', 'string', 'max:1000'],
         ], [
             'pago_medico_id.required' => 'Debe seleccionar el médico asignado.',
+            'pago_medico_caja_id.required' => 'Debe seleccionar la caja abierta de donde se desembolsará el honorario.',
+            'pago_medico_tipo_pago.required' => 'Debe seleccionar el canal de pago / desembolso.',
             'pago_medico_monto.required' => 'Debe indicar el monto de honorarios a pagar.',
             'pago_medico_monto.min' => 'El monto debe ser mayor a 0.',
             'pago_medico_fecha.required' => 'La fecha de liquidación es requerida.',
         ]);
 
-        if ($this->editando_pago_medico_id) {
-            $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($this->editando_pago_medico_id);
-            $pago->update([
-                'medico_id' => $this->pago_medico_id,
-                'monto' => (float) $this->pago_medico_monto,
-                'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
-                'fecha_pago' => $this->pago_medico_fecha,
-            ]);
+        if ($this->pago_medico_tipo_pago === 'Transferencia' && empty(trim($this->pago_medico_numero_referencia))) {
+            $this->addError('pago_medico_numero_referencia', 'El número de referencia o comprobante bancario es obligatorio para transferencias.');
 
-            $mensaje = 'El registro de honorarios médicos fue actualizado correctamente.';
-        } else {
-            ProformaPagoMedico::create([
-                'proforma_id' => $this->proforma->id,
-                'medico_id' => $this->pago_medico_id,
-                'monto' => (float) $this->pago_medico_monto,
-                'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
-                'fecha_pago' => $this->pago_medico_fecha,
-                'user_id' => Auth::id(),
-            ]);
-
-            $mensaje = 'El honorario médico fue registrado con éxito.';
+            return;
         }
 
-        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user');
+        $caja = Caja::where('id', $this->pago_medico_caja_id)
+            ->where('estado', 'Abierta')
+            ->first();
+
+        if (! $caja) {
+            $this->addError('pago_medico_caja_id', 'La caja seleccionada no existe o ya no se encuentra abierta.');
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Caja No Disponible',
+                'text' => 'La caja seleccionada ya no se encuentra en estado Abierta.',
+            ]);
+
+            return;
+        }
+
+        $monto = (float) $this->pago_medico_monto;
+
+        // Calcular saldo disponible en la caja según el método de pago
+        $saldoDisponible = match ($this->pago_medico_tipo_pago) {
+            'Efectivo' => $caja->saldoEsperadoEfectivo(),
+            'QR' => $caja->saldoEsperadoQr(),
+            'Transferencia' => $caja->saldoEsperadoTransferencia(),
+            default => $caja->saldoEsperadoEfectivo(),
+        };
+
+        // Si estamos editando el mismo registro en la misma caja y canal, sumamos su monto previo al saldo disponible
+        if ($this->editando_pago_medico_id) {
+            $pagoPrevio = ProformaPagoMedico::find($this->editando_pago_medico_id);
+            if ($pagoPrevio && $pagoPrevio->caja_id === $caja->id && $pagoPrevio->tipo_pago === $this->pago_medico_tipo_pago) {
+                $saldoDisponible += (float) $pagoPrevio->monto;
+            }
+        }
+
+        // Control estricto: el monto debe ser menor o igual al saldo disponible en caja
+        if ($monto > $saldoDisponible) {
+            $this->addError('pago_medico_monto', 'Saldo insuficiente en caja: La caja seleccionada solo dispone de Bs. '.number_format($saldoDisponible, 2)." en {$this->pago_medico_tipo_pago} para desembolsar este honorario.");
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Saldo Insuficiente en Caja',
+                'text' => 'No es posible otorgar el honorario de Bs. '.number_format($monto, 2).' porque la caja seleccionada solo dispone de Bs. '.number_format($saldoDisponible, 2)." en {$this->pago_medico_tipo_pago}.",
+            ]);
+
+            return;
+        }
+
+        $medico = User::find($this->pago_medico_id);
+        $nombreMedico = $medico ? $medico->nombre_completo : 'Médico';
+        $conceptoEgreso = "Honorario Médico: Dr(a). {$nombreMedico} - Proforma #{$this->proforma->id}";
+        $mensajeExito = '';
+
+        DB::transaction(function () use ($caja, $monto, $conceptoEgreso, &$mensajeExito) {
+            if ($this->editando_pago_medico_id) {
+                $pagoMedico = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($this->editando_pago_medico_id);
+
+                // Actualizar o crear el registro en Pagos (Egreso Caja)
+                if ($pagoMedico->pago_id && $pago = Pago::find($pagoMedico->pago_id)) {
+                    $pago->update([
+                        'caja_id' => $caja->id,
+                        'tipo_pago' => $this->pago_medico_tipo_pago,
+                        'concepto' => $conceptoEgreso,
+                        'monto' => $monto,
+                        'numero_referencia' => ! empty($this->pago_medico_numero_referencia) ? trim($this->pago_medico_numero_referencia) : null,
+                    ]);
+                } else {
+                    $pago = Pago::create([
+                        'caja_id' => $caja->id,
+                        'proforma_id' => $this->proforma->id,
+                        'tipo_movimiento' => 'Egreso Caja',
+                        'categoria' => 'Honorario',
+                        'tipo_pago' => $this->pago_medico_tipo_pago,
+                        'concepto' => $conceptoEgreso,
+                        'monto' => $monto,
+                        'numero_referencia' => ! empty($this->pago_medico_numero_referencia) ? trim($this->pago_medico_numero_referencia) : null,
+                        'user_id' => Auth::id(),
+                    ]);
+                    $pagoMedico->pago_id = $pago->id;
+                }
+
+                $pagoMedico->update([
+                    'medico_id' => $this->pago_medico_id,
+                    'caja_id' => $caja->id,
+                    'pago_id' => $pagoMedico->pago_id,
+                    'tipo_pago' => $this->pago_medico_tipo_pago,
+                    'numero_referencia' => ! empty($this->pago_medico_numero_referencia) ? trim($this->pago_medico_numero_referencia) : null,
+                    'monto' => $monto,
+                    'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
+                    'fecha_pago' => $this->pago_medico_fecha,
+                ]);
+
+                $mensajeExito = 'El honorario médico y su egreso de caja fueron actualizados correctamente.';
+            } else {
+                // Crear egreso en caja
+                $pago = Pago::create([
+                    'caja_id' => $caja->id,
+                    'proforma_id' => $this->proforma->id,
+                    'tipo_movimiento' => 'Egreso Caja',
+                    'categoria' => 'Honorario',
+                    'tipo_pago' => $this->pago_medico_tipo_pago,
+                    'concepto' => $conceptoEgreso,
+                    'monto' => $monto,
+                    'numero_referencia' => ! empty($this->pago_medico_numero_referencia) ? trim($this->pago_medico_numero_referencia) : null,
+                    'user_id' => Auth::id(),
+                ]);
+
+                ProformaPagoMedico::create([
+                    'proforma_id' => $this->proforma->id,
+                    'caja_id' => $caja->id,
+                    'pago_id' => $pago->id,
+                    'medico_id' => $this->pago_medico_id,
+                    'tipo_pago' => $this->pago_medico_tipo_pago,
+                    'numero_referencia' => ! empty($this->pago_medico_numero_referencia) ? trim($this->pago_medico_numero_referencia) : null,
+                    'monto' => $monto,
+                    'observaciones' => $this->pago_medico_observaciones ? trim($this->pago_medico_observaciones) : null,
+                    'fecha_pago' => $this->pago_medico_fecha,
+                    'user_id' => Auth::id(),
+                ]);
+
+                $mensajeExito = 'El honorario médico fue registrado y asentado como salida de caja por Bs. '.number_format($monto, 2).' con éxito.';
+            }
+        });
+
+        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user', 'pagosMedicos.caja.user', 'pagosMedicos.pago');
         $this->cerrarModalPagoMedico();
 
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Honorario Registrado',
-            'text' => $mensaje,
+            'title' => 'Honorario Registrado en Caja',
+            'text' => $mensajeExito,
         ]);
     }
 
@@ -1961,15 +2168,22 @@ class ProformaDetalle extends Component
             return;
         }
 
-        $pago = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
-        $pago->delete();
+        DB::transaction(function () use ($pagoId) {
+            $pagoMedico = ProformaPagoMedico::where('proforma_id', $this->proforma->id)->findOrFail($pagoId);
 
-        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user');
+            if ($pagoMedico->pago_id) {
+                Pago::where('id', $pagoMedico->pago_id)->delete();
+            }
+
+            $pagoMedico->delete();
+        });
+
+        $this->proforma->load('pagosMedicos.medico.especialidad', 'pagosMedicos.user', 'pagosMedicos.caja.user', 'pagosMedicos.pago');
 
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Registro Eliminado',
-            'text' => 'El honorario médico fue retirado de la proforma.',
+            'title' => 'Honorario Revertido',
+            'text' => 'El honorario médico y su egreso de caja asociado fueron revertidos con éxito.',
         ]);
     }
 
@@ -2194,6 +2408,7 @@ class ProformaDetalle extends Component
             'subtotalConsumos' => $subtotalConsumos,
             'subtotalFarmacia' => $subtotalFarmacia,
             'totalPrescripcionReferencial' => $totalPrescripcionReferencial,
+            'cajasAbiertas' => $this->getCajasAbiertasDisponibles(),
         ]);
     }
 }

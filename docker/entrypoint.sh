@@ -30,7 +30,7 @@ chown -R www-data:www-data /var/www/html/storage \
                            /var/lib/nginx \
                            /var/log/nginx \
                            /run/nginx
-chmod -R 775 /var/www/html/storage \
+chmod -R 777 /var/www/html/storage \
              /var/www/html/bootstrap/cache \
              /var/lib/nginx \
              /var/log/nginx \

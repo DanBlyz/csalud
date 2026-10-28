@@ -3,6 +3,7 @@
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
 use App\Livewire\Proformas\ProformaDetalle;
+use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\ConsumoExtra;
 use App\Models\Lote;
@@ -867,6 +868,14 @@ test('puede gestionar honorarios y pagos a medicos segun ponderacion de servicio
         'user_id' => $this->admin->id,
     ]);
 
+    $caja = Caja::create([
+        'sucursal_id' => $this->sucursal->id,
+        'user_id' => $this->admin->id,
+        'monto_apertura' => 5000.00,
+        'fecha_apertura' => now(),
+        'estado' => 'Abierta',
+    ]);
+
     // 1. Probar que el tab y la ponderación de servicios se visualizan
     $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
         ->call('cambiarTab', 'pagos_medicos')
@@ -878,6 +887,8 @@ test('puede gestionar honorarios y pagos a medicos segun ponderacion de servicio
         ->call('abrirModalPagoMedico', $medico->id)
         ->assertSet('modalPagoMedicoOpen', true)
         ->assertSet('pago_medico_id', $medico->id)
+        ->set('pago_medico_caja_id', $caja->id)
+        ->set('pago_medico_tipo_pago', 'Efectivo')
         ->set('pago_medico_monto', '1250.00')
         ->set('pago_medico_observaciones', '50% correspondiente a honorarios de cirujano principal')
         ->set('pago_medico_fecha', now()->toDateString())
@@ -896,6 +907,7 @@ test('puede gestionar honorarios y pagos a medicos segun ponderacion de servicio
     $component->call('editarPagoMedico', $pago->id)
         ->assertSet('modalPagoMedicoOpen', true)
         ->assertSet('editando_pago_medico_id', $pago->id)
+        ->set('pago_medico_caja_id', $caja->id)
         ->set('pago_medico_monto', '1400.00')
         ->call('guardarPagoMedico')
         ->assertDispatched('swal');
@@ -935,6 +947,14 @@ test('en estado Pagada la proforma bloquea agregar editar o eliminar items pero 
     ]);
     $proforma->medicos()->attach($medico->id);
 
+    $caja = Caja::create([
+        'sucursal_id' => $this->sucursal->id,
+        'user_id' => $this->admin->id,
+        'monto_apertura' => 2000.00,
+        'fecha_apertura' => now(),
+        'estado' => 'Abierta',
+    ]);
+
     // 1. Probar que la vista oculta los botones de accion pero muestra el de honorarios
     Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
         ->assertDontSee('Agregar Procedimiento / Servicio')
@@ -964,10 +984,50 @@ test('en estado Pagada la proforma bloquea agregar editar o eliminar items pero 
     // 4. Probar que la liquidacion de honorarios medicos SI funciona con normalidad
     $component->call('abrirModalPagoMedico', $medico->id)
         ->assertSet('modalPagoMedicoOpen', true)
+        ->set('pago_medico_caja_id', $caja->id)
+        ->set('pago_medico_tipo_pago', 'Efectivo')
         ->set('pago_medico_monto', '100.00')
         ->set('pago_medico_fecha', now()->toDateString())
         ->call('guardarPagoMedico')
         ->assertDispatched('swal');
 
     expect(ProformaPagoMedico::where('proforma_id', $proforma->id)->count())->toBe(1);
+});
+
+test('puede adjuntar archivo digital a una orden medica en proforma detalle', function () {
+    $this->actingAs($this->admin);
+    Storage::fake('public');
+
+    $paciente = Paciente::factory()->create();
+    $proforma = Proforma::factory()->create([
+        'paciente_id' => $paciente->id,
+        'sucursal_id' => $this->sucursal->id,
+        'estado' => 'En Curso',
+    ]);
+
+    $tipoSolicitud = TipoSolicitud::firstOrCreate(
+        ['nombre' => 'Hemograma Completo'],
+        ['categoria' => 'Laboratorio', 'activo' => true]
+    );
+
+    $solicitud = ProformaSolicitud::create([
+        'proforma_id' => $proforma->id,
+        'tipo_solicitud_id' => $tipoSolicitud->id,
+        'observaciones' => 'Urgente para control pre-operatorio',
+    ]);
+
+    $archivoFake = UploadedFile::fake()->create('resultado_lab.pdf', 500, 'application/pdf');
+
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalSubirArchivo', $solicitud->id)
+        ->assertSet('modalArchivoSolicitudOpen', true)
+        ->assertSet('solicitud_id_archivo', $solicitud->id)
+        ->set('solicitud_nuevo_archivo', $archivoFake)
+        ->call('guardarArchivoSolicitud')
+        ->assertDispatched('swal')
+        ->assertSet('modalArchivoSolicitudOpen', false);
+
+    $solicitud->refresh();
+    expect($solicitud->archivo)->not->toBeNull();
+    Storage::disk('public')->assertExists($solicitud->archivo);
 });

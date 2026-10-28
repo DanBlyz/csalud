@@ -316,6 +316,13 @@
                                 @else
                                     <span class="text-slate-400 italic text-[11px]">No perecedero</span>
                                 @endif
+
+                                @if ($lote->fecha_compra)
+                                    <div class="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1 mt-1" title="Fecha de Compra / Adquisición">
+                                        <i class="fas fa-calendar-check text-[9px] text-teal-600 dark:text-teal-400"></i>
+                                        <span>Compra: {{ $lote->fecha_compra->format('d/m/Y') }}</span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="py-3 px-4 text-right">
                                 <div class="text-[11px] text-slate-400 font-mono">
@@ -345,8 +352,20 @@
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-right">
-                                @if ($lote->cantidad_actual > 0)
-                                    <div class="flex items-center justify-end gap-1.5">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    @permiso('farmacia.lotes.editar')
+                                    <button 
+                                        wire:click="abrirModalEdicion({{ $lote->id }})" 
+                                        type="button" 
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                                        title="Editar o corregir datos del lote (código, fechas, precios, proveedor)"
+                                    >
+                                        <i class="fas fa-edit text-blue-600 dark:text-blue-400"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                    @endpermiso
+
+                                    @if ($lote->cantidad_actual > 0)
                                         @permiso('farmacia.movimientos.transferir')
                                         <button 
                                             wire:click="abrirModalTransferencia({{ $lote->id }})" 
@@ -370,10 +389,8 @@
                                             <span>Ajuste</span>
                                         </button>
                                         @endpermiso
-                                    </div>
-                                @else
-                                    <span class="text-[11px] text-slate-400 italic">Sin existencias</span>
-                                @endif
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -543,8 +560,8 @@
                             </div>
                         </div>
 
-                        <!-- Código de Lote, Cantidad y Fecha de Vencimiento -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Código de Lote, Cantidad, Fecha de Compra y Fecha de Vencimiento -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
                                 <label for="codigo_lote" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                     Código de Lote <span class="text-rose-500">*</span>
@@ -572,6 +589,19 @@
                                     class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-teal-500 shadow-2xs font-mono font-bold"
                                 />
                                 @error('cantidad_ingresada') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="fecha_compra" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Fecha de Compra <span class="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="fecha_compra" 
+                                    wire:model="fecha_compra" 
+                                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-teal-500 shadow-2xs font-mono"
+                                />
+                                @error('fecha_compra') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
@@ -951,6 +981,196 @@
                                 </span>
                                 <span wire:loading wire:target="transferirStock">
                                     <i class="fas fa-spinner fa-spin me-1"></i> Transfiriendo...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL 4: EDICIÓN / CORRECCIÓN DE LOTE -->
+    @if ($modalEditarLoteOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-editar-lote-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm shadow-sm shadow-blue-500/20">
+                                <i class="fas fa-edit"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100" id="modal-editar-lote-title">
+                                    Corrección y Edición de Lote
+                                </h3>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Corrija precios de compra/venta, código, proveedor o fechas de ingreso y vencimiento.
+                                </p>
+                            </div>
+                        </div>
+                        <button wire:click="cerrarModalEdicion" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <form wire:submit="actualizarLote" class="p-6 space-y-4">
+                        <!-- Tarjeta Informativa del Producto y Sede (No mutables para proteger el Kardex) -->
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-start justify-between text-xs gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300">
+                                    <i class="fas fa-pills text-sm"></i>
+                                </span>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 dark:text-white">{{ $edit_producto_nombre }}</h4>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        {{ $edit_producto_unidad }} • <span class="text-slate-700 dark:text-slate-300 font-medium">{{ $edit_sucursal_nombre }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Existencias</span>
+                                <span class="font-mono font-bold text-xs text-teal-600 dark:text-teal-400">
+                                    {{ $edit_cantidad_actual }} / {{ $edit_cantidad_ingresada }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Código de Lote y Proveedor -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="edit_codigo_lote" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Código de Lote <span class="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="edit_codigo_lote" 
+                                    wire:model="edit_codigo_lote" 
+                                    placeholder="LOT-2026-X" 
+                                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold"
+                                />
+                                @error('edit_codigo_lote') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="edit_proveedor_id" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Proveedor / Distribuidor
+                                </label>
+                                <select 
+                                    id="edit_proveedor_id" 
+                                    wire:model="edit_proveedor_id" 
+                                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                                >
+                                    <option value="">Adquisición Directa / Sin Proveedor</option>
+                                    @foreach ($proveedores as $pr)
+                                        <option value="{{ $pr->id }}">{{ $pr->razon_social }}</option>
+                                    @endforeach
+                                </select>
+                                @error('edit_proveedor_id') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Compra y Fecha de Vencimiento -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="edit_fecha_compra" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Fecha de Compra / Adquisición <span class="text-rose-500">*</span>
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="edit_fecha_compra" 
+                                    wire:model="edit_fecha_compra" 
+                                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono"
+                                />
+                                @error('edit_fecha_compra') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="edit_fecha_vencimiento" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Fecha de Vencimiento
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="edit_fecha_vencimiento" 
+                                    wire:model="edit_fecha_vencimiento" 
+                                    class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono"
+                                />
+                                @error('edit_fecha_vencimiento') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Precios de Compra y Venta -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="edit_precio_compra" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Precio de Compra Unitario (Bs.) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">Bs.</span>
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0" 
+                                        id="edit_precio_compra" 
+                                        wire:model="edit_precio_compra" 
+                                        placeholder="0.00"
+                                        class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono"
+                                    />
+                                </div>
+                                @error('edit_precio_compra') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="edit_precio_venta" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Precio de Venta al Paciente (Bs.) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">Bs.</span>
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0" 
+                                        id="edit_precio_venta" 
+                                        wire:model="edit_precio_venta" 
+                                        placeholder="0.00"
+                                        class="w-full text-xs rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500 shadow-2xs font-mono font-bold text-teal-600 dark:text-teal-400"
+                                    />
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Sincroniza con el catálogo de precios si es el lote más reciente.</span>
+                                @error('edit_precio_venta') <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Nota de Auditoría -->
+                        <div class="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-200">
+                            <i class="fas fa-shield-halved text-blue-600 dark:text-blue-400 mt-0.5 shrink-0"></i>
+                            <div>
+                                <strong>Control de Auditoría:</strong> Las correcciones aplicadas actualizan las valorizaciones financieras de inventario sin alterar los movimientos físicos históricos ya despachados.
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                            <button 
+                                wire:click="cerrarModalEdicion" 
+                                type="button" 
+                                class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="actualizarLote">
+                                    <i class="fas fa-check me-1"></i> Guardar Corrección
+                                </span>
+                                <span wire:loading wire:target="actualizarLote">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Actualizando...
                                 </span>
                             </button>
                         </div>
