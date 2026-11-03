@@ -185,7 +185,7 @@ class ReportePacientesService
                 'paciente_id' => $prof->paciente_id,
                 'paciente_nombre' => $paciente?->nombre_completo ?? 'N/D',
                 'paciente_cedula' => $paciente?->cedula ?? 'S/N',
-                'paciente_edad' => $paciente?->fecha_nacimiento?->age,
+                'paciente_edad' => $paciente?->edadEnFecha($fIngreso ?? $prof->created_at),
                 'paciente_celular' => $paciente?->celular,
                 'institucion_nombre' => $institucionNombre,
                 'tipo_atencion' => $prof->tipo_atencion,

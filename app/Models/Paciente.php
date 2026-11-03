@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Traits\Auditable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Paciente extends Model
 {
@@ -62,12 +64,31 @@ class Paciente extends Model
     }
 
     /**
-     * Edad calculada del paciente en años.
+     * Edad calculada del paciente en años (a la fecha actual).
      */
     protected function edad(): Attribute
     {
         return Attribute::make(
-            get: fn (): ?int => $this->fecha_nacimiento ? $this->fecha_nacimiento->age : null
+            get: fn (): ?int => $this->edadEnFecha(now())
         );
+    }
+
+    /**
+     * Edad del paciente en años calculada a una fecha de referencia específica.
+     * Si no se provee fecha, calcula la edad respecto a la fecha actual.
+     */
+    public function edadEnFecha(CarbonInterface|string|null $fecha = null): ?int
+    {
+        if (! $this->fecha_nacimiento) {
+            return null;
+        }
+
+        $fechaReferencia = $fecha ? Carbon::parse($fecha) : now();
+
+        if ($fechaReferencia->lt($this->fecha_nacimiento)) {
+            return 0;
+        }
+
+        return (int) $this->fecha_nacimiento->diffInYears($fechaReferencia);
     }
 }

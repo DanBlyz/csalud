@@ -195,8 +195,8 @@
             <td class="info-value">{{ $proforma->paciente->cedula ?? 'N/D' }}</td>
         </tr>
         <tr>
-            <td class="info-label">Fecha Nac. / Edad:</td>
-            <td class="info-value">{{ $proforma->paciente->fecha_nacimiento ? $proforma->paciente->fecha_nacimiento->format('d/m/Y') : 'N/D' }} ({{ $proforma->paciente->edad ?? '-' }} años)</td>
+            <td class="info-label">Fecha Nac. / Edad (al ingreso):</td>
+            <td class="info-value">{{ $proforma->paciente->fecha_nacimiento ? $proforma->paciente->fecha_nacimiento->format('d/m/Y') : 'N/D' }} ({{ $proforma->edad_paciente ?? '-' }} años)</td>
             <td class="info-label">Convenio / Seguro:</td>
             <td class="info-value font-bold">{{ $proforma->paciente->institucion->nombre ?? 'Particular (Sin convenio)' }}</td>
         </tr>

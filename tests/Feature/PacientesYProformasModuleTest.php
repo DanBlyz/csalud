@@ -3,6 +3,7 @@
 use App\Livewire\Pacientes\PacientesIndex;
 use App\Livewire\Proformas\ProformaCrear;
 use App\Livewire\Proformas\ProformaDetalle;
+use App\Livewire\Proformas\ProformasIndex;
 use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\ConsumoExtra;
@@ -22,6 +23,7 @@ use App\Models\Servicio;
 use App\Models\Sucursal;
 use App\Models\TipoSolicitud;
 use App\Models\User;
+use App\Services\ReportePacientesService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -1030,4 +1032,63 @@ test('puede adjuntar archivo digital a una orden medica en proforma detalle', fu
     $solicitud->refresh();
     expect($solicitud->archivo)->not->toBeNull();
     Storage::disk('public')->assertExists($solicitud->archivo);
+});
+
+test('la edad del paciente en la proforma y reportes corresponde a la fecha de registro/ingreso y no a la fecha actual', function () {
+    $this->actingAs($this->admin);
+
+    // Paciente nacido el 15 de marzo de 2000
+    $paciente = Paciente::create([
+        'nombres' => 'Carlos',
+        'apellido_paterno' => 'Mendoza',
+        'cedula' => 'CI-EDAD-'.rand(1000, 9999),
+        'fecha_nacimiento' => '2000-03-15',
+        'genero' => 'Masculino',
+    ]);
+
+    // Proforma registrada el 20 de mayo de 2018 (edad al ingreso: 18 años)
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => '2018-05-20 10:00:00',
+        'tipo_atencion' => 'Ambulatoria',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // Verificar cálculos en modelo Paciente
+    expect($paciente->edadEnFecha('2018-05-20'))->toBe(18);
+    expect($paciente->edadEnFecha('2010-01-01'))->toBe(9);
+    expect($paciente->edadEnFecha('1999-01-01'))->toBe(0);
+
+    // Verificar modelo Proforma
+    expect($proforma->edadPacienteAlIngreso())->toBe(18);
+    expect($proforma->edad_paciente)->toBe(18);
+
+    // ProformaDetalle muestra la edad al ingreso (18 años)
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->assertSee('18 años');
+
+    // ProformasIndex muestra la edad al ingreso (18 años)
+    Livewire::test(ProformasIndex::class)
+        ->assertSee('18 años');
+
+    // PDF de detalle y resumen reflejan la edad histórica al ingreso
+    $responseDetalle = $this->get(route('proformas.pdf.detalle', $proforma));
+    $responseDetalle->assertOk();
+
+    $responseResumen = $this->get(route('proformas.pdf.resumen', $proforma));
+    $responseResumen->assertOk();
+
+    // Reporte de pacientes también imputa la edad a la fecha de ingreso
+    $servicioReporte = app(ReportePacientesService::class);
+    $datosReporte = $servicioReporte->generar(
+        fechaInicio: '2018-01-01',
+        fechaFin: '2018-12-31',
+        sucursalId: $this->sucursal->id
+    );
+
+    $itemProforma = collect($datosReporte['items'])->firstWhere('proforma_id', $proforma->id);
+    expect($itemProforma)->not->toBeNull();
+    expect($itemProforma['paciente_edad'])->toBe(18);
 });

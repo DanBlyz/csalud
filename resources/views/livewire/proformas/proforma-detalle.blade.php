@@ -103,7 +103,7 @@
                         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
                             <span><strong class="text-slate-700 dark:text-slate-300">CI:</strong> {{ $proforma->paciente->cedula ?: 'Sin documento' }}</span>
                             <span>•</span>
-                            <span><strong class="text-slate-700 dark:text-slate-300">Edad:</strong> {{ $proforma->paciente->edad !== null ? "{$proforma->paciente->edad} años" : 'N/E' }}</span>
+                            <span><strong class="text-slate-700 dark:text-slate-300">Edad:</strong> {{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'N/E' }}</span>
                             <span>•</span>
                             <span><strong class="text-slate-700 dark:text-slate-300">Teléfono:</strong> {{ $proforma->paciente->celular ?: 'Sin celular' }}</span>
                             @if ($proforma->paciente->contacto_emergencia_nombre)

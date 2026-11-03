@@ -82,7 +82,7 @@
                             <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
                                 <span><span class="font-medium text-slate-700 dark:text-slate-300">Documento:</span> {{ $pacienteSeleccionado->cedula ?: 'Sin CI' }}</span>
                                 <span>•</span>
-                                <span><span class="font-medium text-slate-700 dark:text-slate-300">Edad:</span> {{ $pacienteSeleccionado->edad !== null ? "{$pacienteSeleccionado->edad} años" : 'N/E' }}</span>
+                                <span><span class="font-medium text-slate-700 dark:text-slate-300">Edad:</span> {{ $pacienteSeleccionado->edadEnFecha($fecha_ingreso ?: now()) !== null ? "{$pacienteSeleccionado->edadEnFecha($fecha_ingreso ?: now())} años" : 'N/E' }}</span>
                                 <span>•</span>
                                 <span><span class="font-medium text-slate-700 dark:text-slate-300">Celular:</span> {{ $pacienteSeleccionado->celular ?: 'Sin celular' }}</span>
                                 @if ($pacienteSeleccionado->contacto_emergencia_nombre)

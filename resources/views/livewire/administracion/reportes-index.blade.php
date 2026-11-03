@@ -66,11 +66,11 @@
             <span>Resumen Anual de Ingresos y Gastos (Excel)</span>
         </button>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
+        {{-- <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed" title="Próximamente">
             <i class="fas fa-user-md text-[11px]"></i>
             <span>Honorarios y Producción Médica</span>
             <span class="text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase">Próx.</span>
-        </div>
+        </div> --}}
     </div>
 
     <!-- ========================================================================= -->

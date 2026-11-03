@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,6 +51,30 @@ class Proforma extends Model
     public function paciente(): BelongsTo
     {
         return $this->belongsTo(Paciente::class, 'paciente_id');
+    }
+
+    /**
+     * Edad del paciente en años calculada al momento del ingreso/registro de la proforma.
+     */
+    public function edadPacienteAlIngreso(): ?int
+    {
+        if (! $this->paciente) {
+            return null;
+        }
+
+        $fechaReferencia = $this->fecha_ingreso ?? $this->created_at ?? now();
+
+        return $this->paciente->edadEnFecha($fechaReferencia);
+    }
+
+    /**
+     * Accessor virtual para la edad del paciente correspondiente al momento de la proforma.
+     */
+    protected function edadPaciente(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?int => $this->edadPacienteAlIngreso()
+        );
     }
 
     public function medicos(): BelongsToMany

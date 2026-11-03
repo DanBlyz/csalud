@@ -194,7 +194,7 @@
                                 <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                     <span>CI: {{ $proforma->paciente->cedula ?: 'S/D' }}</span>
                                     <span>•</span>
-                                    <span>{{ $proforma->paciente->edad !== null ? "{$proforma->paciente->edad} años" : 'S/E' }}</span>
+                                    <span>{{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'S/E' }}</span>
                                     @if ($proforma->paciente?->antecedentes_alergias)
                                         <span class="text-rose-500 font-bold" title="Alergias: {{ $proforma->paciente->antecedentes_alergias }}">
                                             <i class="fas fa-exclamation-triangle"></i>

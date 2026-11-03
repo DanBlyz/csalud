@@ -565,7 +565,7 @@
                                                         $stkLoteSec = $le->loteSecciones->where('seccion_id', $extra_seccion_id)->sum('cantidad_actual');
                                                     @endphp
                                                     <option value="{{ $le->id }}">
-                                                        {{ $le->codigo_lote }} (Stock: {{ $stkLoteSec }} - Vto: {{ $le->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }})
+                                                        Stock: {{ $stkLoteSec }} (Lote: {{ $le->codigo_lote }} - Vto: {{ $le->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }})
                                                     </option>
                                                 @endforeach
                                             @endif

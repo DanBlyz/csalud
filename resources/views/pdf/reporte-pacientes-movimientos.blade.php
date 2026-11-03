@@ -274,7 +274,7 @@
                         <strong>{{ $item['paciente_nombre'] }}</strong><br>
                         <span style="font-size: 8px; color: #64748b;">
                             C.I.: {{ $item['paciente_cedula'] }}
-                            @if($item['paciente_edad']) &bull; {{ $item['paciente_edad'] }} años @endif
+                            @if($item['paciente_edad'] !== null) &bull; {{ $item['paciente_edad'] }} años @endif
                         </span>
                     </td>
                     <td>
