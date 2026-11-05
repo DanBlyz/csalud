@@ -4,7 +4,9 @@ namespace App\Livewire\Proformas;
 
 use App\Models\Caja;
 use App\Models\ConsumoExtra;
+use App\Models\Epicrisis;
 use App\Models\Evolucion;
+use App\Models\HistoriaClinica;
 use App\Models\Indicacion;
 use App\Models\Internacion;
 use App\Models\Lote;
@@ -56,6 +58,96 @@ class ProformaDetalle extends Component
     public string $edit_estado = 'En Curso';
 
     public array $edit_medicos = [];
+
+    // Modal / Gestión Historia Clínica
+    public bool $modalHistoriaClinicaOpen = false;
+
+    public string $hc_procedencia = '';
+
+    public string $hc_residencia = '';
+
+    public string $hc_fuente_informacion = 'Paciente';
+
+    public string $hc_motivo_consulta = '';
+
+    public string $hc_enfermedad_actual = '';
+
+    public string $hc_antecedentes_patologicos = '';
+
+    public string $hc_antecedentes_no_patologicos = '';
+
+    public string $hc_menarca = '';
+
+    public string $hc_fum = '';
+
+    public string $hc_gestas = '';
+
+    public string $hc_partos = '';
+
+    public string $hc_cesareas = '';
+
+    public string $hc_abortos = '';
+
+    public string $hc_pap = '';
+
+    public string $hc_gineco_otros = '';
+
+    public string $hc_pa = '';
+
+    public string $hc_fc = '';
+
+    public string $hc_fr = '';
+
+    public string $hc_temperatura = '';
+
+    public string $hc_sato2 = '';
+
+    public string $hc_peso = '';
+
+    public string $hc_talla = '';
+
+    public string $hc_imc = '';
+
+    public string $hc_examen_fisico = '';
+
+    public string $hc_diagnostico = '';
+
+    public string $hc_conducta = '';
+
+    // Modal / Gestión de Epicrisis (Alta y Egreso del Paciente)
+    public bool $modalEpicrisisOpen = false;
+
+    public string $epi_cama = '';
+
+    public string $epi_servicio = '';
+
+    public ?string $epi_fecha_egreso = null;
+
+    public string $epi_condiciones_ingreso = '';
+
+    public string $epi_diagnostico_ingreso = '';
+
+    public string $epi_condiciones_egreso = 'Estable';
+
+    public string $epi_diagnostico_egreso = '';
+
+    public string $epi_causa_egreso = 'Alta médica';
+
+    public string $epi_estudios_complementarios = '';
+
+    public string $epi_antecedentes_relevantes = '';
+
+    public string $epi_historia_medica_actual = '';
+
+    public string $epi_procedimientos = '';
+
+    public string $epi_tratamiento_realizado = '';
+
+    public string $epi_indicaciones_alta = '';
+
+    public string $epi_proxima_cita = '';
+
+    public string $epi_observaciones = '';
 
     // Modal Agregar Servicios en Lote
     public bool $modalServicioOpen = false;
@@ -252,6 +344,8 @@ class ProformaDetalle extends Component
             'medicos.especialidad',
             'sucursal',
             'servicios.servicio.categoria',
+            'historiaClinica.usuarioCreador',
+            'epicrisis.usuarioCreador',
             'solicitudes.tipoSolicitud',
             'evoluciones.usuarioCreador',
             'indicaciones.usuarioCreador',
@@ -386,6 +480,307 @@ class ProformaDetalle extends Component
             'icon' => 'success',
             'title' => 'Expediente Actualizado',
             'text' => 'Los datos generales de la proforma han sido actualizados.',
+        ]);
+    }
+
+    // =========================================================================
+    // GESTIÓN DE HISTORIA CLÍNICA DE LA PROFORMA
+    // =========================================================================
+    public function abrirModalHistoriaClinica(): void
+    {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para editar la historia clínica de la proforma.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $hc = $this->proforma->historiaClinica;
+
+        $this->hc_procedencia = $hc?->procedencia ?? '';
+        $this->hc_residencia = $hc?->residencia ?? ($this->proforma->paciente->direccion ?? '');
+        $this->hc_fuente_informacion = $hc?->fuente_informacion ?? 'Paciente';
+        $this->hc_motivo_consulta = $hc?->motivo_consulta ?? ($this->proforma->motivo_consulta ?? '');
+        $this->hc_enfermedad_actual = $hc?->enfermedad_actual ?? '';
+        $this->hc_antecedentes_patologicos = $hc?->antecedentes_patologicos ?? ($this->proforma->paciente->antecedentes_alergias ? 'Alergias / Antecedentes: '.$this->proforma->paciente->antecedentes_alergias : '');
+        $this->hc_antecedentes_no_patologicos = $hc?->antecedentes_no_patologicos ?? '';
+        $this->hc_menarca = $hc?->menarca ?? '';
+        $this->hc_fum = $hc?->fum ?? '';
+        $this->hc_gestas = $hc?->gestas ?? '';
+        $this->hc_partos = $hc?->partos ?? '';
+        $this->hc_cesareas = $hc?->cesareas ?? '';
+        $this->hc_abortos = $hc?->abortos ?? '';
+        $this->hc_pap = $hc?->pap ?? '';
+        $this->hc_gineco_otros = $hc?->gineco_otros ?? '';
+        $this->hc_pa = $hc?->pa ?? '';
+        $this->hc_fc = $hc?->fc ?? '';
+        $this->hc_fr = $hc?->fr ?? '';
+        $this->hc_temperatura = $hc?->temperatura ?? '';
+        $this->hc_sato2 = $hc?->sato2 ?? '';
+        $this->hc_peso = $hc?->peso ?? '';
+        $this->hc_talla = $hc?->talla ?? '';
+        $this->hc_imc = $hc?->imc ?? '';
+        $this->hc_examen_fisico = $hc?->examen_fisico ?? '';
+        $this->hc_diagnostico = $hc?->diagnostico ?? ($this->proforma->diagnostico ?? '');
+        $this->hc_conducta = $hc?->conducta ?? '';
+
+        $this->modalHistoriaClinicaOpen = true;
+    }
+
+    public function cerrarModalHistoriaClinica(): void
+    {
+        $this->modalHistoriaClinicaOpen = false;
+    }
+
+    public function updatedHcPeso(): void
+    {
+        $this->calcularHcImc();
+    }
+
+    public function updatedHcTalla(): void
+    {
+        $this->calcularHcImc();
+    }
+
+    protected function calcularHcImc(): void
+    {
+        $peso = (float) str_replace(',', '.', $this->hc_peso);
+        $talla = (float) str_replace(',', '.', $this->hc_talla);
+
+        if ($peso > 0 && $talla > 0) {
+            $tallaM = $talla > 3 ? $talla / 100 : $talla;
+            $imc = $peso / ($tallaM * $tallaM);
+            $this->hc_imc = number_format($imc, 1, '.', '');
+        }
+    }
+
+    public function guardarHistoriaClinica(): void
+    {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para editar la historia clínica de la proforma.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->validate([
+            'hc_procedencia' => ['nullable', 'string', 'max:150'],
+            'hc_residencia' => ['nullable', 'string', 'max:255'],
+            'hc_fuente_informacion' => ['nullable', 'string', 'max:100'],
+            'hc_motivo_consulta' => ['nullable', 'string', 'max:1000'],
+            'hc_enfermedad_actual' => ['nullable', 'string', 'max:5000'],
+            'hc_antecedentes_patologicos' => ['nullable', 'string', 'max:5000'],
+            'hc_antecedentes_no_patologicos' => ['nullable', 'string', 'max:5000'],
+            'hc_menarca' => ['nullable', 'string', 'max:50'],
+            'hc_fum' => ['nullable', 'string', 'max:50'],
+            'hc_gestas' => ['nullable', 'string', 'max:20'],
+            'hc_partos' => ['nullable', 'string', 'max:20'],
+            'hc_cesareas' => ['nullable', 'string', 'max:20'],
+            'hc_abortos' => ['nullable', 'string', 'max:20'],
+            'hc_pap' => ['nullable', 'string', 'max:100'],
+            'hc_gineco_otros' => ['nullable', 'string', 'max:255'],
+            'hc_pa' => ['nullable', 'string', 'max:30'],
+            'hc_fc' => ['nullable', 'string', 'max:30'],
+            'hc_fr' => ['nullable', 'string', 'max:30'],
+            'hc_temperatura' => ['nullable', 'string', 'max:30'],
+            'hc_sato2' => ['nullable', 'string', 'max:30'],
+            'hc_peso' => ['nullable', 'string', 'max:30'],
+            'hc_talla' => ['nullable', 'string', 'max:30'],
+            'hc_imc' => ['nullable', 'string', 'max:30'],
+            'hc_examen_fisico' => ['nullable', 'string', 'max:5000'],
+            'hc_diagnostico' => ['nullable', 'string', 'max:1000'],
+            'hc_conducta' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $hc = HistoriaClinica::updateOrCreate(
+            ['proforma_id' => $this->proforma->id],
+            [
+                'procedencia' => $this->hc_procedencia ?: null,
+                'residencia' => $this->hc_residencia ?: null,
+                'fuente_informacion' => $this->hc_fuente_informacion ?: 'Paciente',
+                'motivo_consulta' => $this->hc_motivo_consulta ?: null,
+                'enfermedad_actual' => $this->hc_enfermedad_actual ?: null,
+                'antecedentes_patologicos' => $this->hc_antecedentes_patologicos ?: null,
+                'antecedentes_no_patologicos' => $this->hc_antecedentes_no_patologicos ?: null,
+                'menarca' => $this->hc_menarca ?: null,
+                'fum' => $this->hc_fum ?: null,
+                'gestas' => $this->hc_gestas ?: null,
+                'partos' => $this->hc_partos ?: null,
+                'cesareas' => $this->hc_cesareas ?: null,
+                'abortos' => $this->hc_abortos ?: null,
+                'pap' => $this->hc_pap ?: null,
+                'gineco_otros' => $this->hc_gineco_otros ?: null,
+                'pa' => $this->hc_pa ?: null,
+                'fc' => $this->hc_fc ?: null,
+                'fr' => $this->hc_fr ?: null,
+                'temperatura' => $this->hc_temperatura ?: null,
+                'sato2' => $this->hc_sato2 ?: null,
+                'peso' => $this->hc_peso ?: null,
+                'talla' => $this->hc_talla ?: null,
+                'imc' => $this->hc_imc ?: null,
+                'examen_fisico' => $this->hc_examen_fisico ?: null,
+                'diagnostico' => $this->hc_diagnostico ?: null,
+                'conducta' => $this->hc_conducta ?: null,
+                'usuario_modificador_id' => Auth::id(),
+            ]
+        );
+
+        if (! $hc->usuario_creador_id) {
+            $hc->update(['usuario_creador_id' => Auth::id()]);
+        }
+
+        // Sincronizar motivo y diagnóstico en la proforma
+        $this->proforma->update([
+            'motivo_consulta' => $this->hc_motivo_consulta ?: $this->proforma->motivo_consulta,
+            'diagnostico' => $this->hc_diagnostico ?: $this->proforma->diagnostico,
+        ]);
+
+        $this->proforma->load('historiaClinica.usuarioCreador');
+
+        $this->cerrarModalHistoriaClinica();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Historia Clínica Guardada',
+            'text' => 'Los antecedentes, examen físico y datos de la historia clínica se han guardado exitosamente.',
+        ]);
+    }
+
+    // =========================================================================
+    // GESTIÓN DE EPICRISIS (ALTA / EGRESO DEL PACIENTE)
+    // =========================================================================
+    public function abrirModalEpicrisis(): void
+    {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para gestionar la epicrisis de la proforma.')) {
+            return;
+        }
+
+        $epi = $this->proforma->epicrisis;
+
+        if ($epi) {
+            $this->epi_cama = $epi->cama ?? '';
+            $this->epi_servicio = $epi->servicio ?? '';
+            $this->epi_fecha_egreso = $epi->fecha_egreso?->format('Y-m-d\TH:i');
+            $this->epi_condiciones_ingreso = $epi->condiciones_ingreso ?? '';
+            $this->epi_diagnostico_ingreso = $epi->diagnostico_ingreso ?? '';
+            $this->epi_condiciones_egreso = $epi->condiciones_egreso ?? 'Estable';
+            $this->epi_diagnostico_egreso = $epi->diagnostico_egreso ?? '';
+            $this->epi_causa_egreso = $epi->causa_egreso ?? 'Alta médica';
+            $this->epi_estudios_complementarios = $epi->estudios_complementarios ?? '';
+            $this->epi_antecedentes_relevantes = $epi->antecedentes_relevantes ?? '';
+            $this->epi_historia_medica_actual = $epi->historia_medica_actual ?? '';
+            $this->epi_procedimientos = $epi->procedimientos ?? '';
+            $this->epi_tratamiento_realizado = $epi->tratamiento_realizado ?? '';
+            $this->epi_indicaciones_alta = $epi->indicaciones_alta ?? '';
+            $this->epi_proxima_cita = $epi->proxima_cita ?? '';
+            $this->epi_observaciones = $epi->observaciones ?? '';
+        } else {
+            // Precarga inteligente basada en el expediente clínico
+            $this->epi_cama = $this->proforma->pieza ?: ($this->proforma->tipo_atencion === 'Internacion' ? 'Sala 1 - Cama General' : 'Consultorio Externo');
+            $this->epi_servicio = $this->proforma->tipo_atencion === 'Internacion' ? 'Hospitalización' : 'Medicina General';
+            $this->epi_fecha_egreso = $this->proforma->fecha_salida ? $this->proforma->fecha_salida->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->epi_condiciones_ingreso = 'Paciente hemodinámicamente estable al ingreso.';
+            $this->epi_diagnostico_ingreso = $this->proforma->diagnostico ?: ($this->proforma->historiaClinica?->diagnostico ?: '');
+            $this->epi_condiciones_egreso = 'Paciente afebril, hemodinámicamente estable, con evolución favorable y buena tolerancia oral.';
+            $this->epi_diagnostico_egreso = $this->proforma->diagnostico ?: ($this->proforma->historiaClinica?->diagnostico ?: '');
+            $this->epi_causa_egreso = 'Alta médica por mejoría clínica';
+
+            $solicitudes = $this->proforma->solicitudes->pluck('tipoSolicitud.nombre')->filter()->unique()->implode(', ');
+            $this->epi_estudios_complementarios = $solicitudes ?: 'Estudios rutinarios dentro de parámetros normales.';
+
+            $antecedentes = $this->proforma->historiaClinica?->antecedentes_patologicos ?: ($this->proforma->paciente->antecedentes_alergias ? 'Alergias: '.$this->proforma->paciente->antecedentes_alergias : 'Sin antecedentes patológicos de relevancia reportados.');
+            $this->epi_antecedentes_relevantes = $antecedentes;
+
+            $this->epi_historia_medica_actual = $this->proforma->historiaClinica?->enfermedad_actual ?: ($this->proforma->motivo_consulta ? 'Ingresa con cuadro de: '.$this->proforma->motivo_consulta : 'Paciente cumple esquema hospitalario satisfactorio.');
+
+            $servicios = $this->proforma->servicios->pluck('servicio.nombre')->filter()->unique()->implode(', ');
+            $this->epi_procedimientos = $servicios ?: 'Atención médica y cuidados continuos de enfermería.';
+
+            $fármacos = $this->proforma->recetaActiva?->detalles?->map(function ($det) {
+                return $det->producto->nombre.($det->indicaciones ? ' ('.$det->indicaciones.')' : '');
+            })->filter()->implode('; ');
+            $this->epi_tratamiento_realizado = $fármacos ?: 'Terapia médica hospitalaria de soporte.';
+
+            $this->epi_indicaciones_alta = 'Reposo relativo en domicilio, cumplimiento estricto del tratamiento farmacológico prescrito y acudir de inmediato a emergencias ante cualquier signo de alarma.';
+            $this->epi_proxima_cita = 'Control por consulta externa en 7 días.';
+            $this->epi_observaciones = 'Se entrega alta médica formal con recomendaciones de cuidado.';
+        }
+
+        $this->modalEpicrisisOpen = true;
+    }
+
+    public function cerrarModalEpicrisis(): void
+    {
+        $this->modalEpicrisisOpen = false;
+    }
+
+    public function guardarEpicrisis(): void
+    {
+        if (! $this->autorizarAccion('proformas.editar', 'No cuenta con permiso para guardar la epicrisis de la proforma.')) {
+            return;
+        }
+
+        $this->validate([
+            'epi_cama' => ['nullable', 'string', 'max:100'],
+            'epi_servicio' => ['nullable', 'string', 'max:150'],
+            'epi_fecha_egreso' => ['nullable', 'date'],
+            'epi_condiciones_ingreso' => ['nullable', 'string', 'max:2000'],
+            'epi_diagnostico_ingreso' => ['nullable', 'string', 'max:2000'],
+            'epi_condiciones_egreso' => ['nullable', 'string', 'max:2000'],
+            'epi_diagnostico_egreso' => ['nullable', 'string', 'max:2000'],
+            'epi_causa_egreso' => ['nullable', 'string', 'max:255'],
+            'epi_estudios_complementarios' => ['nullable', 'string', 'max:5000'],
+            'epi_antecedentes_relevantes' => ['nullable', 'string', 'max:5000'],
+            'epi_historia_medica_actual' => ['nullable', 'string', 'max:5000'],
+            'epi_procedimientos' => ['nullable', 'string', 'max:5000'],
+            'epi_tratamiento_realizado' => ['nullable', 'string', 'max:5000'],
+            'epi_indicaciones_alta' => ['nullable', 'string', 'max:5000'],
+            'epi_proxima_cita' => ['nullable', 'string', 'max:255'],
+            'epi_observaciones' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $epi = Epicrisis::updateOrCreate(
+            ['proforma_id' => $this->proforma->id],
+            [
+                'cama' => $this->epi_cama ?: null,
+                'servicio' => $this->epi_servicio ?: null,
+                'fecha_egreso' => $this->epi_fecha_egreso ?: null,
+                'condiciones_ingreso' => $this->epi_condiciones_ingreso ?: null,
+                'diagnostico_ingreso' => $this->epi_diagnostico_ingreso ?: null,
+                'condiciones_egreso' => $this->epi_condiciones_egreso ?: null,
+                'diagnostico_egreso' => $this->epi_diagnostico_egreso ?: null,
+                'causa_egreso' => $this->epi_causa_egreso ?: null,
+                'estudios_complementarios' => $this->epi_estudios_complementarios ?: null,
+                'antecedentes_relevantes' => $this->epi_antecedentes_relevantes ?: null,
+                'historia_medica_actual' => $this->epi_historia_medica_actual ?: null,
+                'procedimientos' => $this->epi_procedimientos ?: null,
+                'tratamiento_realizado' => $this->epi_tratamiento_realizado ?: null,
+                'indicaciones_alta' => $this->epi_indicaciones_alta ?: null,
+                'proxima_cita' => $this->epi_proxima_cita ?: null,
+                'observaciones' => $this->epi_observaciones ?: null,
+                'usuario_modificador_id' => Auth::id(),
+            ]
+        );
+
+        if (! $epi->usuario_creador_id) {
+            $epi->update(['usuario_creador_id' => Auth::id()]);
+        }
+
+        // Si la proforma no tenía fecha de salida registrada y se indicó fecha de egreso, sincronizar
+        if ($this->epi_fecha_egreso && ! $this->proforma->fecha_salida) {
+            $this->proforma->update(['fecha_salida' => $this->epi_fecha_egreso]);
+        }
+
+        $this->proforma->load('epicrisis.usuarioCreador');
+
+        $this->cerrarModalEpicrisis();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Epicrisis Registrada',
+            'text' => 'El documento de epicrisis médica de alta ha sido guardado exitosamente.',
         ]);
     }
 
@@ -2719,6 +3114,8 @@ class ProformaDetalle extends Component
         // Refrescar relaciones clave
         $this->proforma->load([
             'servicios.servicio.categoria',
+            'historiaClinica.usuarioCreador',
+            'epicrisis.usuarioCreador',
             'solicitudes.tipoSolicitud',
             'evoluciones.usuarioCreador',
             'indicaciones.usuarioCreador',

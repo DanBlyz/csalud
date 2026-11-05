@@ -7,7 +7,9 @@ use App\Livewire\Proformas\ProformasIndex;
 use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\ConsumoExtra;
+use App\Models\Epicrisis;
 use App\Models\Evolucion;
+use App\Models\HistoriaClinica;
 use App\Models\Indicacion;
 use App\Models\Internacion;
 use App\Models\Lote;
@@ -67,6 +69,8 @@ test('puede registrar y editar un paciente en pacientes index', function () {
         ->set('fecha_nacimiento', '1995-05-15')
         ->set('genero', 'Masculino')
         ->set('celular', '71234567')
+        ->set('estado_civil', 'Soltero(a)')
+        ->set('ocupacion', 'Contador')
         ->set('antecedentes_alergias', 'Alérgico a sulfas')
         ->call('guardar')
         ->assertDispatched('swal');
@@ -74,16 +78,50 @@ test('puede registrar y editar un paciente en pacientes index', function () {
     $paciente = Paciente::where('cedula', $cedula)->first();
     expect($paciente)->not->toBeNull();
     expect($paciente->nombres)->toBe('Juan Pablo');
+    expect($paciente->estado_civil)->toBe('Soltero(a)');
+    expect($paciente->ocupacion)->toBe('Contador');
     expect($paciente->edad)->not->toBeNull();
 
     // Editar paciente
     Livewire::test(PacientesIndex::class)
         ->call('abrirModalEditar', $paciente->id)
+        ->assertSet('estado_civil', 'Soltero(a)')
+        ->assertSet('ocupacion', 'Contador')
         ->set('nombres', 'Juan Pablo Modificado')
+        ->set('estado_civil', 'Casado(a)')
+        ->set('ocupacion', 'Docente')
         ->call('guardar')
         ->assertDispatched('swal');
 
     expect($paciente->fresh()->nombres)->toBe('Juan Pablo Modificado');
+    expect($paciente->fresh()->estado_civil)->toBe('Casado(a)');
+    expect($paciente->fresh()->ocupacion)->toBe('Docente');
+});
+
+test('puede registrar un nuevo paciente rapido con estado civil y ocupacion en proforma crear', function () {
+    $this->actingAs($this->admin);
+
+    $cedulaQuick = 'CI-QUICK-'.rand(1000, 9999);
+
+    Livewire::test(ProformaCrear::class)
+        ->call('abrirModalNuevoPaciente')
+        ->set('nuevo_nombres', 'Patricia')
+        ->set('nuevo_apellido_paterno', 'Flores')
+        ->set('nuevo_apellido_materno', 'Rios')
+        ->set('nuevo_cedula', $cedulaQuick)
+        ->set('nuevo_fecha_nacimiento', '1990-11-20')
+        ->set('nuevo_genero', 'Femenino')
+        ->set('nuevo_celular', '78945612')
+        ->set('nuevo_estado_civil', 'Casado(a)')
+        ->set('nuevo_ocupacion', 'Abogada')
+        ->call('guardarNuevoPaciente')
+        ->assertDispatched('swal');
+
+    $paciente = Paciente::where('cedula', $cedulaQuick)->first();
+    expect($paciente)->not->toBeNull();
+    expect($paciente->nombres)->toBe('Patricia');
+    expect($paciente->estado_civil)->toBe('Casado(a)');
+    expect($paciente->ocupacion)->toBe('Abogada');
 });
 
 test('puede consultar el historial clinico de un paciente', function () {
@@ -1553,4 +1591,239 @@ test('control de permisos granulares para evolucion, indicacion e internacion (v
         // Intentar eliminar sin permiso de eliminar
         ->call('eliminarEvolucion', $evolucion->id)
         ->assertDispatched('swal');
+});
+
+test('puede abrir una proforma con historia clinica completa en proforma crear', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Valeria',
+        'apellido_paterno' => 'Mendoza',
+        'apellido_materno' => 'Salazar',
+        'cedula' => 'CI-HC-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1998-04-12',
+        'genero' => 'Femenino',
+        'celular' => '71122334',
+        'direccion' => 'Av. América #123',
+    ]);
+
+    Livewire::test(ProformaCrear::class)
+        ->set('paciente_id', $paciente->id)
+        ->set('tipo_atencion', 'Internacion')
+        ->set('fecha_ingreso', now()->format('Y-m-d\TH:i'))
+        ->set('pieza', 'Sala 1 - Cama 4')
+        ->set('procedencia', 'Cochabamba')
+        ->set('residencia', 'Av. América #123')
+        ->set('fuente_informacion', 'Paciente')
+        ->set('motivo_consulta', 'Dolor abdominal agudo')
+        ->set('enfermedad_actual', 'Cuadro de 24 horas de evolución con dolor en FID')
+        ->set('antecedentes_patologicos', 'Alergia a penicilina')
+        ->set('antecedentes_no_patologicos', 'No fuma, no bebe')
+        ->set('menarca', '12')
+        ->set('fum', '10/10/2026')
+        ->set('gestas', '1')
+        ->set('partos', '1')
+        ->set('cesareas', '0')
+        ->set('abortos', '0')
+        ->set('pap', 'Negativo')
+        ->set('pa', '110/70')
+        ->set('fc', '78')
+        ->set('fr', '16')
+        ->set('temperatura', '36.8')
+        ->set('sato2', '98')
+        ->set('peso', '60')
+        ->set('talla', '165')
+        ->set('examen_fisico', 'Abdomen doloroso a la palpación en fosa ilíaca derecha')
+        ->set('diagnostico', 'Apendicitis aguda presuntiva')
+        ->set('conducta', 'Internación y valoración por cirugía general')
+        ->call('abrirProforma')
+        ->assertRedirect();
+
+    $proforma = Proforma::where('paciente_id', $paciente->id)->latest('id')->first();
+    expect($proforma)->not->toBeNull();
+    expect($proforma->historiaClinica)->not->toBeNull();
+    expect($proforma->historiaClinica->procedencia)->toBe('Cochabamba');
+    expect($proforma->historiaClinica->pa)->toBe('110/70');
+    expect($proforma->historiaClinica->imc)->not->toBeEmpty();
+    expect($proforma->historiaClinica->diagnostico)->toBe('Apendicitis aguda presuntiva');
+});
+
+test('puede consultar y editar la historia clinica desde proforma detalle', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Gabriel',
+        'apellido_paterno' => 'Perez',
+        'cedula' => 'CI-EDITHC-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1992-06-18',
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Ambulatoria',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalHistoriaClinica')
+        ->assertSet('modalHistoriaClinicaOpen', true)
+        ->set('hc_procedencia', 'Santa Cruz')
+        ->set('hc_pa', '125/80')
+        ->set('hc_fc', '80')
+        ->set('hc_peso', '72')
+        ->set('hc_talla', '175')
+        ->set('hc_motivo_consulta', 'Chequeo rutinario')
+        ->set('hc_diagnostico', 'Paciente clínicamente sano')
+        ->set('hc_conducta', 'Control preventivo anual')
+        ->call('guardarHistoriaClinica')
+        ->assertDispatched('swal');
+
+    $hc = HistoriaClinica::where('proforma_id', $proforma->id)->first();
+    expect($hc)->not->toBeNull();
+    expect($hc->procedencia)->toBe('Santa Cruz');
+    expect($hc->pa)->toBe('125/80');
+    expect($hc->diagnostico)->toBe('Paciente clínicamente sano');
+    expect($proforma->fresh()->diagnostico)->toBe('Paciente clínicamente sano');
+});
+
+test('puede generar el documento oficial pdf de la historia clinica', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Elena',
+        'apellido_paterno' => 'Rojas',
+        'cedula' => 'CI-PDFHC-'.rand(1000, 9999),
+        'fecha_nacimiento' => '2001-08-25',
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    HistoriaClinica::create([
+        'proforma_id' => $proforma->id,
+        'procedencia' => 'Oruro',
+        'motivo_consulta' => 'Cefalea intensa',
+        'enfermedad_actual' => 'Episodio recurrente de migraña',
+        'pa' => '120/80',
+        'fc' => '72',
+        'diagnostico' => 'Migraña sin aura',
+        'conducta' => 'Analgésicos y reposo',
+    ]);
+
+    $response = $this->get(route('proformas.pdf.historia_clinica', $proforma->id));
+    $response->assertStatus(200);
+    $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('puede abrir modal, registrar y editar la epicrisis en proforma detalle', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Mario',
+        'apellido_paterno' => 'Barrientos',
+        'cedula' => 'CI-EPI-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1990-05-15',
+        'genero' => 'Masculino',
+        'telefono' => '70012345',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now()->subDays(3),
+        'tipo_atencion' => 'Internacion',
+        'pieza' => 'Sala 4 - Cama 2',
+        'diagnostico' => 'Apendicitis aguda',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // Abrir modal y guardar Epicrisis
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalEpicrisis')
+        ->assertSet('modalEpicrisisOpen', true)
+        ->assertSet('epi_cama', 'Sala 4 - Cama 2')
+        ->assertSet('epi_diagnostico_ingreso', 'Apendicitis aguda')
+        ->set('epi_servicio', 'Cirugía General')
+        ->set('epi_fecha_egreso', now()->format('Y-m-d\TH:i'))
+        ->set('epi_condiciones_ingreso', 'Fiebre, dolor abdominal agudo en FID')
+        ->set('epi_condiciones_egreso', 'Herida quirúrgica limpia, afebril, hemodinámicamente estable')
+        ->set('epi_diagnostico_egreso', 'Post operado de apendicectomía laparoscópica')
+        ->set('epi_causa_egreso', 'Alta médica por mejoría')
+        ->set('epi_procedimientos', 'Apendicectomía por laparoscopía')
+        ->set('epi_indicaciones_alta', 'Ciprofloxacino 500mg c/12h por 5 días, reposo relativo')
+        ->set('epi_proxima_cita', 'En 7 días para retiro de puntos')
+        ->call('guardarEpicrisis')
+        ->assertDispatched('swal')
+        ->assertSet('modalEpicrisisOpen', false);
+
+    $epicrisis = Epicrisis::where('proforma_id', $proforma->id)->first();
+    expect($epicrisis)->not->toBeNull();
+    expect($epicrisis->servicio)->toBe('Cirugía General');
+    expect($epicrisis->causa_egreso)->toBe('Alta médica por mejoría');
+    expect($epicrisis->diagnostico_egreso)->toBe('Post operado de apendicectomía laparoscópica');
+
+    // Ahora editar la epicrisis
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalEpicrisis')
+        ->assertSet('modalEpicrisisOpen', true)
+        ->assertSet('epi_servicio', 'Cirugía General')
+        ->set('epi_observaciones', 'Evolución favorable sin complicaciones postoperatorias')
+        ->call('guardarEpicrisis')
+        ->assertDispatched('swal');
+
+    expect($epicrisis->fresh()->observaciones)->toBe('Evolución favorable sin complicaciones postoperatorias');
+});
+
+test('puede generar el documento oficial pdf de la epicrisis', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Rosa',
+        'apellido_paterno' => 'Quiroga',
+        'cedula' => 'CI-EPIDOC-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1988-12-04',
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now()->subDays(2),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    Epicrisis::create([
+        'proforma_id' => $proforma->id,
+        'cama' => 'Cama 101',
+        'servicio' => 'Medicina Interna',
+        'fecha_egreso' => now(),
+        'condiciones_ingreso' => 'Paciente en regular estado',
+        'diagnostico_ingreso' => 'Neumonía adquirida en la comunidad',
+        'condiciones_egreso' => 'Buena mecánica ventilatoria, afebril',
+        'diagnostico_egreso' => 'Neumonía resuelta',
+        'causa_egreso' => 'Alta médica por mejoría',
+        'estudios_complementarios' => 'Radiografía de tórax control: campos pulmonares limpios',
+        'tratamiento_realizado' => 'Ceftriaxona EV por 48 horas',
+        'indicaciones_alta' => 'Amoxicilina + Clavulánico 875/125mg VO c/8h por 5 días',
+        'proxima_cita' => 'Control por consulta externa en 10 días',
+        'creado_por' => $this->admin->id,
+    ]);
+
+    $response = $this->get(route('proformas.pdf.epicrisis', $proforma->id));
+    $response->assertStatus(200);
+    $response->assertHeader('content-type', 'application/pdf');
 });

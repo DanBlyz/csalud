@@ -180,6 +180,18 @@
                                             Particular
                                         </span>
                                     @endif
+                                    @if ($paciente->ocupacion)
+                                        <span>•</span>
+                                        <span class="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400" title="Ocupación: {{ $paciente->ocupacion }}">
+                                            <i class="fas fa-briefcase text-[9px] text-slate-400"></i> {{ $paciente->ocupacion }}
+                                        </span>
+                                    @endif
+                                    @if ($paciente->estado_civil)
+                                        <span>•</span>
+                                        <span class="text-[10px] text-slate-500 dark:text-slate-400" title="Estado Civil: {{ $paciente->estado_civil }}">
+                                            {{ $paciente->estado_civil }}
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">
@@ -420,6 +432,32 @@
                                     Dirección Domiciliaria
                                 </label>
                                 <input type="text" id="direccion" wire:model="direccion" placeholder="Calle, Nro., Zona..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                            </div>
+                        </div>
+
+                        <!-- Estado Civil y Ocupación -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="estado_civil" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Estado Civil
+                                </label>
+                                <select id="estado_civil" wire:model="estado_civil" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Soltero(a)">Soltero(a)</option>
+                                    <option value="Casado(a)">Casado(a)</option>
+                                    <option value="Divorciado(a)">Divorciado(a)</option>
+                                    <option value="Viudo(a)">Viudo(a)</option>
+                                    <option value="Unión Libre">Unión Libre</option>
+                                </select>
+                                @error('estado_civil') <span class="text-[11px] text-rose-500 font-medium">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label for="ocupacion" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Ocupación / Profesión
+                                </label>
+                                <input type="text" id="ocupacion" wire:model="ocupacion" placeholder="Ej. Ingeniero, Comerciante, Estudiante..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                                @error('ocupacion') <span class="text-[11px] text-rose-500 font-medium">{{ $message }}</span> @enderror
                             </div>
                         </div>
 

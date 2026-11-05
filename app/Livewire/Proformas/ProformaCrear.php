@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Proformas;
 
+use App\Models\HistoriaClinica;
 use App\Models\Institucion;
 use App\Models\Paciente;
 use App\Models\Producto;
@@ -50,6 +51,55 @@ class ProformaCrear extends Component
     public string $motivo_consulta = '';
 
     public string $diagnostico = '';
+
+    // Historia Clínica (Sección 2)
+    public string $procedencia = '';
+
+    public string $residencia = '';
+
+    public string $fuente_informacion = 'Paciente';
+
+    public string $enfermedad_actual = '';
+
+    public string $antecedentes_patologicos = '';
+
+    public string $antecedentes_no_patologicos = '';
+
+    public string $menarca = '';
+
+    public string $fum = '';
+
+    public string $gestas = '';
+
+    public string $partos = '';
+
+    public string $cesareas = '';
+
+    public string $abortos = '';
+
+    public string $pap = '';
+
+    public string $gineco_otros = '';
+
+    public string $pa = '';
+
+    public string $fc = '';
+
+    public string $fr = '';
+
+    public string $temperatura = '';
+
+    public string $sato2 = '';
+
+    public string $peso = '';
+
+    public string $talla = '';
+
+    public string $imc = '';
+
+    public string $examen_fisico = '';
+
+    public string $conducta = '';
 
     // Búsqueda de Pacientes
     public string $pacienteSearch = '';
@@ -108,6 +158,10 @@ class ProformaCrear extends Component
     public string $nuevo_celular = '';
 
     public string $nuevo_direccion = '';
+
+    public string $nuevo_estado_civil = '';
+
+    public string $nuevo_ocupacion = '';
 
     public string $nuevo_contacto_nombre = '';
 
@@ -168,6 +222,35 @@ class ProformaCrear extends Component
         $this->pacienteSeleccionado = Paciente::with('institucion')->findOrFail($id);
         $this->paciente_id = $this->pacienteSeleccionado->id;
         $this->pacienteSearch = '';
+
+        if (empty($this->residencia) && $this->pacienteSeleccionado->direccion) {
+            $this->residencia = $this->pacienteSeleccionado->direccion;
+        }
+        if (empty($this->antecedentes_patologicos) && $this->pacienteSeleccionado->antecedentes_alergias) {
+            $this->antecedentes_patologicos = 'Alergias / Antecedentes: '.$this->pacienteSeleccionado->antecedentes_alergias;
+        }
+    }
+
+    public function updatedPeso(): void
+    {
+        $this->calcularImc();
+    }
+
+    public function updatedTalla(): void
+    {
+        $this->calcularImc();
+    }
+
+    protected function calcularImc(): void
+    {
+        $peso = (float) str_replace(',', '.', $this->peso);
+        $talla = (float) str_replace(',', '.', $this->talla);
+
+        if ($peso > 0 && $talla > 0) {
+            $tallaM = $talla > 3 ? $talla / 100 : $talla;
+            $imc = $peso / ($tallaM * $tallaM);
+            $this->imc = number_format($imc, 1, '.', '');
+        }
     }
 
     public function deseleccionarPaciente(): void
@@ -199,6 +282,8 @@ class ProformaCrear extends Component
             'nuevo_fecha_nacimiento',
             'nuevo_celular',
             'nuevo_direccion',
+            'nuevo_estado_civil',
+            'nuevo_ocupacion',
             'nuevo_contacto_nombre',
             'nuevo_contacto_telefono',
             'nuevo_antecedentes_alergias',
@@ -240,6 +325,8 @@ class ProformaCrear extends Component
             'nuevo_genero' => ['required', 'in:Masculino,Femenino,Otro'],
             'nuevo_celular' => ['nullable', 'string', 'max:20'],
             'nuevo_direccion' => ['nullable', 'string', 'max:255'],
+            'nuevo_estado_civil' => ['nullable', 'string', 'max:50'],
+            'nuevo_ocupacion' => ['nullable', 'string', 'max:150'],
             'nuevo_contacto_nombre' => ['nullable', 'string', 'max:150'],
             'nuevo_contacto_telefono' => ['nullable', 'string', 'max:20'],
             'nuevo_antecedentes_alergias' => ['nullable', 'string', 'max:1000'],
@@ -255,6 +342,8 @@ class ProformaCrear extends Component
             'genero' => $this->nuevo_genero,
             'celular' => $this->nuevo_celular,
             'direccion' => $this->nuevo_direccion,
+            'estado_civil' => $this->nuevo_estado_civil ?: null,
+            'ocupacion' => $this->nuevo_ocupacion ?: null,
             'contacto_emergencia_nombre' => $this->nuevo_contacto_nombre,
             'contacto_emergencia_telefono' => $this->nuevo_contacto_telefono,
             'antecedentes_alergias' => $this->nuevo_antecedentes_alergias,
@@ -499,6 +588,30 @@ class ProformaCrear extends Component
             'pieza' => ['nullable', 'string', 'max:100'],
             'motivo_consulta' => ['nullable', 'string', 'max:1000'],
             'diagnostico' => ['nullable', 'string', 'max:1000'],
+            'procedencia' => ['nullable', 'string', 'max:150'],
+            'residencia' => ['nullable', 'string', 'max:255'],
+            'fuente_informacion' => ['nullable', 'string', 'max:100'],
+            'enfermedad_actual' => ['nullable', 'string', 'max:5000'],
+            'antecedentes_patologicos' => ['nullable', 'string', 'max:5000'],
+            'antecedentes_no_patologicos' => ['nullable', 'string', 'max:5000'],
+            'menarca' => ['nullable', 'string', 'max:50'],
+            'fum' => ['nullable', 'string', 'max:50'],
+            'gestas' => ['nullable', 'string', 'max:20'],
+            'partos' => ['nullable', 'string', 'max:20'],
+            'cesareas' => ['nullable', 'string', 'max:20'],
+            'abortos' => ['nullable', 'string', 'max:20'],
+            'pap' => ['nullable', 'string', 'max:100'],
+            'gineco_otros' => ['nullable', 'string', 'max:255'],
+            'pa' => ['nullable', 'string', 'max:30'],
+            'fc' => ['nullable', 'string', 'max:30'],
+            'fr' => ['nullable', 'string', 'max:30'],
+            'temperatura' => ['nullable', 'string', 'max:30'],
+            'sato2' => ['nullable', 'string', 'max:30'],
+            'peso' => ['nullable', 'string', 'max:30'],
+            'talla' => ['nullable', 'string', 'max:30'],
+            'imc' => ['nullable', 'string', 'max:30'],
+            'examen_fisico' => ['nullable', 'string', 'max:5000'],
+            'conducta' => ['nullable', 'string', 'max:5000'],
             'servicios_agregados.*.costo_final' => ['nullable', 'numeric', 'min:0'],
             'receta_medicamentos.*.cantidad' => ['nullable', 'integer', 'min:1'],
             'receta_medicamentos.*.indicaciones' => ['nullable', 'string', 'max:255'],
@@ -521,6 +634,38 @@ class ProformaCrear extends Component
             'diagnostico' => $this->diagnostico,
             'estado' => 'En Curso',
             'costo_total' => 0.00,
+        ]);
+
+        // Registrar Historia Clínica Inicial de la Proforma
+        HistoriaClinica::create([
+            'proforma_id' => $proforma->id,
+            'procedencia' => $this->procedencia ?: null,
+            'residencia' => $this->residencia ?: null,
+            'fuente_informacion' => $this->fuente_informacion ?: 'Paciente',
+            'motivo_consulta' => $this->motivo_consulta ?: null,
+            'enfermedad_actual' => $this->enfermedad_actual ?: null,
+            'antecedentes_patologicos' => $this->antecedentes_patologicos ?: null,
+            'antecedentes_no_patologicos' => $this->antecedentes_no_patologicos ?: null,
+            'menarca' => $this->menarca ?: null,
+            'fum' => $this->fum ?: null,
+            'gestas' => $this->gestas ?: null,
+            'partos' => $this->partos ?: null,
+            'cesareas' => $this->cesareas ?: null,
+            'abortos' => $this->abortos ?: null,
+            'pap' => $this->pap ?: null,
+            'gineco_otros' => $this->gineco_otros ?: null,
+            'pa' => $this->pa ?: null,
+            'fc' => $this->fc ?: null,
+            'fr' => $this->fr ?: null,
+            'temperatura' => $this->temperatura ?: null,
+            'sato2' => $this->sato2 ?: null,
+            'peso' => $this->peso ?: null,
+            'talla' => $this->talla ?: null,
+            'imc' => $this->imc ?: null,
+            'examen_fisico' => $this->examen_fisico ?: null,
+            'diagnostico' => $this->diagnostico ?: null,
+            'conducta' => $this->conducta ?: null,
+            'usuario_creador_id' => Auth::id(),
         ]);
 
         // 1. Asociar Médicos Tratantes

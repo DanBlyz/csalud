@@ -15,13 +15,57 @@
             </h1>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center flex-wrap gap-2">
+            <button 
+                wire:click="abrirModalHistoriaClinica" 
+                type="button" 
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-300 dark:border-teal-700 text-teal-800 dark:text-teal-200 text-xs font-semibold hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-colors cursor-pointer"
+                title="Ver y editar la Historia Clínica del paciente"
+            >
+                <i class="fas fa-file-medical-alt text-teal-600 dark:text-teal-400"></i>
+                <span>Historia Clínica</span>
+            </button>
+
+            @permiso('proformas.imprimir')
+                <a 
+                    href="{{ route('proformas.pdf.historia_clinica', $proforma->id) }}" 
+                    target="_blank"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                    title="Imprimir documento oficial de Historia Clínica en PDF"
+                >
+                    <i class="fas fa-print text-xs"></i>
+                    <span>Imprimir H.C.</span>
+                </a>
+            @endpermiso
+
+            <button 
+                wire:click="abrirModalEpicrisis" 
+                type="button" 
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                title="Ver y editar la Epicrisis médica de alta"
+            >
+                <i class="fas fa-file-signature text-emerald-600 dark:text-emerald-400"></i>
+                <span>Epicrisis (Alta)</span>
+            </button>
+
+            @permiso('proformas.imprimir')
+                <a 
+                    href="{{ route('proformas.pdf.epicrisis', $proforma->id) }}" 
+                    target="_blank"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                    title="Imprimir documento oficial de Epicrisis en PDF"
+                >
+                    <i class="fas fa-print text-xs"></i>
+                    <span>Imprimir Epicrisis</span>
+                </a>
+            @endpermiso
+
             @if ($proforma->estado !== 'Pagada')
                 @permiso('proformas.editar')
                     <button 
                         wire:click="abrirModalEditarCabecera" 
                         type="button" 
-                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                         <i class="fas fa-edit text-xs text-blue-500"></i>
                         <span>Editar Cabecera</span>
@@ -31,7 +75,7 @@
 
             <a 
                 href="{{ route('proformas.index') }}" 
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
                 <i class="fas fa-arrow-left text-xs"></i>
                 <span>Volver</span>
@@ -106,6 +150,14 @@
                             <span><strong class="text-slate-700 dark:text-slate-300">Edad:</strong> {{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'N/E' }}</span>
                             <span>•</span>
                             <span><strong class="text-slate-700 dark:text-slate-300">Teléfono:</strong> {{ $proforma->paciente->celular ?: 'Sin celular' }}</span>
+                            @if ($proforma->paciente->estado_civil)
+                                <span>•</span>
+                                <span><strong class="text-slate-700 dark:text-slate-300">Estado Civil:</strong> {{ $proforma->paciente->estado_civil }}</span>
+                            @endif
+                            @if ($proforma->paciente->ocupacion)
+                                <span>•</span>
+                                <span><strong class="text-slate-700 dark:text-slate-300">Ocupación:</strong> {{ $proforma->paciente->ocupacion }}</span>
+                            @endif
                             @if ($proforma->paciente->contacto_emergencia_nombre)
                                 <span>•</span>
                                 <span><strong class="text-amber-600 dark:text-amber-400">Emergencia:</strong> {{ $proforma->paciente->contacto_emergencia_nombre }} ({{ $proforma->paciente->contacto_emergencia_telefono }})</span>
@@ -180,17 +232,90 @@
                 </div>
             @endif
 
-            <!-- Diagnóstico / Motivo de Consulta -->
+            <!-- Diagnóstico / Motivo de Consulta y Resumen de Historia Clínica -->
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div class="p-3 rounded-xl bg-white/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                    <span class="font-bold uppercase tracking-wider text-[10px] text-slate-400 block mb-1">Motivo de Consulta</span>
-                    <p class="text-slate-700 dark:text-slate-300">{{ $proforma->motivo_consulta ?: 'Sin motivo registrado' }}</p>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-slate-400">Motivo de Consulta</span>
+                        @if ($proforma->historiaClinica)
+                            <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">
+                                <i class="fas fa-check-circle me-0.5"></i> H.C. Registrada
+                            </span>
+                        @endif
+                    </div>
+                    <p class="text-slate-700 dark:text-slate-300 font-medium">{{ $proforma->motivo_consulta ?: 'Sin motivo registrado' }}</p>
+                    @if ($proforma->historiaClinica?->enfermedad_actual)
+                        <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[11px] text-slate-500 dark:text-slate-400">
+                            <span class="font-bold text-slate-600 dark:text-slate-300">Enfermedad Actual:</span> {{ \Illuminate\Support\Str::limit($proforma->historiaClinica->enfermedad_actual, 140) }}
+                        </div>
+                    @endif
                 </div>
                 <div class="p-3 rounded-xl bg-white/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                    <span class="font-bold uppercase tracking-wider text-[10px] text-slate-400 block mb-1">Diagnóstico / Observación</span>
-                    <p class="text-slate-700 dark:text-slate-300">{{ $proforma->diagnostico ?: 'Sin diagnóstico preliminar' }}</p>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold uppercase tracking-wider text-[10px] text-slate-400">Diagnóstico / Impresión Clínica</span>
+                        <button wire:click="abrirModalHistoriaClinica" type="button" class="text-[10px] text-teal-600 hover:text-teal-800 dark:text-teal-400 font-bold flex items-center gap-1 cursor-pointer">
+                            <i class="fas fa-edit"></i> Ver / Editar H.C.
+                        </button>
+                    </div>
+                    <p class="text-slate-700 dark:text-slate-300 font-medium">{{ $proforma->diagnostico ?: 'Sin diagnóstico preliminar' }}</p>
+                    @if ($proforma->historiaClinica && ($proforma->historiaClinica->pa || $proforma->historiaClinica->fc || $proforma->historiaClinica->temperatura))
+                        <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center gap-2 text-[10px]">
+                            @if ($proforma->historiaClinica->pa)
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono"><strong>PA:</strong> {{ $proforma->historiaClinica->pa }}</span>
+                            @endif
+                            @if ($proforma->historiaClinica->fc)
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono"><strong>FC:</strong> {{ $proforma->historiaClinica->fc }} lpm</span>
+                            @endif
+                            @if ($proforma->historiaClinica->temperatura)
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono"><strong>T:</strong> {{ $proforma->historiaClinica->temperatura }} °C</span>
+                            @endif
+                            @if ($proforma->historiaClinica->sato2)
+                                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono"><strong>Sat:</strong> {{ $proforma->historiaClinica->sato2 }}%</span>
+                            @endif
+                            @if ($proforma->historiaClinica->imc)
+                                <span class="px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 font-mono font-bold"><strong>IMC:</strong> {{ $proforma->historiaClinica->imc }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
+
+            <!-- Resumen de Epicrisis Registrada -->
+            @if ($proforma->epicrisis)
+                <div class="mt-3 p-3.5 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/20 border border-cyan-200/80 dark:border-cyan-800/50 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                    <div class="flex items-start gap-2.5">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-600 text-white shadow-2xs mt-0.5">
+                            <i class="fas fa-file-medical text-xs"></i>
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-cyan-900 dark:text-cyan-200 uppercase tracking-wider text-[11px]">Epicrisis Clínica de Egreso</span>
+                                @if ($proforma->epicrisis->causa_egreso)
+                                    <span class="px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/60 text-cyan-800 dark:text-cyan-300 font-semibold text-[10px]">
+                                        {{ $proforma->epicrisis->causa_egreso }}
+                                    </span>
+                                @endif
+                                @if ($proforma->epicrisis->fecha_egreso)
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400">
+                                        Egreso: {{ $proforma->epicrisis->fecha_egreso->format('d/m/Y H:i') }}
+                                    </span>
+                                @endif
+                            </div>
+                            <p class="text-slate-600 dark:text-slate-300 mt-0.5 text-xs">
+                                <strong>Diagnóstico de Egreso:</strong> {{ $proforma->epicrisis->diagnostico_egreso ?: 'Sin diagnóstico de egreso especificado' }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 self-end md:self-center">
+                        <button wire:click="abrirModalEpicrisis" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-cyan-300 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300 font-semibold hover:bg-cyan-50 dark:hover:bg-slate-750 transition-colors shadow-2xs text-xs">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <a href="{{ route('proformas.pdf.epicrisis', $proforma->id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-semibold transition-colors shadow-2xs text-xs">
+                            <i class="fas fa-print"></i> PDF
+                        </a>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- CONSOLIDACIÓN DE COSTOS EN TIEMPO REAL -->
@@ -2276,6 +2401,486 @@
     <!-- ======================================================================= -->
     <!-- MODALES DE OPERACIÓN CLÍNICA -->
     <!-- ======================================================================= -->
+
+    <!-- MODAL HISTORIA CLÍNICA -->
+    @if ($modalHistoriaClinicaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl">
+                    <div class="px-6 py-4 bg-teal-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white shadow-xs">
+                                <i class="fas fa-file-medical-alt text-sm"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">
+                                    Historia Clínica del Paciente
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Expediente #{{ str_pad($proforma->id, 5, '0', STR_PAD_LEFT) }} • {{ $proforma->paciente->nombre_completo }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a 
+                                href="{{ route('proformas.pdf.historia_clinica', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
+                                title="Imprimir Historia Clínica Oficial en PDF"
+                            >
+                                <i class="fas fa-print text-xs text-teal-600"></i>
+                                <span>PDF</span>
+                            </a>
+                            <button wire:click="cerrarModalHistoriaClinica" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                                <i class="fas fa-times text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form wire:submit="guardarHistoriaClinica" class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                        <!-- Referencia rápida del paciente -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div class="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+                                <span><strong class="text-slate-900 dark:text-white">Paciente:</strong> {{ $proforma->paciente->nombre_completo }}</span>
+                                <span>•</span>
+                                <span><strong>CI:</strong> {{ $proforma->paciente->cedula ?: 'Sin CI' }}</span>
+                                <span>•</span>
+                                <span><strong>Edad:</strong> {{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>Sexo:</strong> {{ $proforma->paciente->genero ?? 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>Estado Civil:</strong> {{ $proforma->paciente->estado_civil ?: 'No especificado' }}</span>
+                                <span>•</span>
+                                <span><strong>Ocupación:</strong> {{ $proforma->paciente->ocupacion ?: 'No especificada' }}</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-400">N° H.C.: {{ $proforma->paciente->numero_historia_clinica }}</span>
+                        </div>
+
+                        <!-- 1. Filiación Complementaria -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-3">
+                                <i class="fas fa-id-card text-teal-600 dark:text-teal-400 me-1"></i> Filiación Complementaria
+                            </span>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Procedencia
+                                    </label>
+                                    <input type="text" wire:model="hc_procedencia" placeholder="Ej. La Paz, Santa Cruz..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Residencia (Domicilio)
+                                    </label>
+                                    <input type="text" wire:model="hc_residencia" placeholder="Ej. Calle ..., Zona ..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Fuente de Información
+                                    </label>
+                                    <input type="text" wire:model="hc_fuente_informacion" placeholder="Ej. Paciente, Tutor..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Motivo de Consulta y Enfermedad Actual -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Motivo de Consulta
+                                </label>
+                                <textarea wire:model="hc_motivo_consulta" rows="3" placeholder="Motivo o queja principal..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Historia de la Enfermedad Actual
+                                </label>
+                                <textarea wire:model="hc_enfermedad_actual" rows="3" placeholder="Cronología y sintomatología..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 3. Antecedentes Personales -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Antecedentes Personales Patológicos
+                                </label>
+                                <textarea wire:model="hc_antecedentes_patologicos" rows="2.5" placeholder="Enfermedades crónicas, quirúrgicos, alergias..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Antecedentes Personales No Patológicos
+                                </label>
+                                <textarea wire:model="hc_antecedentes_no_patologicos" rows="2.5" placeholder="Hábitos, inmunizaciones, alimentación..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 4. Antecedentes Ginecológicos -->
+                        <div class="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/70 dark:border-purple-800/40">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300 block mb-2.5">
+                                <i class="fas fa-venus text-purple-600 dark:text-purple-400 me-1"></i> Antecedentes Ginecológicos (Si aplica)
+                            </span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">MENARCA</label>
+                                    <input type="text" wire:model="hc_menarca" placeholder="Ej. 13 a." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FUM</label>
+                                    <input type="text" wire:model="hc_fum" placeholder="Ej. 12/04/24" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">G</label>
+                                    <input type="text" wire:model="hc_gestas" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">P</label>
+                                    <input type="text" wire:model="hc_partos" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">C</label>
+                                    <input type="text" wire:model="hc_cesareas" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">A</label>
+                                    <input type="text" wire:model="hc_abortos" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PAP</label>
+                                    <input type="text" wire:model="hc_pap" placeholder="Negativo" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Otros</label>
+                                    <input type="text" wire:model="hc_gineco_otros" placeholder="Regular" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Examen Físico y Signos Vitales -->
+                        <div class="space-y-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                                <i class="fas fa-heartbeat text-rose-500 me-1"></i> Examen Físico y Signos Vitales
+                            </span>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PA (mmHg)</label>
+                                    <input type="text" wire:model="hc_pa" placeholder="120/80" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FC (lpm)</label>
+                                    <input type="text" wire:model="hc_fc" placeholder="75" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FR (rpm)</label>
+                                    <input type="text" wire:model="hc_fr" placeholder="18" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">T (°C)</label>
+                                    <input type="text" wire:model="hc_temperatura" placeholder="36.5" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">SatO2 (%)</label>
+                                    <input type="text" wire:model="hc_sato2" placeholder="98" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">P (kg)</label>
+                                    <input type="text" wire:model.live.debounce.400ms="hc_peso" placeholder="70" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">T (cm)</label>
+                                    <input type="text" wire:model.live.debounce.400ms="hc_talla" placeholder="170" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">IMC</label>
+                                    <input type="text" wire:model="hc_imc" readonly placeholder="24.2" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 font-bold p-2 shadow-2xs">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Descripción del Examen Físico (Cabeza, Cuello, Tórax, Abdomen, Extremidades...)
+                                </label>
+                                <textarea wire:model="hc_examen_fisico" rows="3" placeholder="Hallazgos del examen físico..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 6. Diagnóstico y Conducta -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Diagnóstico Clínico / Impresión Presuntiva
+                                </label>
+                                <textarea wire:model="hc_diagnostico" rows="2.5" placeholder="Diagnóstico definitivo o presuntivo..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Conducta a Seguir / Plan Terapéutico
+                                </label>
+                                <textarea wire:model="hc_conducta" rows="2.5" placeholder="Plan terapéutico y manejo..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                            <a 
+                                href="{{ route('proformas.pdf.historia_clinica', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors"
+                            >
+                                <i class="fas fa-print text-teal-600"></i>
+                                <span>Imprimir Documento PDF</span>
+                            </a>
+                            <div class="flex items-center gap-2">
+                                <button wire:click="cerrarModalHistoriaClinica" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    wire:loading.attr="disabled"
+                                    wire:target="guardarHistoriaClinica"
+                                    class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <span wire:loading.remove wire:target="guardarHistoriaClinica">
+                                        <i class="fas fa-save me-1"></i> Guardar Historia Clínica
+                                    </span>
+                                    <span wire:loading wire:target="guardarHistoriaClinica">
+                                        <i class="fas fa-spinner fa-spin"></i> Guardando...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL EPICRISIS (SALIDA / ALTA MÉDICA) -->
+    @if ($modalEpicrisisOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-4xl">
+                    <div class="px-6 py-4 bg-cyan-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-600 text-white shadow-xs">
+                                <i class="fas fa-file-medical text-sm"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">
+                                    Epicrisis Médica (Documento de Salida)
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Expediente #{{ str_pad($proforma->id, 5, '0', STR_PAD_LEFT) }} • {{ $proforma->paciente->nombre_completo }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a 
+                                href="{{ route('proformas.pdf.epicrisis', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
+                                title="Imprimir Epicrisis Oficial en PDF"
+                            >
+                                <i class="fas fa-print text-xs text-cyan-600"></i>
+                                <span>PDF</span>
+                            </a>
+                            <button wire:click="cerrarModalEpicrisis" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                                <i class="fas fa-times text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form wire:submit="guardarEpicrisis" class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                        <!-- Referencia rápida de Filiación del Paciente -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div class="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+                                <span><strong class="text-slate-900 dark:text-white">Paciente:</strong> {{ $proforma->paciente->nombre_completo }}</span>
+                                <span>•</span>
+                                <span><strong>Sexo:</strong> {{ $proforma->paciente->genero ?? 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>Edad al Ingreso:</strong> {{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>Teléfono:</strong> {{ $proforma->paciente->telefono ?: 'S/N' }}</span>
+                                <span>•</span>
+                                <span><strong>Fecha Ingreso:</strong> {{ $proforma->fecha_ingreso?->format('d/m/Y H:i') ?: 'N/E' }}</span>
+                            </div>
+                            <span class="text-[11px] font-mono font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-100/70 dark:bg-cyan-950/60 px-2 py-0.5 rounded">
+                                N° H.C.: {{ $proforma->paciente->numero_historia_clinica }}
+                            </span>
+                        </div>
+
+                        <!-- 1. Parámetros de Internación / Ubicación y Salida -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-3">
+                                <i class="fas fa-hospital-user text-cyan-600 dark:text-cyan-400 me-1"></i> Parámetros de Estancia y Salida
+                            </span>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Cama / Pieza
+                                    </label>
+                                    <input type="text" wire:model="epi_cama" placeholder="Ej. Cama 3, Hab. 102..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Servicio
+                                    </label>
+                                    <input type="text" wire:model="epi_servicio" placeholder="Ej. Medicina Interna, Cirugía..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Fecha y Hora de Egreso
+                                    </label>
+                                    <input type="datetime-local" wire:model="epi_fecha_egreso" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Condiciones y Diagnósticos -->
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Condiciones de Ingreso
+                                    </label>
+                                    <input type="text" wire:model="epi_condiciones_ingreso" placeholder="Ej. Regular estado general, consciente, orientado..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Diagnóstico de Ingreso
+                                    </label>
+                                    <input type="text" wire:model="epi_diagnostico_ingreso" placeholder="Diagnóstico al momento de admisión..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Condiciones de Egreso
+                                    </label>
+                                    <input type="text" wire:model="epi_condiciones_egreso" placeholder="Ej. Estable, asintomático, afebril, hemodinámicamente estable..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Diagnóstico de Egreso
+                                    </label>
+                                    <input type="text" wire:model="epi_diagnostico_egreso" placeholder="Diagnóstico definitivo al alta..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Causa de Egreso
+                                </label>
+                                <input type="text" wire:model="epi_causa_egreso" list="lista_causas_egreso" placeholder="Ej. Alta médica, Mejoría clínica, Transferencia, Retiro voluntario, Fallecimiento..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                <datalist id="lista_causas_egreso">
+                                    <option value="Alta médica por curación">
+                                    <option value="Alta médica por mejoría">
+                                    <option value="Alta solicitada / Retiro voluntario">
+                                    <option value="Transferencia a otro centro">
+                                    <option value="Fuga del paciente">
+                                    <option value="Fallecimiento">
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <!-- 3. Secciones Clínicas Detalladas -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Estudios Complementarios
+                                </label>
+                                <textarea wire:model="epi_estudios_complementarios" rows="2.5" placeholder="Laboratorios, ecografías, radiografías, tomografías realizadas..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Antecedentes Relevantes
+                                </label>
+                                <textarea wire:model="epi_antecedentes_relevantes" rows="2" placeholder="Antecedentes patológicos o quirúrgicos de interés..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Historia Médica Actual
+                                </label>
+                                <textarea wire:model="epi_historia_medica_actual" rows="2.5" placeholder="Resumen del cuadro clínico y evolución intrahospitalaria..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Procedimientos
+                                    </label>
+                                    <textarea wire:model="epi_procedimientos" rows="2.5" placeholder="Cirugías, punciones, curaciones, intubación..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Tratamiento Realizado
+                                    </label>
+                                    <textarea wire:model="epi_tratamiento_realizado" rows="2.5" placeholder="Esquema terapéutico administrado durante la estancia..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Indicaciones de Alta
+                                </label>
+                                <textarea wire:model="epi_indicaciones_alta" rows="2.5" placeholder="Medicación ambulatoria, reposo, dieta, signos de alarma..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 4. Cierre: Próxima Cita y Observaciones -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Próxima Cita / Control
+                                </label>
+                                <input type="text" wire:model="epi_proxima_cita" placeholder="Ej. En 7 días por consulta externa, 15/11/2026..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Observaciones
+                                </label>
+                                <input type="text" wire:model="epi_observaciones" placeholder="Notas adicionales al egreso..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                            <a 
+                                href="{{ route('proformas.pdf.epicrisis', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors"
+                            >
+                                <i class="fas fa-print text-cyan-600"></i>
+                                <span>Imprimir Documento PDF</span>
+                            </a>
+                            <div class="flex items-center gap-2">
+                                <button wire:click="cerrarModalEpicrisis" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    wire:loading.attr="disabled"
+                                    wire:target="guardarEpicrisis"
+                                    class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md shadow-cyan-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <span wire:loading.remove wire:target="guardarEpicrisis">
+                                        <i class="fas fa-save me-1"></i> Guardar Epicrisis
+                                    </span>
+                                    <span wire:loading wire:target="guardarEpicrisis">
+                                        <i class="fas fa-spinner fa-spin"></i> Guardando...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- MODAL 1: EDITAR CABECERA -->
     @if ($modalEditarCabeceraOpen)

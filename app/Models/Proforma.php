@@ -88,6 +88,16 @@ class Proforma extends Model
         return $this->hasMany(ProformaServicio::class, 'proforma_id');
     }
 
+    public function historiaClinica(): HasOne
+    {
+        return $this->hasOne(HistoriaClinica::class, 'proforma_id');
+    }
+
+    public function epicrisis(): HasOne
+    {
+        return $this->hasOne(Epicrisis::class, 'proforma_id');
+    }
+
     public function solicitudes(): HasMany
     {
         return $this->hasMany(ProformaSolicitud::class, 'proforma_id');

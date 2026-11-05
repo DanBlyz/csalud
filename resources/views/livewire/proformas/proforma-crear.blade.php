@@ -85,6 +85,14 @@
                                 <span><span class="font-medium text-slate-700 dark:text-slate-300">Edad:</span> {{ $pacienteSeleccionado->edadEnFecha($fecha_ingreso ?: now()) !== null ? "{$pacienteSeleccionado->edadEnFecha($fecha_ingreso ?: now())} años" : 'N/E' }}</span>
                                 <span>•</span>
                                 <span><span class="font-medium text-slate-700 dark:text-slate-300">Celular:</span> {{ $pacienteSeleccionado->celular ?: 'Sin celular' }}</span>
+                                @if ($pacienteSeleccionado->estado_civil)
+                                    <span>•</span>
+                                    <span><span class="font-medium text-slate-700 dark:text-slate-300">Estado Civil:</span> {{ $pacienteSeleccionado->estado_civil }}</span>
+                                @endif
+                                @if ($pacienteSeleccionado->ocupacion)
+                                    <span>•</span>
+                                    <span><span class="font-medium text-slate-700 dark:text-slate-300">Ocupación:</span> {{ $pacienteSeleccionado->ocupacion }}</span>
+                                @endif
                                 @if ($pacienteSeleccionado->contacto_emergencia_nombre)
                                     <span>•</span>
                                     <span><span class="font-medium text-amber-600 dark:text-amber-400">Emerg:</span> {{ $pacienteSeleccionado->contacto_emergencia_nombre }} ({{ $pacienteSeleccionado->contacto_emergencia_telefono }})</span>
@@ -179,10 +187,216 @@
             @endif
         </div>
 
-        <!-- SECCIÓN 2: PARÁMETROS OPERATIVOS Y ATENCIÓN CLÍNICA -->
+        <!-- SECCIÓN 2: HISTORIA CLÍNICA (INGRESO) -->
+        <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-xs font-bold">2</span>
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            Historia Clínica (Apertura e Ingreso)
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Anamnesis reglada, antecedentes clínicos, examen físico y signos vitales al momento del ingreso.
+                        </p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60">
+                    <i class="fas fa-notes-medical"></i> Expediente Clínico
+                </span>
+            </div>
+
+            <!-- 1. Filiación Complementaria (Procedencia, Residencia y Fuente) -->
+            <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-3">
+                    <i class="fas fa-id-card text-teal-600 dark:text-teal-400 me-1"></i> Filiación Complementaria
+                </span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="procedencia" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Procedencia (Lugar de Origen)
+                        </label>
+                        <input type="text" id="procedencia" wire:model="procedencia" placeholder="Ej. La Paz, Santa Cruz, Sucre..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                        @error('procedencia') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="residencia" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Residencia Actual (Domicilio)
+                        </label>
+                        <input type="text" id="residencia" wire:model="residencia" placeholder="Ej. Av. Blanco Galindo Km 5..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                        @error('residencia') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="fuente_informacion" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Fuente de Información
+                        </label>
+                        <input type="text" id="fuente_informacion" wire:model="fuente_informacion" placeholder="Ej. Paciente, Madre, Tutor..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                        @error('fuente_informacion') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Motivo de Consulta e Historia de la Enfermedad Actual -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="motivo_consulta" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Motivo de Consulta <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="motivo_consulta" wire:model="motivo_consulta" rows="3" placeholder="Razón o queja principal que motivó la consulta médica..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('motivo_consulta') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="enfermedad_actual" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Historia de la Enfermedad Actual
+                    </label>
+                    <textarea id="enfermedad_actual" wire:model="enfermedad_actual" rows="3" placeholder="Cronología, evolución de síntomas, tratamientos previos tomados..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('enfermedad_actual') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <!-- 3. Antecedentes Personales Patológicos y No Patológicos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="antecedentes_patologicos" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Antecedentes Personales Patológicos
+                    </label>
+                    <textarea id="antecedentes_patologicos" wire:model="antecedentes_patologicos" rows="2" placeholder="Enfermedades crónicas, quirúrgicos, traumáticos, alergias..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('antecedentes_patologicos') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="antecedentes_no_patologicos" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Antecedentes Personales No Patológicos
+                    </label>
+                    <textarea id="antecedentes_no_patologicos" wire:model="antecedentes_no_patologicos" rows="2" placeholder="Inmunizaciones, hábitos higiénico-dietéticos, alcohol, tabaco..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('antecedentes_no_patologicos') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <!-- 4. Antecedentes Ginecológicos / Obstétricos -->
+            <div class="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/70 dark:border-purple-800/40">
+                <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                        <i class="fas fa-venus text-purple-600 dark:text-purple-400 me-1"></i> Antecedentes Ginecológicos (Si aplica)
+                    </span>
+                    <span class="text-[11px] text-purple-600 dark:text-purple-400 font-medium">Fórmula Obstétrica y Ginecológica</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2.5">
+                    <div>
+                        <label for="menarca" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">MENARCA</label>
+                        <input type="text" id="menarca" wire:model="menarca" placeholder="Ej. 13 a." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="fum" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FUM</label>
+                        <input type="text" id="fum" wire:model="fum" placeholder="Ej. 12/04/24" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="gestas" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">G (Gestas)</label>
+                        <input type="text" id="gestas" wire:model="gestas" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="partos" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">P (Partos)</label>
+                        <input type="text" id="partos" wire:model="partos" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="cesareas" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">C (Cesáreas)</label>
+                        <input type="text" id="cesareas" wire:model="cesareas" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="abortos" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">A (Abortos)</label>
+                        <input type="text" id="abortos" wire:model="abortos" placeholder="0" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="pap" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PAP</label>
+                        <input type="text" id="pap" wire:model="pap" placeholder="Ej. Negativo" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="gineco_otros" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Otros / Ciclos</label>
+                        <input type="text" id="gineco_otros" wire:model="gineco_otros" placeholder="Regular" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Examen Físico: Signos Vitales y Descripción Regional -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        <i class="fas fa-heartbeat text-rose-500 me-1"></i> Examen Físico y Signos Vitales
+                    </label>
+                    <span class="text-[11px] text-slate-400">El IMC se calcula automáticamente al ingresar Peso y Talla</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                    <div>
+                        <label for="pa" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">PA (mmHg)</label>
+                        <input type="text" id="pa" wire:model="pa" placeholder="120/80" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="fc" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FC (lpm)</label>
+                        <input type="text" id="fc" wire:model="fc" placeholder="75" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="fr" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">FR (rpm)</label>
+                        <input type="text" id="fr" wire:model="fr" placeholder="18" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="temperatura" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">T (°C)</label>
+                        <input type="text" id="temperatura" wire:model="temperatura" placeholder="36.5" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="sato2" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">SatO2 (%)</label>
+                        <input type="text" id="sato2" wire:model="sato2" placeholder="98" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="peso" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">P (kg)</label>
+                        <input type="text" id="peso" wire:model.live.debounce.400ms="peso" placeholder="70" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="talla" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">T (cm)</label>
+                        <input type="text" id="talla" wire:model.live.debounce.400ms="talla" placeholder="170" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs">
+                    </div>
+                    <div>
+                        <label for="imc" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">IMC</label>
+                        <input type="text" id="imc" wire:model="imc" placeholder="24.2" readonly class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 font-bold p-2 shadow-2xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="examen_fisico" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Descripción del Examen Físico (General, Cabeza, Cuello, Tórax, Abdomen, Extremidades, Neurológico)
+                    </label>
+                    <textarea id="examen_fisico" wire:model="examen_fisico" rows="3" placeholder="Hallazgos clínicos observados durante la exploración física..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('examen_fisico') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <!-- 6. Diagnóstico y Conducta -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="diagnostico" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Diagnóstico Clínico / Impresión Presuntiva
+                    </label>
+                    <textarea id="diagnostico" wire:model="diagnostico" rows="2.5" placeholder="Diagnóstico definitivo o presuntivo según CIE-10..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('diagnostico') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="conducta" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Conducta a Seguir / Plan Terapéutico
+                    </label>
+                    <textarea id="conducta" wire:model="conducta" rows="2.5" placeholder="Plan de manejo, hospitalización, solicitud de laboratorios, indicaciones..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
+                    @error('conducta') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: PARÁMETROS OPERATIVOS Y MODALIDAD DE ATENCIÓN -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-6">
             <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <span class="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold">2</span>
+                <span class="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold">3</span>
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     Modalidad y Responsables de la Atención
                 </h2>
@@ -339,30 +553,13 @@
                     @error('fecha_salida') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
-
-            <!-- Motivo de Consulta y Diagnóstico Preliminar -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="motivo_consulta" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Motivo de Consulta y Síntomas Iniciales
-                    </label>
-                    <textarea id="motivo_consulta" wire:model="motivo_consulta" rows="2" placeholder="Descripción detallada de la queja principal del paciente..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 p-2.5 shadow-2xs"></textarea>
-                </div>
-
-                <div>
-                    <label for="diagnostico" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                        Diagnóstico Preliminar / Impresión Clínica
-                    </label>
-                    <textarea id="diagnostico" wire:model="diagnostico" rows="2" placeholder="Hipótesis diagnóstica o diagnóstico presuntivo..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 p-2.5 shadow-2xs"></textarea>
-                </div>
-            </div>
         </div>
 
-        <!-- SECCIÓN 3: SERVICIOS Y PROCEDIMIENTOS MÉDICOS (EN LOTE) -->
+        <!-- SECCIÓN 4: SERVICIOS Y PROCEDIMIENTOS MÉDICOS (EN LOTE) -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold">3</span>
+                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold">4</span>
                     <div>
                         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                             Servicios y Procedimientos Médicos
@@ -475,11 +672,11 @@
             @endif
         </div>
 
-        <!-- SECCIÓN 4: SOLICITUDES Y EXÁMENES (EN LOTE) -->
+        <!-- SECCIÓN 5: SOLICITUDES Y EXÁMENES (EN LOTE) -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 text-xs font-bold">4</span>
+                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 text-xs font-bold">5</span>
                     <div>
                         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                             Solicitudes de Exámenes y Estudios Clínicos
@@ -568,11 +765,11 @@
             @endif
         </div>
 
-        <!-- SECCIÓN 5: CRONOGRAMA Y CALENDARIO (EN LOTE) -->
+        <!-- SECCIÓN 6: CRONOGRAMA Y CALENDARIO (EN LOTE) -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 text-xs font-bold">5</span>
+                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 text-xs font-bold">6</span>
                     <div>
                         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                             Cronograma y Actividades del Paciente
@@ -651,11 +848,11 @@
             @endif
         </div>
 
-        <!-- SECCIÓN 6: PRESCRIPCIÓN Y RECETA MÉDICA INICIAL (EN LOTE) -->
+        <!-- SECCIÓN 7: PRESCRIPCIÓN Y RECETA MÉDICA INICIAL (EN LOTE) -->
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold">6</span>
+                    <span class="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold">7</span>
                     <div>
                         <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                             Prescripción de Receta Médica Inicial (Opcional)
@@ -931,6 +1128,30 @@
                                     Dirección
                                 </label>
                                 <input type="text" id="nuevo_direccion" wire:model="nuevo_direccion" placeholder="Calle, Zona..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label for="nuevo_estado_civil" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Estado Civil
+                                </label>
+                                <select id="nuevo_estado_civil" wire:model="nuevo_estado_civil" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Soltero(a)">Soltero(a)</option>
+                                    <option value="Casado(a)">Casado(a)</option>
+                                    <option value="Divorciado(a)">Divorciado(a)</option>
+                                    <option value="Viudo(a)">Viudo(a)</option>
+                                    <option value="Unión Libre">Unión Libre</option>
+                                </select>
+                                @error('nuevo_estado_civil') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="nuevo_ocupacion" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Ocupación / Profesión
+                                </label>
+                                <input type="text" id="nuevo_ocupacion" wire:model="nuevo_ocupacion" placeholder="Ej. Ingeniero, Comerciante..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                                @error('nuevo_ocupacion') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
 

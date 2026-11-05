@@ -26,8 +26,10 @@ class Paciente extends Model
         'cedula',
         'fecha_nacimiento',
         'genero',
-        'direccion',
+        'direccion', // residencia
         'celular',
+        'estado_civil',
+        'ocupacion',
         'contacto_emergencia_nombre',
         'contacto_emergencia_telefono',
         'antecedentes_alergias',

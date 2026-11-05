@@ -176,4 +176,46 @@ class ProformaPdfController extends Controller
 
         return $pdf->stream("receta-{$receta->id}-proforma-{$proforma->id}.pdf");
     }
+
+    /**
+     * Genera e imprime la Historia Clínica en PDF.
+     */
+    public function historiaClinica(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'medicos.especialidad',
+            'historiaClinica.usuarioCreador',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-historia-clinica', [
+            'proforma' => $proforma,
+            'historia' => $proforma->historiaClinica,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("historia-clinica-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Epicrisis de Alta Médica en PDF.
+     */
+    public function epicrisis(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'medicos.especialidad',
+            'epicrisis.usuarioCreador',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-epicrisis', [
+            'proforma' => $proforma,
+            'epicrisis' => $proforma->epicrisis,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("epicrisis-proforma-{$proforma->id}.pdf");
+    }
 }

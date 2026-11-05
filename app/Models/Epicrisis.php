@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Models;
+
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Epicrisis extends Model
+{
+    use Auditable, HasFactory, SoftDeletes;
+
+    protected $table = 'epicrisis';
+
+    protected $fillable = [
+        'proforma_id',
+        'cama',
+        'servicio',
+        'fecha_egreso',
+        'condiciones_ingreso',
+        'diagnostico_ingreso',
+        'condiciones_egreso',
+        'diagnostico_egreso',
+        'causa_egreso',
+        'estudios_complementarios',
+        'antecedentes_relevantes',
+        'historia_medica_actual',
+        'procedimientos',
+        'tratamiento_realizado',
+        'indicaciones_alta',
+        'proxima_cita',
+        'observaciones',
+        'usuario_creador_id',
+        'usuario_modificador_id',
+        'usuario_eliminador_id',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'fecha_egreso' => 'datetime',
+        ];
+    }
+
+    public function proforma(): BelongsTo
+    {
+        return $this->belongsTo(Proforma::class, 'proforma_id');
+    }
+
+    public function usuarioCreador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'usuario_creador_id');
+    }
+
+    public function usuarioModificador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'usuario_modificador_id');
+    }
+}
+

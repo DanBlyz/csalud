@@ -50,6 +50,10 @@ class PacientesIndex extends Component
 
     public string $celular = '';
 
+    public string $estado_civil = '';
+
+    public string $ocupacion = '';
+
     public string $contacto_emergencia_nombre = '';
 
     public string $contacto_emergencia_telefono = '';
@@ -98,6 +102,8 @@ class PacientesIndex extends Component
             'genero' => ['required', 'in:Masculino,Femenino,Otro'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'celular' => ['nullable', 'string', 'max:20'],
+            'estado_civil' => ['nullable', 'string', 'max:50'],
+            'ocupacion' => ['nullable', 'string', 'max:150'],
             'contacto_emergencia_nombre' => ['nullable', 'string', 'max:150'],
             'contacto_emergencia_telefono' => ['nullable', 'string', 'max:20'],
             'antecedentes_alergias' => ['nullable', 'string', 'max:1000'],
@@ -138,6 +144,8 @@ class PacientesIndex extends Component
             'genero',
             'direccion',
             'celular',
+            'estado_civil',
+            'ocupacion',
             'contacto_emergencia_nombre',
             'contacto_emergencia_telefono',
             'antecedentes_alergias',
@@ -171,6 +179,8 @@ class PacientesIndex extends Component
         $this->genero = $paciente->genero ?? 'Masculino';
         $this->direccion = $paciente->direccion ?? '';
         $this->celular = $paciente->celular ?? '';
+        $this->estado_civil = $paciente->estado_civil ?? '';
+        $this->ocupacion = $paciente->ocupacion ?? '';
         $this->contacto_emergencia_nombre = $paciente->contacto_emergencia_nombre ?? '';
         $this->contacto_emergencia_telefono = $paciente->contacto_emergencia_telefono ?? '';
         $this->antecedentes_alergias = $paciente->antecedentes_alergias ?? '';
