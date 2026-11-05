@@ -6,11 +6,13 @@ use App\Livewire\Proformas\ProformaDetalle;
 use App\Livewire\Proformas\ProformasIndex;
 use App\Models\Caja;
 use App\Models\Categoria;
+use App\Models\Cirugia;
 use App\Models\ConsumoExtra;
 use App\Models\Epicrisis;
 use App\Models\Evolucion;
 use App\Models\HistoriaClinica;
 use App\Models\Indicacion;
+use App\Models\Institucion;
 use App\Models\Internacion;
 use App\Models\Lote;
 use App\Models\MovimientoInventario;
@@ -25,6 +27,7 @@ use App\Models\ProformaSolicitud;
 use App\Models\Receta;
 use App\Models\RecetaDetalle;
 use App\Models\Rol;
+use App\Models\Seccion;
 use App\Models\Servicio;
 use App\Models\Sucursal;
 use App\Models\TipoSolicitud;
@@ -1826,4 +1829,229 @@ test('puede generar el documento oficial pdf de la epicrisis', function () {
     $response = $this->get(route('proformas.pdf.epicrisis', $proforma->id));
     $response->assertStatus(200);
     $response->assertHeader('content-type', 'application/pdf');
+});
+
+test('puede abrir pestaña, registrar, encolar medicamentos y guardar descargo de quirofano en proforma detalle', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Carlos',
+        'apellido_paterno' => 'Mendoza',
+        'cedula' => 'CI-CQ-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1985-03-20',
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'pieza' => 'Quirófano 1',
+        'diagnostico' => 'Colecistitis aguda litiásica',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // Crear sección de quirófano
+    $seccionQuirofano = Seccion::firstOrCreate(
+        ['nombre' => 'Quirofano', 'sucursal_id' => $this->sucursal->id],
+        ['activo' => true]
+    );
+
+    // Crear producto con stock en lote
+    $producto = Producto::factory()->create([
+        'nombre' => 'Propofol 1% 20ml',
+        'ultimo_precio_venta' => 45.00,
+    ]);
+
+    Lote::create([
+        'producto_id' => $producto->id,
+        'sucursal_id' => $this->sucursal->id,
+        'numero_lote' => 'LOT-PROP-'.rand(100, 999),
+        'cantidad_ingresada' => 20,
+        'cantidad_actual' => 15,
+        'precio_compra' => 30.00,
+        'precio_venta' => 45.00,
+    ]);
+
+    $cirujano = User::factory()->create([
+        'rol_id' => $this->rolAdmin->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    $anestesiologo = User::factory()->create([
+        'rol_id' => $this->rolAdmin->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'cirugias')
+        ->assertSet('tab', 'cirugias')
+        ->call('abrirModalNuevaCirugia')
+        ->assertSet('modalCirugiaOpen', true)
+        ->set('cir_especialidad', 'Cirugía Laparoscópica')
+        ->set('cir_cirugia_efectuada', 'Colecistectomía laparoscópica')
+        ->set('cir_tipo_cirugia', 'Mayor')
+        ->set('cir_cirujano_id', $cirujano->id)
+        ->set('cir_anestesiologo_id', $anestesiologo->id)
+        ->set('cir_torre_laparoscopia', true)
+        ->set('cir_electrobisturi', true)
+        ->call('seleccionarMedicamentoCirugia', $producto->id)
+        ->assertSet('cir_medicamento_costo_unitario', '45.00')
+        ->set('cir_medicamento_seccion_id', $seccionQuirofano->id)
+        ->set('cir_medicamento_area', 'Anestesiología')
+        ->set('cir_medicamento_cantidad', 2)
+        ->set('cir_medicamento_indicaciones', 'Inducción anestésica')
+        ->call('agregarMedicamentoACirugia')
+        ->assertCount('cola_medicamentos_cirugia', 1)
+        ->call('guardarCirugia')
+        ->assertDispatched('swal')
+        ->assertSet('modalCirugiaOpen', false);
+
+    // Verificar en BD
+    $cirugia = Cirugia::where('proforma_id', $proforma->id)->first();
+    expect($cirugia)->not->toBeNull();
+    expect($cirugia->cirugia_efectuada)->toBe('Colecistectomía laparoscópica');
+    expect($cirugia->cirujano_id)->toBe($cirujano->id);
+    expect($cirugia->anestesiologo_id)->toBe($anestesiologo->id);
+    expect($cirugia->torre_laparoscopia)->toBeTrue();
+
+    // Verificar la receta quirúrgica vinculada
+    $recetaCirugia = Receta::where('cirugia_id', $cirugia->id)->first();
+    expect($recetaCirugia)->not->toBeNull();
+    expect($recetaCirugia->tipo)->toBe('Quirófano');
+    expect($recetaCirugia->detalles()->count())->toBe(1);
+
+    $detalle = $recetaCirugia->detalles()->first();
+    expect($detalle->producto_id)->toBe($producto->id);
+    expect($detalle->seccion_id)->toBe($seccionQuirofano->id);
+    expect($detalle->area_quirurgica)->toBe('Anestesiología');
+    expect($detalle->cantidad)->toBe(2);
+    expect((float) $detalle->costo_unitario)->toBe(45.00);
+});
+
+test('puede generar los documentos pdf de anestesiologia, enfermeria y descargo completo de quirofano', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Patricia',
+        'apellido_paterno' => 'Vargas',
+        'cedula' => 'CI-PDFCQ-'.rand(1000, 9999),
+        'fecha_nacimiento' => '1992-07-14',
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $cirugia = Cirugia::create([
+        'proforma_id' => $proforma->id,
+        'numero' => 'CQ-TEST-01',
+        'fecha' => now(),
+        'especialidad' => 'Cirugía General',
+        'cirugia_efectuada' => 'Apendicectomía Laparoscópica',
+        'diagnostico_operacion' => 'Apendicitis aguda flegmonosa',
+        'tipo_cirugia' => 'Media',
+        'tipo_anestesia' => 'General',
+        'cirujano_id' => $this->admin->id,
+        'torre_laparoscopia' => true,
+    ]);
+
+    $seccion = Seccion::firstOrCreate(
+        ['nombre' => 'Farmacia Central', 'sucursal_id' => $this->sucursal->id],
+        ['activo' => true]
+    );
+
+    $prodAnestesia = Producto::factory()->create(['nombre' => 'Fentanilo 0.5mg/10ml', 'ultimo_precio_venta' => 25.50]);
+    $prodEnfermeria = Producto::factory()->create(['nombre' => 'Vicryl 3-0 con aguja', 'ultimo_precio_venta' => 18.00]);
+
+    $receta = Receta::create([
+        'proforma_id' => $proforma->id,
+        'cirugia_id' => $cirugia->id,
+        'user_id' => $this->admin->id,
+        'fecha_prescripcion' => now(),
+        'tipo' => 'Quirófano',
+        'estado' => 'Activa',
+    ]);
+
+    $receta->detalles()->create([
+        'producto_id' => $prodAnestesia->id,
+        'seccion_id' => $seccion->id,
+        'area_quirurgica' => 'Anestesiología',
+        'cantidad' => 2,
+        'costo_unitario' => 25.50,
+    ]);
+
+    $receta->detalles()->create([
+        'producto_id' => $prodEnfermeria->id,
+        'seccion_id' => $seccion->id,
+        'area_quirurgica' => 'Enfermería',
+        'cantidad' => 3,
+        'costo_unitario' => 18.00,
+    ]);
+
+    // Hoja Anestesiología
+    $resAnestesia = $this->get(route('proformas.pdf.cirugia_anestesiologia', [$proforma->id, $cirugia->id]));
+    $resAnestesia->assertStatus(200);
+    $resAnestesia->assertHeader('content-type', 'application/pdf');
+
+    // Hoja Enfermería
+    $resEnfermeria = $this->get(route('proformas.pdf.cirugia_enfermeria', [$proforma->id, $cirugia->id]));
+    $resEnfermeria->assertStatus(200);
+    $resEnfermeria->assertHeader('content-type', 'application/pdf');
+
+    // Descargo Completo (ambas hojas)
+    $resCompleto = $this->get(route('proformas.pdf.cirugia', [$proforma->id, $cirugia->id]));
+    $resCompleto->assertStatus(200);
+    $resCompleto->assertHeader('content-type', 'application/pdf');
+});
+
+test('autocompleta convenio institucional en modal de cirugia si el paciente tiene institucion asignada', function () {
+    $this->actingAs($this->admin);
+
+    $institucion = Institucion::create([
+        'nombre' => 'Seguro Salud BISA',
+        'estado' => 'Activo',
+    ]);
+
+    $pacienteConConvenio = Paciente::create([
+        'institucion_id' => $institucion->id,
+        'nombres' => 'Fernando',
+        'apellido_paterno' => 'Guzman',
+        'cedula' => 'CI-CONV-'.rand(1000, 9999),
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $pacienteConConvenio->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // Al abrir el modal de nueva cirugía debe autocompletar automáticamente el nombre del convenio
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalNuevaCirugia')
+        ->assertSet('cir_es_convenio', true)
+        ->assertSet('cir_es_institucional', false)
+        ->assertSet('cir_convenio_nombre', 'Seguro Salud BISA')
+        // Si el usuario conmuta a Institucional
+        ->set('cir_es_institucional', true)
+        ->assertSet('cir_es_convenio', false)
+        ->assertSet('cir_convenio_nombre', '')
+        // Si vuelve a conmutar a Convenio se debe re-autocompletar con la institución del paciente
+        ->set('cir_es_convenio', true)
+        ->assertSet('cir_es_institucional', false)
+        ->assertSet('cir_convenio_nombre', 'Seguro Salud BISA');
 });

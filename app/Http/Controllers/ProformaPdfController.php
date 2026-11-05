@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cirugia;
 use App\Models\Proforma;
 use App\Models\Receta;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -217,5 +218,95 @@ class ProformaPdfController extends Controller
         ])->setPaper('letter', 'portrait');
 
         return $pdf->stream("epicrisis-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Descargo Completo de Quirófano (Hoja Anestesiología + Hoja Enfermería).
+     */
+    public function cirugia(Proforma $proforma, Cirugia $cirugia): Response
+    {
+        if ($cirugia->proforma_id !== $proforma->id) {
+            abort(404, 'La cirugía no corresponde a la proforma indicada.');
+        }
+
+        $proforma->load(['paciente.institucion', 'sucursal']);
+        $cirugia->load([
+            'cirujano',
+            'primerAyudante',
+            'segundoAyudante',
+            'anestesiologo',
+            'instrumentador',
+            'circulante',
+            'receta.detalles.producto',
+            'receta.detalles.seccion',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-cirugia', [
+            'proforma' => $proforma,
+            'cirugia' => $cirugia,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("descargo-quirofano-{$cirugia->numero}-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Hoja de Anestesiología del Descargo de Quirófano.
+     */
+    public function cirugiaAnestesiologia(Proforma $proforma, Cirugia $cirugia): Response
+    {
+        if ($cirugia->proforma_id !== $proforma->id) {
+            abort(404, 'La cirugía no corresponde a la proforma indicada.');
+        }
+
+        $proforma->load(['paciente.institucion', 'sucursal']);
+        $cirugia->load([
+            'cirujano',
+            'primerAyudante',
+            'segundoAyudante',
+            'anestesiologo',
+            'instrumentador',
+            'circulante',
+            'receta.detalles.producto',
+            'receta.detalles.seccion',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-cirugia-anestesiologia', [
+            'proforma' => $proforma,
+            'cirugia' => $cirugia,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("hoja-anestesiologia-{$cirugia->numero}-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Hoja de Enfermería del Descargo de Quirófano.
+     */
+    public function cirugiaEnfermeria(Proforma $proforma, Cirugia $cirugia): Response
+    {
+        if ($cirugia->proforma_id !== $proforma->id) {
+            abort(404, 'La cirugía no corresponde a la proforma indicada.');
+        }
+
+        $proforma->load(['paciente.institucion', 'sucursal']);
+        $cirugia->load([
+            'cirujano',
+            'primerAyudante',
+            'segundoAyudante',
+            'anestesiologo',
+            'instrumentador',
+            'circulante',
+            'receta.detalles.producto',
+            'receta.detalles.seccion',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-cirugia-enfermeria', [
+            'proforma' => $proforma,
+            'cirugia' => $cirugia,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("hoja-enfermeria-{$cirugia->numero}-proforma-{$proforma->id}.pdf");
     }
 }

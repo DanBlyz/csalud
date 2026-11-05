@@ -123,6 +123,11 @@ class Proforma extends Model
         return $this->hasMany(ProformaCalendario::class, 'proforma_id');
     }
 
+    public function cirugias(): HasMany
+    {
+        return $this->hasMany(Cirugia::class, 'proforma_id');
+    }
+
     public function recetas(): HasMany
     {
         return $this->hasMany(Receta::class, 'proforma_id');

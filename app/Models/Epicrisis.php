@@ -62,4 +62,3 @@ class Epicrisis extends Model
         return $this->belongsTo(User::class, 'usuario_modificador_id');
     }
 }
-

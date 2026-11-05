@@ -174,6 +174,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/receta/{receta?}', [ProformaPdfController::class, 'receta'])->name('receta');
         Route::get('/historia-clinica', [ProformaPdfController::class, 'historiaClinica'])->name('historia_clinica');
         Route::get('/epicrisis', [ProformaPdfController::class, 'epicrisis'])->name('epicrisis');
+        Route::get('/cirugias/{cirugia}', [ProformaPdfController::class, 'cirugia'])->name('cirugia');
+        Route::get('/cirugias/{cirugia}/anestesiologia', [ProformaPdfController::class, 'cirugiaAnestesiologia'])->name('cirugia_anestesiologia');
+        Route::get('/cirugias/{cirugia}/enfermeria', [ProformaPdfController::class, 'cirugiaEnfermeria'])->name('cirugia_enfermeria');
     });
 });
 

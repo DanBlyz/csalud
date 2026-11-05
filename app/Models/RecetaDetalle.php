@@ -17,6 +17,9 @@ class RecetaDetalle extends Model
     protected $fillable = [
         'receta_id',
         'producto_id',
+        'seccion_id',
+        'area_quirurgica',
+        'costo_unitario',
         'cantidad',
         'indicaciones',
         'despachado',
@@ -29,6 +32,7 @@ class RecetaDetalle extends Model
     {
         return [
             'cantidad' => 'integer',
+            'costo_unitario' => 'decimal:2',
             'despachado' => 'boolean',
         ];
     }
@@ -41,5 +45,10 @@ class RecetaDetalle extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    public function seccion(): BelongsTo
+    {
+        return $this->belongsTo(Seccion::class, 'seccion_id');
     }
 }

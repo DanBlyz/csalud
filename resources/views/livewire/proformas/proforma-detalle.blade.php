@@ -545,6 +545,21 @@
                 </button>
             @endpermiso
 
+            <!-- 3.A. Cirugías / Descargo de Quirófano -->
+            @permiso('proformas.cirugia.ver')
+                <button 
+                    wire:click="cambiarTab('cirugias')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'cirugias' ? 'border-rose-600 text-rose-600 dark:text-rose-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-procedures text-xs"></i>
+                    <span>Descargo de Quirófano</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->cirugias->count() }}
+                    </span>
+                </button>
+            @endpermiso
+
             <!-- 4. Recetas Médicas -->
             @permiso('proformas.recetas.ver')
                 <button 
@@ -1414,6 +1429,303 @@
                         <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                         <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
                         <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar el cronograma y agenda médica.</p>
+                    </div>
+                @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 3.A: DESCARGO DE QUIRÓFANO Y CIRUGÍAS -->
+            <!-- =================================================================== -->
+            @if ($tab === 'cirugias')
+                @permiso('proformas.cirugia.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                                        <i class="fas fa-procedures text-xs"></i>
+                                    </span>
+                                    <span>Descargos de Quirófano e Intervenciones Quirúrgicas</span>
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">
+                                    Registro de cirugías, personal interviniente, insumos/medicamentos utilizados (Anestesiología y Enfermería) y equipos especiales.
+                                </p>
+                            </div>
+
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.cirugia.crear')
+                                    <button 
+                                        wire:click="abrirModalNuevaCirugia" 
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 hover:shadow-lg transition-all transform active:scale-95 cursor-pointer shrink-0"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Registrar Cirugía / Descargo</span>
+                                    </button>
+                                @endpermiso
+                            @endif
+                        </div>
+
+                        <!-- LISTA DE CIRUGÍAS -->
+                        <div class="space-y-4">
+                            @forelse ($cirugias as $cir)
+                                <div class="p-5 rounded-2xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-rose-300 dark:hover:border-rose-900/60 transition-all">
+                                    <!-- Cabecera de la cirugía -->
+                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                        <div class="flex flex-wrap items-center gap-2.5">
+                                            <span class="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 font-mono font-bold text-xs">
+                                                N° {{ $cir->numero ?: str_pad($cir->id, 4, '0', STR_PAD_LEFT) }}
+                                            </span>
+                                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $cir->es_convenio ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300' }}">
+                                                {{ $cir->es_convenio ? 'Convenio: '.($cir->convenio_nombre ?: 'Aseguradora') : 'Institucional' }}
+                                            </span>
+                                            @if ($cir->tipo_cirugia)
+                                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                    Cirugía {{ $cir->tipo_cirugia }}
+                                                </span>
+                                            @endif
+                                            <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                <i class="far fa-calendar-alt text-rose-500"></i>
+                                                {{ $cir->fecha?->format('d/m/Y') ?: 'Sin fecha' }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Acciones de la cirugía -->
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <!-- Menú desplegable o botones de impresión PDF -->
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia_anestesiologia', [$proforma->id, $cir->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
+                                                title="Imprimir Hoja de Anestesiología PDF"
+                                            >
+                                                <i class="fas fa-print text-rose-600"></i>
+                                                <span>Anestesiología PDF</span>
+                                            </a>
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia_enfermeria', [$proforma->id, $cir->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-2xs"
+                                                title="Imprimir Hoja de Enfermería PDF"
+                                            >
+                                                <i class="fas fa-print text-teal-600"></i>
+                                                <span>Enfermería PDF</span>
+                                            </a>
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia', [$proforma->id, $cir->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-2xs"
+                                                title="Imprimir Descargo Quirófano Completo PDF (Ambas Hojas)"
+                                            >
+                                                <i class="fas fa-file-pdf"></i>
+                                                <span>Descargo Completo</span>
+                                            </a>
+
+                                            @if ($proforma->estado !== 'Pagada')
+                                                @permiso('proformas.cirugia.editar')
+                                                    <button 
+                                                        wire:click="abrirModalEditarCirugia({{ $cir->id }})" 
+                                                        type="button" 
+                                                        class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                                                        title="Editar Cirugía / Descargo"
+                                                    >
+                                                        <i class="fas fa-edit text-xs"></i>
+                                                    </button>
+                                                @endpermiso
+                                                @permiso('proformas.cirugia.eliminar')
+                                                    <button 
+                                                        wire:click="eliminarCirugia({{ $cir->id }})" 
+                                                        wire:confirm="¿Está seguro de eliminar este descargo de quirófano? Esta acción cancelará también la receta quirúrgica vinculada."
+                                                        type="button" 
+                                                        class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                                                        title="Eliminar Cirugía"
+                                                    >
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                @endpermiso
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <!-- Datos de la intervención -->
+                                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Cirugía Efectuada</span>
+                                            <p class="font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                                                {{ $cir->cirugia_efectuada ?: 'Sin especificar' }}
+                                            </p>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                                                <strong>Diag. Operación:</strong> {{ $cir->diagnostico_operacion ?: 'N/E' }}
+                                            </span>
+                                        </div>
+
+                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Especialidad y Sala</span>
+                                            <p class="font-medium text-slate-700 dark:text-slate-200 mt-0.5">
+                                                <i class="fas fa-stethoscope text-rose-500 me-1"></i> {{ $cir->especialidad ?: 'Cirugía General' }}
+                                            </p>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                                                <strong>Sala:</strong> {{ $cir->sala ?: 'S/N' }} • <strong>Cama:</strong> {{ $cir->cama ?: 'S/N' }}
+                                            </span>
+                                        </div>
+
+                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Tiempos y Anestesia</span>
+                                            <span class="text-[11px] text-slate-600 dark:text-slate-300 block mt-0.5">
+                                                <strong>Quirófano:</strong> {{ $cir->hora_ingreso_quirofano ?: '--' }} a {{ $cir->hora_salida_quirofano ?: '--' }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-600 dark:text-slate-300 block">
+                                                <strong>Cirugía:</strong> {{ $cir->hora_inicio_cirugia ?: '--' }} a {{ $cir->hora_fin_cirugia ?: '--' }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
+                                                <strong>Anestesia:</strong> {{ $cir->tipo_anestesia ?: 'N/E' }}
+                                            </span>
+                                        </div>
+
+                                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Equipo Responsable</span>
+                                            <span class="text-[11px] text-slate-700 dark:text-slate-200 block mt-0.5 font-medium">
+                                                <strong>Cirujano:</strong> {{ $cir->cirujano?->nombre_completo ?? 'No asignado' }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-600 dark:text-slate-300 block">
+                                                <strong>Anestesiólogo:</strong> {{ $cir->anestesiologo?->nombre_completo ?? 'No asignado' }}
+                                            </span>
+                                            <div class="text-[10px] text-slate-400 mt-1 flex flex-wrap gap-1">
+                                                @if ($cir->primerAyudante)
+                                                    <span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">1er Ayud: {{ $cir->primerAyudante->nombre_completo }}</span>
+                                                @endif
+                                                @if ($cir->instrumentador)
+                                                    <span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Inst: {{ $cir->instrumentador->nombre_completo }}</span>
+                                                @endif
+                                                @if ($cir->circulante)
+                                                    <span class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Circ: {{ $cir->circulante->nombre_completo }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Medicamentos e Insumos utilizados en la cirugía -->
+                                    @if ($cir->receta && $cir->receta->detalles->count() > 0)
+                                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                                    <i class="fas fa-pills text-teal-600"></i>
+                                                    <span>Medicamentos e Insumos Utilizados en Quirófano ({{ $cir->receta->detalles->count() }} ítems)</span>
+                                                </span>
+                                                <span class="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                                    <i class="fas fa-info-circle me-1"></i> Entregar reporte a Farmacia para el descargo y salida formal
+                                                </span>
+                                            </div>
+                                            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                                <table class="w-full text-left text-xs">
+                                                    <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-[11px] uppercase">
+                                                        <tr>
+                                                            <th class="py-2 px-3">Área</th>
+                                                            <th class="py-2 px-3">Producto / Medicamento / Insumo</th>
+                                                            <th class="py-2 px-3">Sección Origen</th>
+                                                            <th class="py-2 px-3 text-center">Cantidad</th>
+                                                            <th class="py-2 px-3 text-right">Costo Ref.</th>
+                                                            <th class="py-2 px-3 text-center">Estado Farmacia</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-[11px]">
+                                                        @foreach ($cir->receta->detalles as $det)
+                                                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                                                <td class="py-2 px-3 font-sans">
+                                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $det->area_quirurgica === 'Anestesiología' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' : 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300' }}">
+                                                                        {{ $det->area_quirurgica ?: 'Anestesiología' }}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="py-2 px-3 font-sans font-medium text-slate-800 dark:text-slate-200">
+                                                                    {{ $det->producto->nombre ?? 'Producto no encontrado' }}
+                                                                    @if ($det->indicaciones)
+                                                                        <span class="text-[10px] text-slate-400 font-normal block">{{ $det->indicaciones }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="py-2 px-3 font-sans text-slate-600 dark:text-slate-400">
+                                                                    {{ $det->seccion?->nombre ?? 'Quirófano' }}
+                                                                </td>
+                                                                <td class="py-2 px-3 text-center font-bold text-slate-700 dark:text-slate-300">
+                                                                    {{ $det->cantidad }}
+                                                                </td>
+                                                                <td class="py-2 px-3 text-right text-slate-600 dark:text-slate-400">
+                                                                    Bs. {{ number_format($det->costo_unitario ?? 0, 2) }}
+                                                                </td>
+                                                                <td class="py-2 px-3 text-center font-sans">
+                                                                    @if ($det->despachado)
+                                                                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+                                                                            <i class="fas fa-check-double me-0.5"></i> Despachado
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-semibold">
+                                                                            <i class="fas fa-clock me-0.5"></i> Pendiente Farmacia
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <!-- Equipos especiales y solicitudes -->
+                                    @php
+                                        $equiposActivos = [];
+                                        if ($cir->torre_laparoscopia) $equiposActivos[] = 'Torre de Laparoscopía';
+                                        if ($cir->maquina_anestesiologia) $equiposActivos[] = 'Máquina de Anestesiología';
+                                        if ($cir->oxigeno_central) $equiposActivos[] = 'Oxígeno Central';
+                                        if ($cir->bomba_infusion) $equiposActivos[] = 'Bomba de Infusión';
+                                        if ($cir->monitor_multiparametrico) $equiposActivos[] = 'Monitor Multiparamétrico';
+                                        if ($cir->electrobisturi) $equiposActivos[] = 'Electrobisturí';
+                                        if ($cir->maquina_aspiracion) $equiposActivos[] = 'Máquina de Aspiración';
+                                        if ($cir->ecografo) $equiposActivos[] = 'Ecógrafo';
+                                        if ($cir->rayos_x) $equiposActivos[] = 'Rayos X';
+                                        if ($cir->intensificador_imagenes) $equiposActivos[] = 'Intensificador de Imágenes';
+                                        if ($cir->material_importadora) $equiposActivos[] = 'Importadora: '.$cir->material_importadora;
+                                        if ($cir->patologia) $equiposActivos[] = 'Patología: '.$cir->patologia;
+                                        if ($cir->otros_equipos) $equiposActivos[] = 'Otros: '.$cir->otros_equipos;
+                                    @endphp
+
+                                    @if (count($equiposActivos) > 0)
+                                        <div class="mt-3 pt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                            <span class="font-bold text-slate-700 dark:text-slate-300"><i class="fas fa-microchip me-1 text-rose-500"></i> Equipos Especiales:</span>
+                                            @foreach ($equiposActivos as $eq)
+                                                <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-[10px]">
+                                                    {{ $eq }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="py-12 px-4 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                    <i class="fas fa-procedures text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
+                                    <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">No hay cirugías registradas</h4>
+                                    <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                                        No se han registrado descargos de quirófano ni intervenciones quirúrgicas para esta proforma.
+                                    </p>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        @permiso('proformas.cirugia.crear')
+                                            <button 
+                                                wire:click="abrirModalNuevaCirugia" 
+                                                type="button" 
+                                                class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 cursor-pointer shadow-md transition"
+                                            >
+                                                <i class="fas fa-plus"></i> Registrar Primer Descargo de Quirófano
+                                            </button>
+                                        @endpermiso
+                                    @endif
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar los descargos de quirófano.</p>
                     </div>
                 @endpermiso
             @endif
@@ -2875,6 +3187,537 @@
                                     </span>
                                 </button>
                             </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL CIRUGÍAS / DESCARGO DE QUIRÓFANO -->
+    @if ($modalCirugiaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-5xl">
+                    <div class="px-6 py-4 bg-rose-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-600 text-white shadow-xs">
+                                <i class="fas fa-procedures text-sm"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">
+                                    {{ $cirugia_id_en_edicion ? 'Editar Descargo de Quirófano' : 'Registrar Descargo de Quirófano / Cirugía' }}
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Expediente #{{ str_pad($proforma->id, 5, '0', STR_PAD_LEFT) }} • {{ $proforma->paciente->nombre_completo }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if ($cirugia_id_en_edicion)
+                                <a 
+                                    href="{{ route('proformas.pdf.cirugia', [$proforma->id, $cirugia_id_en_edicion]) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition shadow-2xs"
+                                    title="Imprimir PDF del Descargo"
+                                >
+                                    <i class="fas fa-print text-rose-600"></i>
+                                    <span>PDF</span>
+                                </a>
+                            @endif
+                            <button wire:click="cerrarModalCirugia" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                                <i class="fas fa-times text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form wire:submit="guardarCirugia" class="p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+                        <!-- Referencia rápida del paciente -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div class="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+                                <span><strong class="text-slate-900 dark:text-white">Paciente:</strong> {{ $proforma->paciente->nombre_completo }}</span>
+                                <span>•</span>
+                                <span><strong>Sexo:</strong> {{ $proforma->paciente->genero ?? 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>Edad al Ingreso:</strong> {{ $proforma->edad_paciente !== null ? "{$proforma->edad_paciente} años" : 'N/E' }}</span>
+                                <span>•</span>
+                                <span><strong>N° H.C.:</strong> {{ $proforma->paciente->numero_historia_clinica }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300">
+                                    Folio: {{ $cir_numero ?: 'Auto-generado' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 1. IDENTIFICACIÓN Y COBERTURA DE LA CIRUGÍA -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-3">
+                                <i class="fas fa-id-card-alt text-rose-600 dark:text-rose-400 me-1"></i> Identificación y Régimen de la Intervención
+                            </span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        N° Descargo de Quirófano
+                                    </label>
+                                    <input type="text" wire:model="cir_numero" placeholder="Ej. CQ-001..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Fecha de la Cirugía *
+                                    </label>
+                                    <input type="date" wire:model="cir_fecha" required class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Régimen de Cobertura
+                                    </label>
+                                    <div class="flex items-center gap-4 pt-2">
+                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                                            <input type="checkbox" wire:model.live="cir_es_institucional" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                            <span>Institucional</span>
+                                        </label>
+                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                                            <input type="checkbox" wire:model.live="cir_es_convenio" class="rounded text-purple-600 focus:ring-purple-500 border-slate-300">
+                                            <span>Convenio</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                            Nombre del Convenio
+                                        </label>
+                                        @if ($proforma->paciente->institucion)
+                                            <span class="text-[10px] text-purple-600 dark:text-purple-400 font-semibold truncate max-w-[150px]" title="Institución del paciente: {{ $proforma->paciente->institucion->nombre }}">
+                                                <i class="fas fa-building me-0.5"></i> {{ $proforma->paciente->institucion->nombre }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        wire:model="cir_convenio_nombre" 
+                                        list="lista_convenios_instituciones"
+                                        placeholder="Aseguradora / Empresa..." 
+                                        {{ ! $cir_es_convenio ? 'disabled' : '' }} 
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs disabled:opacity-50"
+                                    >
+                                    <datalist id="lista_convenios_instituciones">
+                                        @if ($proforma->paciente->institucion)
+                                            <option value="{{ $proforma->paciente->institucion->nombre }}">
+                                        @endif
+                                        @foreach (\App\Models\Institucion::where('estado', 'Activo')->orderBy('nombre')->get() as $inst)
+                                            <option value="{{ $inst->nombre }}">
+                                        @endforeach
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Especialidad Quirúrgica
+                                    </label>
+                                    <input type="text" wire:model="cir_especialidad" placeholder="Ej. Cirugía General, Traumatología..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Sala / Quirófano
+                                    </label>
+                                    <input type="text" wire:model="cir_sala" placeholder="Ej. Quirófano 1, Sala Operaciones..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Cama / Destino
+                                    </label>
+                                    <input type="text" wire:model="cir_cama" placeholder="Ej. Cama 4, Recuperación..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                        Tipo de Cirugía
+                                    </label>
+                                    <select wire:model="cir_tipo_cirugia" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="Ambulatoria">Ambulatoria</option>
+                                        <option value="Menor">Menor</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Mayor">Mayor</option>
+                                        <option value="Especial">Especial</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. PROCEDIMIENTO, DIAGNÓSTICO Y HORARIOS -->
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Cirugía Efectuada (Procedimiento)
+                                    </label>
+                                    <textarea wire:model="cir_cirugia_efectuada" rows="2" placeholder="Detalle del procedimiento quirúrgico efectuado..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Diagnóstico de Operación (Pre y Post)
+                                    </label>
+                                    <textarea wire:model="cir_diagnostico_operacion" rows="2" placeholder="Diagnóstico operatorio..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Grilla de Tiempos de Quirófano, Anestesia y Cirugía -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 block mb-2">
+                                    <i class="fas fa-clock text-rose-500 me-1"></i> Tiempos Quirúrgicos y Técnica Anestésica
+                                </span>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Ingreso Quirófano</label>
+                                        <input type="time" wire:model="cir_hora_ingreso_quirofano" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Salida Quirófano</label>
+                                        <input type="time" wire:model="cir_hora_salida_quirofano" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Inicio Anestesia</label>
+                                        <input type="time" wire:model="cir_hora_inicio_anestesia" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Fin Anestesia</label>
+                                        <input type="time" wire:model="cir_hora_fin_anestesia" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Inicio Cirugía</label>
+                                        <input type="time" wire:model="cir_hora_inicio_cirugia" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Fin Cirugía</label>
+                                        <input type="time" wire:model="cir_hora_fin_cirugia" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-2 border-t border-slate-200 dark:border-slate-750">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Anestesia</label>
+                                        <input type="text" wire:model="cir_tipo_anestesia" placeholder="Ej. General Balanceada, Raquídea, Epidural, Local..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 shadow-2xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Analgesia Post-Operatoria</label>
+                                        <input type="text" wire:model="cir_analgesia" placeholder="Ej. Ketorolaco 30mg + Tramadol 50mg..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 shadow-2xs">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. PERSONAL QUE INTERVIENE (ENCARGADOS) -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-3">
+                                <i class="fas fa-user-md text-rose-600 dark:text-rose-400 me-1"></i> Personal Quirúrgico Interviniente (Equipo Responsable)
+                            </span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cirujano (Principal) *</label>
+                                    <select wire:model="cir_cirujano_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Seleccione Cirujano...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }} ({{ $u->rol?->nombre ?? 'Personal' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Anestesiólogo</label>
+                                    <select wire:model="cir_anestesiologo_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Seleccione Anestesiólogo...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }} ({{ $u->rol?->nombre ?? 'Personal' }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">1er Ayudante</label>
+                                    <select wire:model="cir_primer_ayudante_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Sin 1er ayudante...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">2do Ayudante</label>
+                                    <select wire:model="cir_segundo_ayudante_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Sin 2do ayudante...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Instrumentador</label>
+                                    <select wire:model="cir_instrumentador_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Sin instrumentador...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Circulante</label>
+                                    <select wire:model="cir_circulante_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs">
+                                        <option value="">Sin circulante...</option>
+                                        @foreach ($personalClinica as $u)
+                                            <option value="{{ $u->id }}">{{ $u->nombre_completo }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. MEDICAMENTOS E INSUMOS UTILIZADOS (DESCARGO VINCULADO A RECETA) -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                        <i class="fas fa-pills text-teal-600 dark:text-teal-400"></i>
+                                        <span>Medicamentos e Insumos Utilizados (Anestesiología y Enfermería)</span>
+                                    </span>
+                                    <p class="text-[11px] text-slate-400">
+                                        Seleccione de qué sección se extrajo cada ítem como referencia para la encargada de farmacia.
+                                    </p>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                                    {{ count($cola_medicamentos_cirugia) }} ítem(s) en cola
+                                </span>
+                            </div>
+
+                            <!-- Barra de Adición Rápida de Medicamentos -->
+                            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-750 space-y-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                    <!-- Buscador de Medicamento -->
+                                    <div class="sm:col-span-4 relative">
+                                        <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">Buscar Fármaco / Insumo *</label>
+                                        <div class="relative">
+                                            <input 
+                                                type="text" 
+                                                wire:model.live.debounce.300ms="buscarMedicamentoCirugia" 
+                                                placeholder="Escriba nombre del medicamento..." 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs pr-8"
+                                            >
+                                            <i class="fas fa-search absolute right-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                        </div>
+
+                                        <!-- Desplegable predictivo de productos -->
+                                        @if (! empty($buscarMedicamentoCirugia) && ! $cir_medicamento_producto_id && $sugerenciasMedicamentosCirugia->count() > 0)
+                                            <div class="absolute z-30 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl divide-y divide-slate-100 dark:divide-slate-800">
+                                                @foreach ($sugerenciasMedicamentosCirugia as $p)
+                                                    <button 
+                                                        type="button" 
+                                                        wire:click="seleccionarMedicamentoCirugia({{ $p->id }})" 
+                                                        class="w-full text-left px-3 py-2 text-xs hover:bg-rose-50 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                                                    >
+                                                        <div>
+                                                            <span class="font-bold text-slate-800 dark:text-slate-100 block">{{ $p->nombre }}</span>
+                                                            <span class="text-[10px] text-slate-400">{{ $p->marca?->nombre ?? 'Sin marca' }}</span>
+                                                        </div>
+                                                        <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                                                            Stock: {{ $p->lotes->sum('cantidad_actual') }}
+                                                        </span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Hoja / Área -->
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">Hoja / Área</label>
+                                        <select wire:model="cir_medicamento_area" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs">
+                                            <option value="Anestesiología">Anestesiología</option>
+                                            <option value="Enfermería">Enfermería</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Sección de Procedencia -->
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">Sección de Origen *</label>
+                                        <select wire:model="cir_medicamento_seccion_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs">
+                                            @foreach ($seccionesSucursal as $sec)
+                                                <option value="{{ $sec->id }}">{{ $sec->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Cantidad -->
+                                    <div class="sm:col-span-1">
+                                        <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">Cant.</label>
+                                        <input type="number" min="1" wire:model="cir_medicamento_cantidad" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs text-center font-bold">
+                                    </div>
+
+                                    <!-- Precio Unitario (Bs.) -->
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">P. Unit. (Bs.)</label>
+                                        <input type="number" step="0.01" min="0" wire:model="cir_medicamento_costo_unitario" placeholder="0.00" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs text-right font-mono font-bold text-slate-800 dark:text-slate-200">
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-2 pt-1">
+                                    <input type="text" wire:model="cir_medicamento_indicaciones" placeholder="Indicaciones o notas posológicas opcionales..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 p-2 shadow-2xs">
+                                    <button 
+                                        type="button" 
+                                        wire:click="agregarMedicamentoACirugia" 
+                                        class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 shadow-xs cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabla Acumulativa de Medicamentos e Insumos en la Cirugía -->
+                            @if (count($cola_medicamentos_cirugia) > 0)
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-750 max-h-56 overflow-y-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] uppercase sticky top-0">
+                                            <tr>
+                                                <th class="py-2 px-3">Área</th>
+                                                <th class="py-2 px-3">Producto / Medicamento</th>
+                                                <th class="py-2 px-3">Sección Origen</th>
+                                                <th class="py-2 px-3 text-center">Cant.</th>
+                                                <th class="py-2 px-3 text-right">Costo Ref.</th>
+                                                <th class="py-2 px-3 text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 font-mono text-[11px]">
+                                            @foreach ($cola_medicamentos_cirugia as $idx => $m)
+                                                <tr>
+                                                    <td class="py-1.5 px-3 font-sans">
+                                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold {{ $m['area'] === 'Anestesiología' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' : 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300' }}">
+                                                            {{ $m['area'] }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-1.5 px-3 font-sans font-medium text-slate-800 dark:text-slate-200">
+                                                        {{ $m['producto_nombre'] }}
+                                                        @if (! empty($m['indicaciones']))
+                                                            <span class="text-[10px] text-slate-400 block font-normal">{{ $m['indicaciones'] }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="py-1.5 px-3 font-sans text-slate-500 dark:text-slate-400">
+                                                        {{ $m['seccion_nombre'] }}
+                                                    </td>
+                                                    <td class="py-1.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100">
+                                                        {{ $m['cantidad'] }}
+                                                    </td>
+                                                    <td class="py-1.5 px-3 text-right text-slate-600 dark:text-slate-400">
+                                                        Bs. {{ number_format($m['costo_unitario'], 2) }}
+                                                    </td>
+                                                    <td class="py-1.5 px-3 text-center font-sans">
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="quitarMedicamentoDeCirugia({{ $idx }})" 
+                                                            class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
+                                                            title="Quitar"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- 5. EQUIPOS ESPECIALES Y SOLICITUDES (HOJA DE ENFERMERÍA) -->
+                        <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                                <i class="fas fa-microchip text-rose-600 dark:text-rose-400 me-1"></i> Equipos Especiales y Solicitudes de Quirófano (Hoja de Enfermería)
+                            </span>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_torre_laparoscopia" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Torre Laparoscopía</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_bomba_infusion" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Bomba de Infusión</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_maquina_aspiracion" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Máquina de Aspiración</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_maquina_anestesiologia" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Máq. Anestesiología</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_monitor_multiparametrico" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Monitor Multiparamétrico</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_ecografo" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Ecógrafo</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_rayos_x" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Rayos X</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_oxigeno_central" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Oxígeno Central</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_electrobisturi" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Electrobisturí</span>
+                                </label>
+                                <label class="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                    <input type="checkbox" wire:model="cir_intensificador_imagenes" class="rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                                    <span>Intensificador de Imágenes</span>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Uso Material - Importadora</label>
+                                    <input type="text" wire:model="cir_material_importadora" placeholder="Detalle de importadora..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Patología</label>
+                                    <input type="text" wire:model="cir_patologia" placeholder="Muestras a patología..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Otros Equipos / Observaciones</label>
+                                    <input type="text" wire:model="cir_otros_equipos" placeholder="Equipamiento adicional..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-2xs">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. OBSERVACIONES -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Observaciones Generales
+                            </label>
+                            <textarea wire:model="cir_observaciones" rows="2" placeholder="Notas de la cirugía o descargo..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 shadow-2xs"></textarea>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button wire:click="cerrarModalCirugia" type="button" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                wire:target="guardarCirugia"
+                                class="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarCirugia">
+                                    <i class="fas fa-save me-1"></i> Guardar Descargo de Quirófano
+                                </span>
+                                <span wire:loading wire:target="guardarCirugia">
+                                    <i class="fas fa-spinner fa-spin"></i> Guardando...
+                                </span>
+                            </button>
                         </div>
                     </form>
                 </div>

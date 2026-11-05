@@ -17,6 +17,8 @@ class Receta extends Model
 
     protected $fillable = [
         'proforma_id',
+        'cirugia_id',
+        'tipo',
         'user_id',
         'activo',
         'observaciones',
@@ -33,17 +35,24 @@ class Receta extends Model
     }
 
     /**
-     * Regla de negocio: Solo una receta activa por proforma.
+     * Regla de negocio: Solo una receta activa de piso por proforma.
+     * Las recetas vinculadas a cirugías pertenecen a su respectivo descargo quirúrgico.
      */
     protected static function booted(): void
     {
         static::saving(function (Receta $receta): void {
-            if ($receta->activo && $receta->proforma_id) {
+            if ($receta->activo && $receta->proforma_id && is_null($receta->cirugia_id)) {
                 static::where('proforma_id', $receta->proforma_id)
+                    ->whereNull('cirugia_id')
                     ->where('id', '!=', $receta->id ?? 0)
                     ->update(['activo' => false]);
             }
         });
+    }
+
+    public function cirugia(): BelongsTo
+    {
+        return $this->belongsTo(Cirugia::class, 'cirugia_id');
     }
 
     public function proforma(): BelongsTo

@@ -92,6 +92,12 @@ class PermisoSeeder extends Seeder
             37 => ['nombre' => 'proformas.cronograma.agregar', 'descripcion' => 'Programar citas y eventos en el calendario clínico'],
             38 => ['nombre' => 'proformas.cronograma.gestionar', 'descripcion' => 'Actualizar estado o eliminar eventos del cronograma'],
 
+            // Pestaña Descargo de Quirófano / Cirugías
+            85 => ['nombre' => 'proformas.cirugia.ver', 'descripcion' => 'Visualizar pestaña y registros de descargo de quirófano y cirugías'],
+            86 => ['nombre' => 'proformas.cirugia.crear', 'descripcion' => 'Registrar nuevas cirugías y descargos de quirófano'],
+            87 => ['nombre' => 'proformas.cirugia.editar', 'descripcion' => 'Modificar cirugías y descargos de quirófano'],
+            88 => ['nombre' => 'proformas.cirugia.eliminar', 'descripcion' => 'Eliminar registros de cirugías de la proforma'],
+
             // Pestaña Recetas Médicas
             8 => ['nombre' => 'emitir-receta', 'descripcion' => 'Prescribir medicamentos y emitir recetas médicas'],
             39 => ['nombre' => 'proformas.recetas.ver', 'descripcion' => 'Visualizar pestaña de prescripciones y recetas médicas'],

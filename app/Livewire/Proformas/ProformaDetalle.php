@@ -3,11 +3,13 @@
 namespace App\Livewire\Proformas;
 
 use App\Models\Caja;
+use App\Models\Cirugia;
 use App\Models\ConsumoExtra;
 use App\Models\Epicrisis;
 use App\Models\Evolucion;
 use App\Models\HistoriaClinica;
 use App\Models\Indicacion;
+use App\Models\Institucion;
 use App\Models\Internacion;
 use App\Models\Lote;
 use App\Models\LoteSeccion;
@@ -148,6 +150,108 @@ class ProformaDetalle extends Component
     public string $epi_proxima_cita = '';
 
     public string $epi_observaciones = '';
+
+    // ==========================================
+    // MODAL CIRUGÍAS / DESCARGO DE QUIRÓFANO
+    // ==========================================
+    public bool $modalCirugiaOpen = false;
+
+    public ?int $cirugia_id_en_edicion = null;
+
+    public string $cir_numero = '';
+
+    public bool $cir_es_institucional = true;
+
+    public bool $cir_es_convenio = false;
+
+    public string $cir_convenio_nombre = '';
+
+    public ?string $cir_fecha = null;
+
+    public string $cir_especialidad = '';
+
+    public string $cir_sala = '';
+
+    public string $cir_cama = '';
+
+    public string $cir_hora_ingreso_quirofano = '';
+
+    public string $cir_hora_salida_quirofano = '';
+
+    public string $cir_hora_inicio_anestesia = '';
+
+    public string $cir_hora_fin_anestesia = '';
+
+    public string $cir_hora_inicio_cirugia = '';
+
+    public string $cir_hora_fin_cirugia = '';
+
+    public string $cir_diagnostico_operacion = '';
+
+    public string $cir_cirugia_efectuada = '';
+
+    public string $cir_tipo_cirugia = 'Media';
+
+    public string $cir_tipo_anestesia = '';
+
+    public string $cir_analgesia = '';
+
+    public ?int $cir_cirujano_id = null;
+
+    public ?int $cir_primer_ayudante_id = null;
+
+    public ?int $cir_segundo_ayudante_id = null;
+
+    public ?int $cir_anestesiologo_id = null;
+
+    public ?int $cir_instrumentador_id = null;
+
+    public ?int $cir_circulante_id = null;
+
+    public bool $cir_torre_laparoscopia = false;
+
+    public bool $cir_bomba_infusion = false;
+
+    public bool $cir_maquina_aspiracion = false;
+
+    public string $cir_material_importadora = '';
+
+    public bool $cir_intensificador_imagenes = false;
+
+    public bool $cir_maquina_anestesiologia = false;
+
+    public bool $cir_monitor_multiparametrico = false;
+
+    public bool $cir_ecografo = false;
+
+    public bool $cir_rayos_x = false;
+
+    public bool $cir_oxigeno_central = false;
+
+    public bool $cir_electrobisturi = false;
+
+    public string $cir_patologia = '';
+
+    public string $cir_otros_equipos = '';
+
+    public string $cir_observaciones = '';
+
+    // Selector y cola de medicamentos para el descargo de la cirugía
+    public string $buscarMedicamentoCirugia = '';
+
+    public ?int $cir_medicamento_producto_id = null;
+
+    public ?int $cir_medicamento_seccion_id = null;
+
+    public string $cir_medicamento_area = 'Anestesiología'; // Anestesiología o Enfermería
+
+    public int $cir_medicamento_cantidad = 1;
+
+    public string $cir_medicamento_costo_unitario = '0.00';
+
+    public string $cir_medicamento_indicaciones = '';
+
+    public array $cola_medicamentos_cirugia = [];
 
     // Modal Agregar Servicios en Lote
     public bool $modalServicioOpen = false;
@@ -315,6 +419,7 @@ class ProformaDetalle extends Component
         'indicaciones' => 'proformas.indicacion.ver',
         'internaciones' => 'proformas.internacion.ver',
         'calendario' => 'proformas.cronograma.ver',
+        'cirugias' => 'proformas.cirugia.ver',
         'recetas' => 'proformas.recetas.ver',
         'consumos' => 'proformas.consumos.ver',
         'despachos' => 'despachar-farmacia',
@@ -351,6 +456,15 @@ class ProformaDetalle extends Component
             'indicaciones.usuarioCreador',
             'internaciones.usuarioCreador',
             'calendarios',
+            'cirugias.cirujano',
+            'cirugias.primerAyudante',
+            'cirugias.segundoAyudante',
+            'cirugias.anestesiologo',
+            'cirugias.instrumentador',
+            'cirugias.circulante',
+            'cirugias.receta.detalles.producto',
+            'cirugias.receta.detalles.seccion',
+            'cirugias.usuarioCreador',
             'recetaActiva.detalles.producto',
             'recetaActiva.doctor',
             'recetas.detalles.producto',
@@ -781,6 +895,470 @@ class ProformaDetalle extends Component
             'icon' => 'success',
             'title' => 'Epicrisis Registrada',
             'text' => 'El documento de epicrisis médica de alta ha sido guardado exitosamente.',
+        ]);
+    }
+
+    // =========================================================================
+    // CIRUGÍAS / DESCARGO DE QUIRÓFANO
+    // =========================================================================
+
+    public function abrirModalNuevaCirugia(): void
+    {
+        if (! $this->autorizarAccion('proformas.cirugia.crear', 'No cuenta con permiso para registrar descargos de quirófano.')) {
+            return;
+        }
+
+        $this->cirugia_id_en_edicion = null;
+        $count = $this->proforma->cirugias()->count() + 1;
+        $this->cir_numero = 'CQ-'.str_pad($this->proforma->id, 4, '0', STR_PAD_LEFT).'-'.str_pad($count, 2, '0', STR_PAD_LEFT);
+
+        // Autocompletado del régimen de convenio si el paciente cuenta con institución
+        $institucionPaciente = $this->proforma->paciente->institucion
+            ?? ($this->proforma->paciente->institucion_id ? Institucion::find($this->proforma->paciente->institucion_id) : null);
+
+        if ($institucionPaciente) {
+            $this->cir_es_convenio = true;
+            $this->cir_es_institucional = false;
+            $this->cir_convenio_nombre = $institucionPaciente->nombre;
+        } else {
+            $this->cir_es_convenio = false;
+            $this->cir_es_institucional = true;
+            $this->cir_convenio_nombre = '';
+        }
+
+        $this->cir_fecha = now()->format('Y-m-d');
+        $this->cir_especialidad = $this->proforma->medicos->first()?->especialidad?->nombre ?? 'Cirugía General';
+        $this->cir_sala = 'Quirófano Central';
+        $this->cir_cama = $this->proforma->pieza ?? 'Recuperación';
+
+        $this->cir_hora_ingreso_quirofano = now()->format('H:i');
+        $this->cir_hora_salida_quirofano = '';
+        $this->cir_hora_inicio_anestesia = now()->format('H:i');
+        $this->cir_hora_fin_anestesia = '';
+        $this->cir_hora_inicio_cirugia = now()->format('H:i');
+        $this->cir_hora_fin_cirugia = '';
+
+        $this->cir_diagnostico_operacion = $this->proforma->diagnostico ?? '';
+        $this->cir_cirugia_efectuada = '';
+        $this->cir_tipo_cirugia = 'Media';
+        $this->cir_tipo_anestesia = 'General Balanceada';
+        $this->cir_analgesia = '';
+
+        $primerMedicoId = $this->proforma->medicos->first()?->id ?? Auth::id();
+        $this->cir_cirujano_id = $primerMedicoId;
+        $this->cir_primer_ayudante_id = null;
+        $this->cir_segundo_ayudante_id = null;
+        $this->cir_anestesiologo_id = null;
+        $this->cir_instrumentador_id = null;
+        $this->cir_circulante_id = null;
+
+        $this->cir_torre_laparoscopia = false;
+        $this->cir_bomba_infusion = false;
+        $this->cir_maquina_aspiracion = false;
+        $this->cir_material_importadora = '';
+        $this->cir_intensificador_imagenes = false;
+        $this->cir_maquina_anestesiologia = false;
+        $this->cir_monitor_multiparametrico = false;
+        $this->cir_ecografo = false;
+        $this->cir_rayos_x = false;
+        $this->cir_oxigeno_central = false;
+        $this->cir_electrobisturi = false;
+        $this->cir_patologia = '';
+        $this->cir_otros_equipos = '';
+        $this->cir_observaciones = '';
+
+        // Sección por defecto para insumos de quirófano
+        $quirofanoSec = Seccion::where('nombre', 'like', '%Quirofano%')->first();
+        $this->cir_medicamento_seccion_id = $quirofanoSec?->id ?? Seccion::first()?->id;
+        $this->cir_medicamento_producto_id = null;
+        $this->buscarMedicamentoCirugia = '';
+        $this->cir_medicamento_area = 'Anestesiología';
+        $this->cir_medicamento_cantidad = 1;
+        $this->cir_medicamento_costo_unitario = '0.00';
+        $this->cir_medicamento_indicaciones = '';
+        $this->cola_medicamentos_cirugia = [];
+
+        $this->modalCirugiaOpen = true;
+    }
+
+    public function abrirModalEditarCirugia(int $cirugiaId): void
+    {
+        if (! $this->autorizarAccion('proformas.cirugia.editar', 'No cuenta con permiso para editar descargos de quirófano.')) {
+            return;
+        }
+
+        $cirugia = Cirugia::with(['receta.detalles.producto', 'receta.detalles.seccion'])->findOrFail($cirugiaId);
+
+        $this->cirugia_id_en_edicion = $cirugia->id;
+        $this->cir_numero = $cirugia->numero ?? '';
+        $this->cir_es_institucional = (bool) $cirugia->es_institucional;
+        $this->cir_es_convenio = (bool) $cirugia->es_convenio;
+
+        $institucionPaciente = $this->proforma->paciente->institucion
+            ?? ($this->proforma->paciente->institucion_id ? Institucion::find($this->proforma->paciente->institucion_id) : null);
+
+        $this->cir_convenio_nombre = $cirugia->convenio_nombre
+            ?: ($this->cir_es_convenio && $institucionPaciente ? $institucionPaciente->nombre : '');
+        $this->cir_fecha = $cirugia->fecha?->format('Y-m-d') ?? now()->format('Y-m-d');
+        $this->cir_especialidad = $cirugia->especialidad ?? '';
+        $this->cir_sala = $cirugia->sala ?? '';
+        $this->cir_cama = $cirugia->cama ?? '';
+        $this->cir_hora_ingreso_quirofano = $cirugia->hora_ingreso_quirofano ?? '';
+        $this->cir_hora_salida_quirofano = $cirugia->hora_salida_quirofano ?? '';
+        $this->cir_hora_inicio_anestesia = $cirugia->hora_inicio_anestesia ?? '';
+        $this->cir_hora_fin_anestesia = $cirugia->hora_fin_anestesia ?? '';
+        $this->cir_hora_inicio_cirugia = $cirugia->hora_inicio_cirugia ?? '';
+        $this->cir_hora_fin_cirugia = $cirugia->hora_fin_cirugia ?? '';
+        $this->cir_diagnostico_operacion = $cirugia->diagnostico_operacion ?? '';
+        $this->cir_cirugia_efectuada = $cirugia->cirugia_efectuada ?? '';
+        $this->cir_tipo_cirugia = $cirugia->tipo_cirugia ?? 'Media';
+        $this->cir_tipo_anestesia = $cirugia->tipo_anestesia ?? '';
+        $this->cir_analgesia = $cirugia->analgesia ?? '';
+
+        $this->cir_cirujano_id = $cirugia->cirujano_id;
+        $this->cir_primer_ayudante_id = $cirugia->primer_ayudante_id;
+        $this->cir_segundo_ayudante_id = $cirugia->segundo_ayudante_id;
+        $this->cir_anestesiologo_id = $cirugia->anestesiologo_id;
+        $this->cir_instrumentador_id = $cirugia->instrumentador_id;
+        $this->cir_circulante_id = $cirugia->circulante_id;
+
+        $this->cir_torre_laparoscopia = (bool) $cirugia->torre_laparoscopia;
+        $this->cir_bomba_infusion = (bool) $cirugia->bomba_infusion;
+        $this->cir_maquina_aspiracion = (bool) $cirugia->maquina_aspiracion;
+        $this->cir_material_importadora = $cirugia->material_importadora ?? '';
+        $this->cir_intensificador_imagenes = (bool) $cirugia->intensificador_imagenes;
+        $this->cir_maquina_anestesiologia = (bool) $cirugia->maquina_anestesiologia;
+        $this->cir_monitor_multiparametrico = (bool) $cirugia->monitor_multiparametrico;
+        $this->cir_ecografo = (bool) $cirugia->ecografo;
+        $this->cir_rayos_x = (bool) $cirugia->rayos_x;
+        $this->cir_oxigeno_central = (bool) $cirugia->oxigeno_central;
+        $this->cir_electrobisturi = (bool) $cirugia->electrobisturi;
+        $this->cir_patologia = $cirugia->patologia ?? '';
+        $this->cir_otros_equipos = $cirugia->otros_equipos ?? '';
+        $this->cir_observaciones = $cirugia->observaciones ?? '';
+
+        // Cargar medicamentos de la receta de quirófano
+        $this->cola_medicamentos_cirugia = [];
+        if ($cirugia->receta) {
+            foreach ($cirugia->receta->detalles as $det) {
+                $this->cola_medicamentos_cirugia[] = [
+                    'producto_id' => $det->producto_id,
+                    'producto_nombre' => $det->producto->nombre ?? 'Medicamento/Insumo',
+                    'seccion_id' => $det->seccion_id,
+                    'seccion_nombre' => $det->seccion?->nombre ?? 'Sin sección',
+                    'area' => $det->area_quirurgica ?? 'Anestesiología',
+                    'cantidad' => $det->cantidad,
+                    'costo_unitario' => (float) ($det->costo_unitario ?? $det->producto?->ultimo_precio_venta ?? 0),
+                    'indicaciones' => $det->indicaciones ?? '',
+                ];
+            }
+        }
+
+        $quirofanoSec = Seccion::where('nombre', 'like', '%Quirofano%')->first();
+        $this->cir_medicamento_seccion_id = $quirofanoSec?->id ?? Seccion::first()?->id;
+        $this->cir_medicamento_producto_id = null;
+        $this->buscarMedicamentoCirugia = '';
+        $this->cir_medicamento_area = 'Anestesiología';
+        $this->cir_medicamento_cantidad = 1;
+        $this->cir_medicamento_costo_unitario = '0.00';
+        $this->cir_medicamento_indicaciones = '';
+
+        $this->modalCirugiaOpen = true;
+    }
+
+    public function updatedCirEsConvenio(bool $value): void
+    {
+        if ($value) {
+            $this->cir_es_institucional = false;
+            if (empty($this->cir_convenio_nombre)) {
+                $institucionPaciente = $this->proforma->paciente->institucion
+                    ?? ($this->proforma->paciente->institucion_id ? Institucion::find($this->proforma->paciente->institucion_id) : null);
+                $this->cir_convenio_nombre = $institucionPaciente?->nombre ?? '';
+            }
+        } else {
+            $this->cir_es_institucional = true;
+            $this->cir_convenio_nombre = '';
+        }
+    }
+
+    public function updatedCirEsInstitucional(bool $value): void
+    {
+        if ($value) {
+            $this->cir_es_convenio = false;
+            $this->cir_convenio_nombre = '';
+        } else {
+            $this->cir_es_convenio = true;
+            if (empty($this->cir_convenio_nombre)) {
+                $institucionPaciente = $this->proforma->paciente->institucion
+                    ?? ($this->proforma->paciente->institucion_id ? Institucion::find($this->proforma->paciente->institucion_id) : null);
+                $this->cir_convenio_nombre = $institucionPaciente?->nombre ?? '';
+            }
+        }
+    }
+
+    public function cerrarModalCirugia(): void
+    {
+        $this->modalCirugiaOpen = false;
+        $this->cirugia_id_en_edicion = null;
+        $this->cola_medicamentos_cirugia = [];
+    }
+
+    public function seleccionarMedicamentoCirugia(int $productoId): void
+    {
+        $producto = Producto::with('lotes')->find($productoId);
+        if (! $producto) {
+            return;
+        }
+
+        $this->cir_medicamento_producto_id = $producto->id;
+        $this->buscarMedicamentoCirugia = $producto->nombre;
+
+        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()?->sucursal_id;
+        $loteConStock = $producto->lotes
+            ->where('cantidad_actual', '>', 0)
+            ->when($sucursalId, fn ($lotes) => $lotes->where('sucursal_id', $sucursalId))
+            ->sortBy('fecha_vencimiento')
+            ->first();
+
+        $precio = (float) ($loteConStock?->precio_venta ?? $producto->ultimo_precio_venta ?? 0);
+        $this->cir_medicamento_costo_unitario = number_format($precio, 2, '.', '');
+    }
+
+    public function agregarMedicamentoACirugia(): void
+    {
+        if (! $this->cir_medicamento_producto_id) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Seleccione un Medicamento o Insumo',
+                'text' => 'Debe buscar y seleccionar un producto del catálogo para añadirlo al descargo.',
+            ]);
+
+            return;
+        }
+
+        if ($this->cir_medicamento_cantidad <= 0) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Cantidad Inválida',
+                'text' => 'La cantidad debe ser mayor a 0.',
+            ]);
+
+            return;
+        }
+
+        $producto = Producto::with('lotes')->find($this->cir_medicamento_producto_id);
+        if (! $producto) {
+            return;
+        }
+
+        // Control de stock referencial
+        $stockTotal = $producto->lotes->where('cantidad_actual', '>', 0)->sum('cantidad_actual');
+        if ($stockTotal <= 0) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Sin Stock Disponible',
+                'text' => "El producto '{$producto->nombre}' no cuenta con stock disponible en farmacia (>0). Seleccione una alternativa con existencias.",
+            ]);
+
+            return;
+        }
+
+        $seccion = Seccion::find($this->cir_medicamento_seccion_id);
+
+        $precioUnitario = (float) $this->cir_medicamento_costo_unitario;
+        if ($precioUnitario <= 0) {
+            $sucursalId = $this->proforma->sucursal_id ?? Auth::user()?->sucursal_id;
+            $loteConStock = $producto->lotes
+                ->where('cantidad_actual', '>', 0)
+                ->when($sucursalId, fn ($lotes) => $lotes->where('sucursal_id', $sucursalId))
+                ->sortBy('fecha_vencimiento')
+                ->first();
+            $precioUnitario = (float) ($loteConStock?->precio_venta ?? $producto->ultimo_precio_venta ?? 0);
+        }
+
+        $this->cola_medicamentos_cirugia[] = [
+            'producto_id' => $producto->id,
+            'producto_nombre' => $producto->nombre,
+            'seccion_id' => $seccion?->id,
+            'seccion_nombre' => $seccion?->nombre ?? 'Sin sección',
+            'area' => $this->cir_medicamento_area,
+            'cantidad' => (int) $this->cir_medicamento_cantidad,
+            'costo_unitario' => $precioUnitario,
+            'indicaciones' => trim($this->cir_medicamento_indicaciones),
+        ];
+
+        // Limpiar formulario de adición
+        $this->cir_medicamento_producto_id = null;
+        $this->buscarMedicamentoCirugia = '';
+        $this->cir_medicamento_cantidad = 1;
+        $this->cir_medicamento_costo_unitario = '0.00';
+        $this->cir_medicamento_indicaciones = '';
+    }
+
+    public function quitarMedicamentoDeCirugia(int $index): void
+    {
+        if (isset($this->cola_medicamentos_cirugia[$index])) {
+            unset($this->cola_medicamentos_cirugia[$index]);
+            $this->cola_medicamentos_cirugia = array_values($this->cola_medicamentos_cirugia);
+        }
+    }
+
+    public function guardarCirugia(): void
+    {
+        if (! $this->asegurarProformaModificable('No se pueden registrar o modificar cirugías en una proforma liquidada.')) {
+            return;
+        }
+
+        $this->validate([
+            'cir_numero' => ['nullable', 'string', 'max:50'],
+            'cir_fecha' => ['required', 'date'],
+            'cir_especialidad' => ['nullable', 'string', 'max:100'],
+            'cir_sala' => ['nullable', 'string', 'max:50'],
+            'cir_cama' => ['nullable', 'string', 'max:50'],
+            'cir_cirugia_efectuada' => ['nullable', 'string', 'max:1000'],
+            'cir_diagnostico_operacion' => ['nullable', 'string', 'max:1000'],
+            'cir_tipo_cirugia' => ['nullable', 'string', 'max:50'],
+            'cir_tipo_anestesia' => ['nullable', 'string', 'max:100'],
+            'cir_analgesia' => ['nullable', 'string', 'max:150'],
+            'cir_cirujano_id' => ['nullable', 'exists:users,id'],
+            'cir_primer_ayudante_id' => ['nullable', 'exists:users,id'],
+            'cir_segundo_ayudante_id' => ['nullable', 'exists:users,id'],
+            'cir_anestesiologo_id' => ['nullable', 'exists:users,id'],
+            'cir_instrumentador_id' => ['nullable', 'exists:users,id'],
+            'cir_circulante_id' => ['nullable', 'exists:users,id'],
+        ]);
+
+        DB::transaction(function () {
+            $cirugia = Cirugia::updateOrCreate(
+                ['id' => $this->cirugia_id_en_edicion],
+                [
+                    'proforma_id' => $this->proforma->id,
+                    'numero' => $this->cir_numero ?: 'CQ-'.str_pad($this->proforma->id, 4, '0', STR_PAD_LEFT).'-'.now()->format('His'),
+                    'es_institucional' => $this->cir_es_institucional,
+                    'es_convenio' => $this->cir_es_convenio,
+                    'convenio_nombre' => $this->cir_es_convenio ? $this->cir_convenio_nombre : null,
+                    'fecha' => $this->cir_fecha,
+                    'especialidad' => $this->cir_especialidad ?: null,
+                    'sala' => $this->cir_sala ?: null,
+                    'cama' => $this->cir_cama ?: null,
+                    'hora_ingreso_quirofano' => $this->cir_hora_ingreso_quirofano ?: null,
+                    'hora_salida_quirofano' => $this->cir_hora_salida_quirofano ?: null,
+                    'hora_inicio_anestesia' => $this->cir_hora_inicio_anestesia ?: null,
+                    'hora_fin_anestesia' => $this->cir_hora_fin_anestesia ?: null,
+                    'hora_inicio_cirugia' => $this->cir_hora_inicio_cirugia ?: null,
+                    'hora_fin_cirugia' => $this->cir_hora_fin_cirugia ?: null,
+                    'diagnostico_operacion' => $this->cir_diagnostico_operacion ?: null,
+                    'cirugia_efectuada' => $this->cir_cirugia_efectuada ?: null,
+                    'tipo_cirugia' => $this->cir_tipo_cirugia ?: 'Media',
+                    'tipo_anestesia' => $this->cir_tipo_anestesia ?: null,
+                    'analgesia' => $this->cir_analgesia ?: null,
+                    'cirujano_id' => $this->cir_cirujano_id ?: null,
+                    'primer_ayudante_id' => $this->cir_primer_ayudante_id ?: null,
+                    'segundo_ayudante_id' => $this->cir_segundo_ayudante_id ?: null,
+                    'anestesiologo_id' => $this->cir_anestesiologo_id ?: null,
+                    'instrumentador_id' => $this->cir_instrumentador_id ?: null,
+                    'circulante_id' => $this->cir_circulante_id ?: null,
+                    'torre_laparoscopia' => $this->cir_torre_laparoscopia,
+                    'bomba_infusion' => $this->cir_bomba_infusion,
+                    'maquina_aspiracion' => $this->cir_maquina_aspiracion,
+                    'material_importadora' => $this->cir_material_importadora ?: null,
+                    'intensificador_imagenes' => $this->cir_intensificador_imagenes,
+                    'maquina_anestesiologia' => $this->cir_maquina_anestesiologia,
+                    'monitor_multiparametrico' => $this->cir_monitor_multiparametrico,
+                    'ecografo' => $this->cir_ecografo,
+                    'rayos_x' => $this->cir_rayos_x,
+                    'oxigeno_central' => $this->cir_oxigeno_central,
+                    'electrobisturi' => $this->cir_electrobisturi,
+                    'patologia' => $this->cir_patologia ?: null,
+                    'otros_equipos' => $this->cir_otros_equipos ?: null,
+                    'observaciones' => $this->cir_observaciones ?: null,
+                    'usuario_modificador_id' => Auth::id(),
+                ]
+            );
+
+            if (! $cirugia->usuario_creador_id) {
+                $cirugia->update(['usuario_creador_id' => Auth::id()]);
+            }
+
+            // Gestionar Receta de Descargo de Quirófano vinculada a la cirugía
+            $recetaCirugia = Receta::updateOrCreate(
+                [
+                    'proforma_id' => $this->proforma->id,
+                    'cirugia_id' => $cirugia->id,
+                ],
+                [
+                    'user_id' => $this->cir_cirujano_id ?? Auth::id(),
+                    'tipo' => 'Quirófano',
+                    'activo' => true,
+                    'observaciones' => "Descargo de Quirófano: {$cirugia->cirugia_efectuada} (N° {$cirugia->numero})",
+                    'usuario_creador_id' => Auth::id(),
+                ]
+            );
+
+            // Reemplazar los detalles de medicamentos e insumos de la cirugía
+            $recetaCirugia->detalles()->where('despachado', false)->delete();
+
+            foreach ($this->cola_medicamentos_cirugia as $item) {
+                RecetaDetalle::create([
+                    'receta_id' => $recetaCirugia->id,
+                    'producto_id' => $item['producto_id'],
+                    'seccion_id' => $item['seccion_id'] ?: null,
+                    'area_quirurgica' => $item['area'] ?? 'Anestesiología',
+                    'cantidad' => $item['cantidad'],
+                    'costo_unitario' => $item['costo_unitario'] ?? 0.00,
+                    'indicaciones' => $item['indicaciones'] ?: null,
+                    'despachado' => false,
+                    'usuario_creador_id' => Auth::id(),
+                ]);
+            }
+        });
+
+        $this->proforma->load([
+            'cirugias.cirujano',
+            'cirugias.primerAyudante',
+            'cirugias.segundoAyudante',
+            'cirugias.anestesiologo',
+            'cirugias.instrumentador',
+            'cirugias.circulante',
+            'cirugias.receta.detalles.producto',
+            'cirugias.receta.detalles.seccion',
+        ]);
+
+        $this->cerrarModalCirugia();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Descargo de Quirófano Guardado',
+            'text' => 'La cirugía y los medicamentos e insumos de quirófano han sido registrados correctamente.',
+        ]);
+    }
+
+    public function eliminarCirugia(int $cirugiaId): void
+    {
+        if (! $this->autorizarAccion('proformas.cirugia.eliminar', 'No cuenta con autorización para eliminar cirugías de la proforma.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable('No se pueden eliminar cirugías en una proforma liquidada.')) {
+            return;
+        }
+
+        $cirugia = Cirugia::with('receta.detalles')->findOrFail($cirugiaId);
+
+        DB::transaction(function () use ($cirugia) {
+            if ($cirugia->receta) {
+                $cirugia->receta->detalles()->delete();
+                $cirugia->receta->delete();
+            }
+            $cirugia->delete();
+        });
+
+        $this->proforma->load('cirugias');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Cirugía Eliminada',
+            'text' => 'El registro del descargo de quirófano ha sido eliminado del expediente.',
         ]);
     }
 
@@ -3323,9 +3901,35 @@ class ProformaDetalle extends Component
         $subtotalFarmacia = $this->proforma->totalDespachosFarmacia();
         $totalPrescripcionReferencial = $this->proforma->totalPrescripcionReferencial();
 
+        $personalClinica = User::where('activo', true)->orderBy('nombres')->get();
+
+        $sugerenciasMedicamentosCirugia = collect();
+        if ($this->modalCirugiaOpen && ! $this->cir_medicamento_producto_id) {
+            $termCir = trim($this->buscarMedicamentoCirugia);
+            if (! empty($termCir)) {
+                $sugerenciasMedicamentosCirugia = Producto::with([
+                    'marca',
+                    'lotes' => function ($q) use ($sucursalId) {
+                        $q->when($sucursalId, fn ($sq) => $sq->where('sucursal_id', $sucursalId))
+                            ->where('cantidad_actual', '>', 0);
+                    },
+                ])
+                    ->where(function ($q) use ($termCir) {
+                        $q->where('nombre', 'like', "%{$termCir}%")
+                            ->orWhere('descripcion', 'like', "%{$termCir}%");
+                    })
+                    ->orderBy('nombre')
+                    ->take(10)
+                    ->get();
+            }
+        }
+
         return view('livewire.proformas.proforma-detalle', [
             'tiposSolicitudes' => $tiposSolicitudes,
             'medicos' => $medicos,
+            'personalClinica' => $personalClinica,
+            'sugerenciasMedicamentosCirugia' => $sugerenciasMedicamentosCirugia,
+            'cirugias' => $this->proforma->cirugias()->with(['cirujano', 'anestesiologo', 'primerAyudante', 'segundoAyudante', 'instrumentador', 'circulante', 'receta.detalles.producto', 'receta.detalles.seccion'])->latest('fecha')->get(),
             'serviciosFiltrados' => $serviciosFiltrados,
             'servicioSeleccionado' => $servicioSeleccionado,
             'sugerenciasMedicamentosReceta' => $sugerenciasMedicamentosReceta,
