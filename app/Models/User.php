@@ -118,6 +118,22 @@ class User extends Authenticatable
         }
 
         // Verificación estricta por slug/nombre de permiso granular (ej. 'instituciones.gestionar', 'pacientes.crear')
+        $aliases = [
+            'proformas.evoluciones.ver' => 'proformas.evolucion.ver',
+            'proformas.evoluciones.crear' => 'proformas.evolucion.crear',
+            'proformas.evoluciones.editar' => 'proformas.evolucion.editar',
+            'proformas.evoluciones.eliminar' => 'proformas.evolucion.eliminar',
+            'proformas.indicaciones.ver' => 'proformas.indicacion.ver',
+            'proformas.indicaciones.crear' => 'proformas.indicacion.crear',
+            'proformas.indicaciones.editar' => 'proformas.indicacion.editar',
+            'proformas.indicaciones.eliminar' => 'proformas.indicacion.eliminar',
+            'proformas.internaciones.ver' => 'proformas.internacion.ver',
+            'proformas.internaciones.crear' => 'proformas.internacion.crear',
+            'proformas.internaciones.editar' => 'proformas.internacion.editar',
+            'proformas.internaciones.eliminar' => 'proformas.internacion.eliminar',
+        ];
+        $permiso = $aliases[$permiso] ?? $permiso;
+
         return $this->permisos()->where('permisos.nombre', $permiso)->exists();
     }
 
@@ -134,7 +150,7 @@ class User extends Authenticatable
             4 => [19, 71, 72],             // especialidades, servicios y tipos de solicitud
             5 => [22, 23, 24, 25, 26],     // pacientes e instituciones
             6 => [6, 27],                  // crear proforma
-            7 => range(27, 46),            // proformas
+            7 => array_merge(range(27, 46), range(73, 84)), // proformas
             8 => [8, 39, 40],              // recetas
             9 => range(47, 59),            // farmacia
             10 => range(60, 70),           // caja

@@ -74,6 +74,32 @@ class Paciente extends Model
     }
 
     /**
+     * Número de historia clínica: fecha de nacimiento (dmY) seguido de las iniciales del paciente en mayúsculas.
+     * Ejemplo: 23102000LDLM para fecha 23-10-2000 y Luis David Loza Mamani.
+     */
+    protected function numeroHistoriaClinica(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $fechaStr = $this->fecha_nacimiento ? $this->fecha_nacimiento->format('dmY') : '';
+                $nombresPartes = array_filter(explode(' ', trim((string) $this->nombres)));
+                $iniciales = '';
+                foreach ($nombresPartes as $part) {
+                    $iniciales .= mb_substr($part, 0, 1);
+                }
+                if ($this->apellido_paterno) {
+                    $iniciales .= mb_substr(trim($this->apellido_paterno), 0, 1);
+                }
+                if ($this->apellido_materno) {
+                    $iniciales .= mb_substr(trim($this->apellido_materno), 0, 1);
+                }
+
+                return $fechaStr.mb_strtoupper($iniciales);
+            }
+        );
+    }
+
+    /**
      * Edad del paciente en años calculada a una fecha de referencia específica.
      * Si no se provee fecha, calcula la edad respecto a la fecha actual.
      */

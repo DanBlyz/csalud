@@ -381,7 +381,7 @@
                                                                     $stkSec = $l->stockEnSeccion($item['seccion_id']);
                                                                 @endphp
                                                                 <option value="{{ $l->id }}">
-                                                                    {{ $l->codigo_lote }} (Stock en área: {{ $stkSec }} un. - Vence: {{ $l->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }})
+                                                                    Stock en área: {{ $stkSec }} un. (Vence: {{ $l->fecha_vencimiento?->format('d/m/y') ?? 'S/F' }} - {{ $l->codigo_lote }})
                                                                 </option>
                                                             @endforeach
                                                         </select>

@@ -4,6 +4,9 @@ namespace App\Livewire\Proformas;
 
 use App\Models\Caja;
 use App\Models\ConsumoExtra;
+use App\Models\Evolucion;
+use App\Models\Indicacion;
+use App\Models\Internacion;
 use App\Models\Lote;
 use App\Models\LoteSeccion;
 use App\Models\MovimientoInventario;
@@ -86,6 +89,33 @@ class ProformaDetalle extends Component
 
     public $solicitud_nuevo_archivo = null;
 
+    // Modal Hoja de Evolución
+    public bool $modalEvolucionOpen = false;
+
+    public ?int $evolucion_id = null;
+
+    public string $evolucion_fecha_hora = '';
+
+    public string $evolucion_descripcion = '';
+
+    // Modal Hoja de Indicaciones
+    public bool $modalIndicacionOpen = false;
+
+    public ?int $indicacion_id = null;
+
+    public string $indicacion_fecha_hora = '';
+
+    public string $indicacion_descripcion = '';
+
+    // Modal Hoja de Internación
+    public bool $modalInternacionOpen = false;
+
+    public ?int $internacion_id = null;
+
+    public string $internacion_fecha_hora = '';
+
+    public string $internacion_descripcion = '';
+
     // Modal Agregar Eventos Calendario en Lote
     public bool $modalCalendarioOpen = false;
 
@@ -107,6 +137,22 @@ class ProformaDetalle extends Component
     public string $receta_observaciones = '';
 
     public array $receta_medicamentos = [];
+
+    public string $buscarMedicamentoReceta = '';
+
+    public ?int $receta_nuevo_producto_id = null;
+
+    public string $receta_nuevo_producto_nombre = '';
+
+    public string $receta_nuevo_unidad_medida = '';
+
+    public string $receta_nuevo_marca_nombre = '';
+
+    public int $receta_nuevo_stock_disponible = 0;
+
+    public int|string $receta_nuevo_cantidad = 1;
+
+    public string $receta_nuevo_indicaciones = '';
 
     // Modal Registrar Consumos Extras en Lote
     public bool $modalConsumoOpen = false;
@@ -173,6 +219,9 @@ class ProformaDetalle extends Component
     public static array $tabPermissions = [
         'servicios' => 'proformas.servicios.ver',
         'solicitudes' => 'proformas.solicitudes.ver',
+        'evoluciones' => 'proformas.evolucion.ver',
+        'indicaciones' => 'proformas.indicacion.ver',
+        'internaciones' => 'proformas.internacion.ver',
         'calendario' => 'proformas.cronograma.ver',
         'recetas' => 'proformas.recetas.ver',
         'consumos' => 'proformas.consumos.ver',
@@ -204,9 +253,14 @@ class ProformaDetalle extends Component
             'sucursal',
             'servicios.servicio.categoria',
             'solicitudes.tipoSolicitud',
+            'evoluciones.usuarioCreador',
+            'indicaciones.usuarioCreador',
+            'internaciones.usuarioCreador',
             'calendarios',
             'recetaActiva.detalles.producto',
+            'recetaActiva.doctor',
             'recetas.detalles.producto',
+            'recetas.doctor',
             'consumosExtras.producto',
             'consumosExtras.user',
             'pagos',
@@ -685,6 +739,324 @@ class ProformaDetalle extends Component
     }
 
     // =========================================================================
+    // 3.A. HOJA DE EVOLUCIÓN CLÍNICA
+    // =========================================================================
+    public function abrirModalEvolucion(?int $id = null): void
+    {
+        $this->resetValidation();
+        if ($id) {
+            if (! $this->autorizarAccion('proformas.evolucion.editar', 'No cuenta con autorización para editar notas de evolución médica.')) {
+                return;
+            }
+            $item = Evolucion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+            $this->evolucion_id = $item->id;
+            $this->evolucion_fecha_hora = $item->fecha_hora ? $item->fecha_hora->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->evolucion_descripcion = $item->descripcion ?? '';
+        } else {
+            if (! $this->autorizarAccion('proformas.evolucion.crear', 'No cuenta con autorización para registrar notas de evolución médica.')) {
+                return;
+            }
+            if (! $this->asegurarProformaModificable()) {
+                return;
+            }
+            $this->evolucion_id = null;
+            $this->evolucion_fecha_hora = now()->format('Y-m-d\TH:i');
+            $this->evolucion_descripcion = '';
+        }
+        $this->modalEvolucionOpen = true;
+    }
+
+    public function cerrarModalEvolucion(): void
+    {
+        $this->modalEvolucionOpen = false;
+        $this->evolucion_id = null;
+        $this->evolucion_fecha_hora = '';
+        $this->evolucion_descripcion = '';
+        $this->resetValidation();
+    }
+
+    public function guardarEvolucion(): void
+    {
+        $permisoRequerido = $this->evolucion_id ? 'proformas.evolucion.editar' : 'proformas.evolucion.crear';
+        if (! $this->autorizarAccion($permisoRequerido, 'No cuenta con autorización para guardar esta nota de evolución médica.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->validate([
+            'evolucion_fecha_hora' => 'required|date',
+            'evolucion_descripcion' => 'required|string',
+        ], [
+            'evolucion_fecha_hora.required' => 'La fecha y hora de la evolución es obligatoria.',
+            'evolucion_descripcion.required' => 'La descripción clínica no puede estar vacía.',
+        ]);
+
+        if ($this->evolucion_id) {
+            $item = Evolucion::where('proforma_id', $this->proforma->id)->findOrFail($this->evolucion_id);
+            $item->update([
+                'fecha_hora' => $this->evolucion_fecha_hora,
+                'descripcion' => $this->evolucion_descripcion,
+                'usuario_modificador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Nota de evolución actualizada con éxito.';
+        } else {
+            $this->proforma->evoluciones()->create([
+                'fecha_hora' => $this->evolucion_fecha_hora,
+                'descripcion' => $this->evolucion_descripcion,
+                'usuario_creador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Nota de evolución registrada con éxito.';
+        }
+
+        $this->cerrarModalEvolucion();
+        $this->proforma->load('evoluciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => '¡Evolución Guardada!',
+            'text' => $mensaje,
+        ]);
+    }
+
+    public function eliminarEvolucion(int $id): void
+    {
+        if (! $this->autorizarAccion('proformas.evolucion.eliminar', 'No cuenta con autorización para eliminar notas de evolución médica.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $item = Evolucion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+        $item->update(['usuario_eliminador_id' => Auth::id()]);
+        $item->delete();
+
+        $this->proforma->load('evoluciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Registro Eliminado',
+            'text' => 'La nota de evolución fue eliminada correctamente.',
+        ]);
+    }
+
+    // =========================================================================
+    // 3.B. HOJA DE INDICACIONES MÉDICAS
+    // =========================================================================
+    public function abrirModalIndicacion(?int $id = null): void
+    {
+        $this->resetValidation();
+        if ($id) {
+            if (! $this->autorizarAccion('proformas.indicacion.editar', 'No cuenta con autorización para editar indicaciones médicas.')) {
+                return;
+            }
+            $item = Indicacion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+            $this->indicacion_id = $item->id;
+            $this->indicacion_fecha_hora = $item->fecha_hora ? $item->fecha_hora->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->indicacion_descripcion = $item->descripcion ?? '';
+        } else {
+            if (! $this->autorizarAccion('proformas.indicacion.crear', 'No cuenta con autorización para registrar indicaciones médicas.')) {
+                return;
+            }
+            if (! $this->asegurarProformaModificable()) {
+                return;
+            }
+            $this->indicacion_id = null;
+            $this->indicacion_fecha_hora = now()->format('Y-m-d\TH:i');
+            $this->indicacion_descripcion = '';
+        }
+        $this->modalIndicacionOpen = true;
+    }
+
+    public function cerrarModalIndicacion(): void
+    {
+        $this->modalIndicacionOpen = false;
+        $this->indicacion_id = null;
+        $this->indicacion_fecha_hora = '';
+        $this->indicacion_descripcion = '';
+        $this->resetValidation();
+    }
+
+    public function guardarIndicacion(): void
+    {
+        $permisoRequerido = $this->indicacion_id ? 'proformas.indicacion.editar' : 'proformas.indicacion.crear';
+        if (! $this->autorizarAccion($permisoRequerido, 'No cuenta con autorización para guardar esta indicación médica.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->validate([
+            'indicacion_fecha_hora' => 'required|date',
+            'indicacion_descripcion' => 'required|string',
+        ], [
+            'indicacion_fecha_hora.required' => 'La fecha y hora de la indicación es obligatoria.',
+            'indicacion_descripcion.required' => 'El contenido de la indicación no puede estar vacío.',
+        ]);
+
+        if ($this->indicacion_id) {
+            $item = Indicacion::where('proforma_id', $this->proforma->id)->findOrFail($this->indicacion_id);
+            $item->update([
+                'fecha_hora' => $this->indicacion_fecha_hora,
+                'descripcion' => $this->indicacion_descripcion,
+                'usuario_modificador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Indicación médica actualizada con éxito.';
+        } else {
+            $this->proforma->indicaciones()->create([
+                'fecha_hora' => $this->indicacion_fecha_hora,
+                'descripcion' => $this->indicacion_descripcion,
+                'usuario_creador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Indicación médica registrada con éxito.';
+        }
+
+        $this->cerrarModalIndicacion();
+        $this->proforma->load('indicaciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => '¡Indicación Guardada!',
+            'text' => $mensaje,
+        ]);
+    }
+
+    public function eliminarIndicacion(int $id): void
+    {
+        if (! $this->autorizarAccion('proformas.indicacion.eliminar', 'No cuenta con autorización para eliminar indicaciones médicas.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $item = Indicacion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+        $item->update(['usuario_eliminador_id' => Auth::id()]);
+        $item->delete();
+
+        $this->proforma->load('indicaciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Registro Eliminado',
+            'text' => 'La indicación médica fue eliminada correctamente.',
+        ]);
+    }
+
+    // =========================================================================
+    // 3.C. HOJA DE INTERNACIÓN
+    // =========================================================================
+    public function abrirModalInternacion(?int $id = null): void
+    {
+        $this->resetValidation();
+        if ($id) {
+            if (! $this->autorizarAccion('proformas.internacion.editar', 'No cuenta con autorización para editar registros de internación.')) {
+                return;
+            }
+            $item = Internacion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+            $this->internacion_id = $item->id;
+            $this->internacion_fecha_hora = $item->fecha_hora ? $item->fecha_hora->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->internacion_descripcion = $item->descripcion ?? '';
+        } else {
+            if (! $this->autorizarAccion('proformas.internacion.crear', 'No cuenta con autorización para registrar notas de internación.')) {
+                return;
+            }
+            if (! $this->asegurarProformaModificable()) {
+                return;
+            }
+            $this->internacion_id = null;
+            $this->internacion_fecha_hora = now()->format('Y-m-d\TH:i');
+            $this->internacion_descripcion = '';
+        }
+        $this->modalInternacionOpen = true;
+    }
+
+    public function cerrarModalInternacion(): void
+    {
+        $this->modalInternacionOpen = false;
+        $this->internacion_id = null;
+        $this->internacion_fecha_hora = '';
+        $this->internacion_descripcion = '';
+        $this->resetValidation();
+    }
+
+    public function guardarInternacion(): void
+    {
+        $permisoRequerido = $this->internacion_id ? 'proformas.internacion.editar' : 'proformas.internacion.crear';
+        if (! $this->autorizarAccion($permisoRequerido, 'No cuenta con autorización para guardar este registro de internación.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->validate([
+            'internacion_fecha_hora' => 'required|date',
+            'internacion_descripcion' => 'required|string',
+        ], [
+            'internacion_fecha_hora.required' => 'La fecha y hora del registro es obligatoria.',
+            'internacion_descripcion.required' => 'El detalle de internación no puede estar vacío.',
+        ]);
+
+        if ($this->internacion_id) {
+            $item = Internacion::where('proforma_id', $this->proforma->id)->findOrFail($this->internacion_id);
+            $item->update([
+                'fecha_hora' => $this->internacion_fecha_hora,
+                'descripcion' => $this->internacion_descripcion,
+                'usuario_modificador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Registro de internación actualizado con éxito.';
+        } else {
+            $this->proforma->internaciones()->create([
+                'fecha_hora' => $this->internacion_fecha_hora,
+                'descripcion' => $this->internacion_descripcion,
+                'usuario_creador_id' => Auth::id(),
+            ]);
+            $mensaje = 'Registro de internación guardado con éxito.';
+        }
+
+        $this->cerrarModalInternacion();
+        $this->proforma->load('internaciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => '¡Internación Guardada!',
+            'text' => $mensaje,
+        ]);
+    }
+
+    public function eliminarInternacion(int $id): void
+    {
+        if (! $this->autorizarAccion('proformas.internacion.eliminar', 'No cuenta con autorización para eliminar registros de internación.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $item = Internacion::where('proforma_id', $this->proforma->id)->findOrFail($id);
+        $item->update(['usuario_eliminador_id' => Auth::id()]);
+        $item->delete();
+
+        $this->proforma->load('internaciones.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Registro Eliminado',
+            'text' => 'El registro de internación fue eliminado correctamente.',
+        ]);
+    }
+
+    // =========================================================================
     // 4. CALENDARIO Y AGENDA DE LA PROFORMA (EN LOTE)
     // =========================================================================
     public function abrirModalCalendario(): void
@@ -841,58 +1213,196 @@ class ProformaDetalle extends Component
         $this->resetValidation();
         $this->receta_medico_id = Auth::id();
         $this->receta_observaciones = '';
-        $this->receta_medicamentos = [
-            ['producto_id' => '', 'producto_nombre' => '', 'unidad_medida' => '', 'busqueda' => '', 'cantidad' => 1, 'indicaciones' => ''],
-        ];
+        $this->receta_medicamentos = [];
+        $this->limpiarMedicamentoSeleccionadoReceta();
         $this->modalRecetaOpen = true;
     }
 
     public function cerrarModalReceta(): void
     {
         $this->modalRecetaOpen = false;
+        $this->limpiarMedicamentoSeleccionadoReceta();
+        $this->receta_medicamentos = [];
+        $this->resetValidation();
+    }
+
+    /**
+     * Calcula las existencias disponibles de un producto en la sucursal de la proforma.
+     */
+    public function obtenerStockDisponibleProducto(int $productoId): int
+    {
+        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()?->sucursal_id;
+
+        $query = Lote::where('producto_id', $productoId)
+            ->where('cantidad_actual', '>', 0);
+
+        if ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
+        }
+
+        return (int) $query->sum('cantidad_actual');
+    }
+
+    /**
+     * Limpia los campos de entrada del medicamento para la receta.
+     */
+    public function limpiarMedicamentoSeleccionadoReceta(): void
+    {
+        $this->receta_nuevo_producto_id = null;
+        $this->receta_nuevo_producto_nombre = '';
+        $this->receta_nuevo_unidad_medida = '';
+        $this->receta_nuevo_marca_nombre = '';
+        $this->receta_nuevo_stock_disponible = 0;
+        $this->receta_nuevo_cantidad = 1;
+        $this->receta_nuevo_indicaciones = '';
+        $this->buscarMedicamentoReceta = '';
+    }
+
+    /**
+     * Selecciona un medicamento tras validar estrictamente que cuente con stock disponible (> 0).
+     */
+    public function seleccionarMedicamentoReceta(int $arg1, ?int $arg2 = null): void
+    {
+        $productoId = $arg2 ?? $arg1;
+        $producto = Producto::with('marca')->find($productoId);
+
+        if (! $producto) {
+            return;
+        }
+
+        $stock = $this->obtenerStockDisponibleProducto($producto->id);
+
+        if ($stock <= 0) {
+            $this->limpiarMedicamentoSeleccionadoReceta();
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Producto Sin Stock',
+                'text' => "El medicamento '{$producto->nombre}' no cuenta con existencias en farmacia (Stock: 0). Por favor, seleccione otro fármaco disponible.",
+            ]);
+
+            return;
+        }
+
+        $this->receta_nuevo_producto_id = $producto->id;
+        $this->receta_nuevo_producto_nombre = $producto->nombre;
+        $this->receta_nuevo_unidad_medida = $producto->unidad_medida ?? 'Unidad';
+        $this->receta_nuevo_marca_nombre = $producto->marca?->nombre ?? '';
+        $this->receta_nuevo_stock_disponible = $stock;
+        $this->buscarMedicamentoReceta = '';
+
+        // Compatibilidad si se invoca con formato posicional index
+        if ($arg2 !== null && isset($this->receta_medicamentos[$arg1])) {
+            $this->receta_medicamentos[$arg1]['producto_id'] = $producto->id;
+            $this->receta_medicamentos[$arg1]['producto_nombre'] = $producto->nombre;
+            $this->receta_medicamentos[$arg1]['unidad_medida'] = $producto->unidad_medida ?? 'Unidad';
+        }
+
+        $this->resetValidation([
+            'receta_nuevo_producto_id',
+            'receta_nuevo_cantidad',
+            'receta_nuevo_indicaciones',
+        ]);
+    }
+
+    public function limpiarMedicamentoReceta(?int $index = null): void
+    {
+        $this->limpiarMedicamentoSeleccionadoReceta();
+
+        if ($index !== null && isset($this->receta_medicamentos[$index])) {
+            $this->receta_medicamentos[$index]['producto_id'] = '';
+            $this->receta_medicamentos[$index]['producto_nombre'] = '';
+            $this->receta_medicamentos[$index]['unidad_medida'] = '';
+        }
+    }
+
+    /**
+     * Agrega el medicamento seleccionado a la tabla de la receta tras revalidar stock.
+     */
+    public function agregarMedicamentoAReceta(): void
+    {
+        if (! $this->receta_nuevo_producto_id) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Seleccione un Medicamento',
+                'text' => 'Debe buscar y seleccionar un medicamento antes de agregarlo.',
+            ]);
+
+            return;
+        }
+
+        $this->validate([
+            'receta_nuevo_producto_id' => ['required', 'exists:productos,id'],
+            'receta_nuevo_cantidad' => ['required', 'integer', 'min:1'],
+            'receta_nuevo_indicaciones' => ['required', 'string', 'min:2', 'max:255'],
+        ], [
+            'receta_nuevo_producto_id.required' => 'Seleccione un medicamento.',
+            'receta_nuevo_cantidad.required' => 'Indique la cantidad a prescribir.',
+            'receta_nuevo_cantidad.min' => 'La cantidad mínima es 1.',
+            'receta_nuevo_indicaciones.required' => 'Indique la posología y horarios (ej. 1 comp cada 8 hrs por 5 días).',
+        ]);
+
+        $stock = $this->obtenerStockDisponibleProducto((int) $this->receta_nuevo_producto_id);
+
+        if ($stock <= 0) {
+            $prodNombre = $this->receta_nuevo_producto_nombre;
+            $this->limpiarMedicamentoSeleccionadoReceta();
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Producto Sin Stock',
+                'text' => "El medicamento '{$prodNombre}' no cuenta con stock disponible en farmacia. Por favor, seleccione otro producto.",
+            ]);
+
+            return;
+        }
+
+        $yaExiste = false;
+        foreach ($this->receta_medicamentos as $k => $item) {
+            if ($item['producto_id'] == $this->receta_nuevo_producto_id) {
+                $this->receta_medicamentos[$k]['cantidad'] += (int) $this->receta_nuevo_cantidad;
+                $this->receta_medicamentos[$k]['indicaciones'] = trim($this->receta_nuevo_indicaciones);
+                $yaExiste = true;
+                break;
+            }
+        }
+
+        if (! $yaExiste) {
+            $this->receta_medicamentos[] = [
+                'producto_id' => $this->receta_nuevo_producto_id,
+                'producto_nombre' => $this->receta_nuevo_producto_nombre,
+                'unidad_medida' => $this->receta_nuevo_unidad_medida,
+                'marca_nombre' => $this->receta_nuevo_marca_nombre,
+                'stock_disponible' => $stock,
+                'cantidad' => (int) $this->receta_nuevo_cantidad,
+                'indicaciones' => trim($this->receta_nuevo_indicaciones),
+            ];
+        }
+
+        $this->limpiarMedicamentoSeleccionadoReceta();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Medicamento Agregado',
+            'text' => 'El medicamento se agregó a la lista de la receta.',
+            'toast' => true,
+        ]);
+    }
+
+    public function removerMedicamentoReceta(int $index): void
+    {
+        if (isset($this->receta_medicamentos[$index])) {
+            unset($this->receta_medicamentos[$index]);
+            $this->receta_medicamentos = array_values($this->receta_medicamentos);
+        }
     }
 
     public function agregarFilaMedicamento(): void
     {
-        $this->receta_medicamentos[] = [
-            'producto_id' => '',
-            'producto_nombre' => '',
-            'unidad_medida' => '',
-            'busqueda' => '',
-            'cantidad' => 1,
-            'indicaciones' => '',
-        ];
+        $this->agregarMedicamentoAReceta();
     }
 
     public function eliminarFilaMedicamento(int $index): void
     {
-        unset($this->receta_medicamentos[$index]);
-        $this->receta_medicamentos = array_values($this->receta_medicamentos);
-
-        if (empty($this->receta_medicamentos)) {
-            $this->agregarFilaMedicamento();
-        }
-    }
-
-    public function seleccionarMedicamentoReceta(int $index, int $productoId): void
-    {
-        $producto = Producto::find($productoId);
-        if ($producto && isset($this->receta_medicamentos[$index])) {
-            $this->receta_medicamentos[$index]['producto_id'] = $producto->id;
-            $this->receta_medicamentos[$index]['producto_nombre'] = $producto->nombre;
-            $this->receta_medicamentos[$index]['unidad_medida'] = $producto->unidad_medida ?? 'Unidad';
-            $this->receta_medicamentos[$index]['busqueda'] = '';
-        }
-    }
-
-    public function limpiarMedicamentoReceta(int $index): void
-    {
-        if (isset($this->receta_medicamentos[$index])) {
-            $this->receta_medicamentos[$index]['producto_id'] = '';
-            $this->receta_medicamentos[$index]['producto_nombre'] = '';
-            $this->receta_medicamentos[$index]['unidad_medida'] = '';
-            $this->receta_medicamentos[$index]['busqueda'] = '';
-        }
+        $this->removerMedicamentoReceta($index);
     }
 
     public function prescribirReceta(): void
@@ -905,6 +1415,14 @@ class ProformaDetalle extends Component
             return;
         }
 
+        // Si el usuario seleccionó un medicamento y rellenó los campos pero no pulsó "Agregar", lo incorporamos automáticamente
+        if ($this->receta_nuevo_producto_id && (int) $this->receta_nuevo_cantidad > 0 && ! empty(trim($this->receta_nuevo_indicaciones))) {
+            $stock = $this->obtenerStockDisponibleProducto((int) $this->receta_nuevo_producto_id);
+            if ($stock > 0) {
+                $this->agregarMedicamentoAReceta();
+            }
+        }
+
         $this->validate([
             'receta_medico_id' => ['required', 'exists:users,id'],
             'receta_observaciones' => ['nullable', 'string', 'max:1000'],
@@ -913,7 +1431,10 @@ class ProformaDetalle extends Component
             'receta_medicamentos.*.cantidad' => ['required', 'integer', 'min:1'],
             'receta_medicamentos.*.indicaciones' => ['required', 'string', 'min:2', 'max:255'],
         ], [
-            'receta_medicamentos.*.producto_id.required' => 'Seleccione un fármaco en cada línea.',
+            'receta_medico_id.required' => 'Debe seleccionar un médico prescriptor.',
+            'receta_medicamentos.required' => 'Debe agregar al menos un medicamento a la receta.',
+            'receta_medicamentos.min' => 'Debe agregar al menos un medicamento a la receta.',
+            'receta_medicamentos.*.producto_id.required' => 'Seleccione un fármaco válido en cada línea.',
             'receta_medicamentos.*.cantidad.min' => 'La cantidad mínima es 1.',
             'receta_medicamentos.*.indicaciones.required' => 'Indique la posología (dosis, horas y días).',
         ]);
@@ -938,6 +1459,12 @@ class ProformaDetalle extends Component
         }
 
         $this->proforma->recalcularTotal();
+        $this->proforma->load([
+            'recetaActiva.detalles.producto',
+            'recetaActiva.doctor',
+            'recetas.detalles.producto',
+            'recetas.doctor',
+        ]);
         $this->cerrarModalReceta();
 
         $this->dispatch('swal', [
@@ -2193,6 +2720,9 @@ class ProformaDetalle extends Component
         $this->proforma->load([
             'servicios.servicio.categoria',
             'solicitudes.tipoSolicitud',
+            'evoluciones.usuarioCreador',
+            'indicaciones.usuarioCreador',
+            'internaciones.usuarioCreador',
             'calendarios' => fn ($q) => $q->orderBy('fecha')->orderBy('hora'),
             'recetaActiva.detalles.producto',
             'recetas' => fn ($q) => $q->with(['detalles.producto', 'doctor'])->latest(),
@@ -2227,24 +2757,30 @@ class ProformaDetalle extends Component
         }
         $servicioSeleccionado = $this->nuevo_servicio_id ? Servicio::with('categoria')->find($this->nuevo_servicio_id) : null;
 
-        // 2. Catálogo reactivo para Recetas
-        $sugerenciasMedicamentosReceta = [];
-        if ($this->modalRecetaOpen) {
-            foreach ($this->receta_medicamentos as $idx => $rItem) {
-                $term = trim($rItem['busqueda'] ?? '');
-                if (! empty($term)) {
-                    $sugerenciasMedicamentosReceta[$idx] = Producto::where(function ($q) use ($term) {
+        // 2. Catálogo reactivo para Recetas (Búsqueda de medicamentos con existencias en sucursal)
+        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()?->sucursal_id;
+        $sugerenciasMedicamentosReceta = collect();
+        if ($this->modalRecetaOpen && ! $this->receta_nuevo_producto_id) {
+            $term = trim($this->buscarMedicamentoReceta);
+            if (! empty($term)) {
+                $sugerenciasMedicamentosReceta = Producto::with([
+                    'marca',
+                    'lotes' => function ($q) use ($sucursalId) {
+                        $q->when($sucursalId, fn ($sq) => $sq->where('sucursal_id', $sucursalId))
+                            ->where('cantidad_actual', '>', 0);
+                    },
+                ])
+                    ->where(function ($q) use ($term) {
                         $q->where('nombre', 'like', "%{$term}%")
                             ->orWhere('descripcion', 'like', "%{$term}%");
-                    })->orderBy('nombre')->take(8)->get();
-                } else {
-                    $sugerenciasMedicamentosReceta[$idx] = collect();
-                }
+                    })
+                    ->orderBy('nombre')
+                    ->take(10)
+                    ->get();
             }
         }
 
         // 3. Catálogo reactivo para Consumos Extras (Filtro estricto por stock disponible en sucursal y sección)
-        $sucursalId = $this->proforma->sucursal_id ?? Auth::user()->sucursal_id;
         $seccionesSucursal = Seccion::where('sucursal_id', $sucursalId)
             ->where('activo', true)
             ->orderBy('es_almacen_principal', 'desc')
@@ -2409,6 +2945,9 @@ class ProformaDetalle extends Component
             'subtotalFarmacia' => $subtotalFarmacia,
             'totalPrescripcionReferencial' => $totalPrescripcionReferencial,
             'cajasAbiertas' => $this->getCajasAbiertasDisponibles(),
+            'evoluciones' => $this->proforma->evoluciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
+            'indicaciones' => $this->proforma->indicaciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
+            'internaciones' => $this->proforma->internaciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
         ]);
     }
 }

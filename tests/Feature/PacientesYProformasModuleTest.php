@@ -7,9 +7,13 @@ use App\Livewire\Proformas\ProformasIndex;
 use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\ConsumoExtra;
+use App\Models\Evolucion;
+use App\Models\Indicacion;
+use App\Models\Internacion;
 use App\Models\Lote;
 use App\Models\MovimientoInventario;
 use App\Models\Paciente;
+use App\Models\Permiso;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\ProformaCalendario;
@@ -24,6 +28,7 @@ use App\Models\Sucursal;
 use App\Models\TipoSolicitud;
 use App\Models\User;
 use App\Services\ReportePacientesService;
+use Database\Seeders\PermisoSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -602,14 +607,25 @@ test('puede buscar y seleccionar reactivamente en modales de servicios, recetas 
         ->assertSet('nuevo_servicio_id', null)
         ->assertSet('nuevo_servicio_costo', '0.00');
 
-    // 2. Selector reactivo de Recetas (por fila)
+    // 2. Selector reactivo de Recetas con validación de stock
+    Lote::create([
+        'sucursal_id' => $proforma->sucursal_id,
+        'producto_id' => $productoMed->id,
+        'codigo_lote' => 'LOTE-MED-TEST-'.rand(100, 999),
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'precio_compra' => 10.00,
+        'precio_venta' => 20.00,
+        'fecha_vencimiento' => now()->addYear(),
+    ]);
+
     Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
         ->call('abrirModalReceta')
-        ->call('seleccionarMedicamentoReceta', 0, $productoMed->id)
-        ->assertSet('receta_medicamentos.0.producto_id', $productoMed->id)
-        ->assertSet('receta_medicamentos.0.producto_nombre', $productoMed->nombre)
-        ->call('limpiarMedicamentoReceta', 0)
-        ->assertSet('receta_medicamentos.0.producto_id', '');
+        ->call('seleccionarMedicamentoReceta', $productoMed->id)
+        ->assertSet('receta_nuevo_producto_id', $productoMed->id)
+        ->assertSet('receta_nuevo_producto_nombre', $productoMed->nombre)
+        ->call('limpiarMedicamentoReceta')
+        ->assertSet('receta_nuevo_producto_id', null);
 
     // 3. Selector reactivo de Consumos Extras
     Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
@@ -1091,4 +1107,450 @@ test('la edad del paciente en la proforma y reportes corresponde a la fecha de r
     $itemProforma = collect($datosReporte['items'])->firstWhere('proforma_id', $proforma->id);
     expect($itemProforma)->not->toBeNull();
     expect($itemProforma['paciente_edad'])->toBe(18);
+});
+
+test('modal de prescripcion de receta valida stock mayor a cero y acumula medicamentos en tabla', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Elena',
+        'apellido_paterno' => 'Rios',
+        'cedula' => 'CI-REC-'.rand(1000, 9999),
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // Producto 1: Con stock en sucursal (50 unidades)
+    $prodConStock = Producto::create([
+        'nombre' => 'Paracetamol 500mg',
+        'unidad_medida' => 'Tableta',
+        'ultimo_precio_venta' => 1.50,
+        'stock_minimo' => 10,
+    ]);
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $prodConStock->id,
+        'codigo_lote' => 'LOTE-PARAC-'.rand(100, 999),
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'precio_compra' => 0.50,
+        'precio_venta' => 1.50,
+        'fecha_vencimiento' => now()->addMonths(12),
+    ]);
+
+    // Producto 2: Sin stock alguno (0 unidades)
+    $prodSinStock = Producto::create([
+        'nombre' => 'Ibuprofeno 400mg',
+        'unidad_medida' => 'Comprimido',
+        'ultimo_precio_venta' => 2.00,
+        'stock_minimo' => 10,
+    ]);
+
+    // Intentar seleccionar producto sin stock debe bloquearse y disparar swal
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalReceta')
+        ->call('seleccionarMedicamentoReceta', $prodSinStock->id)
+        ->assertDispatched('swal')
+        ->assertSet('receta_nuevo_producto_id', null)
+        ->assertSet('receta_medicamentos', [])
+
+        // Seleccionar producto con stock sí se permite
+        ->call('seleccionarMedicamentoReceta', $prodConStock->id)
+        ->assertSet('receta_nuevo_producto_id', $prodConStock->id)
+        ->assertSet('receta_nuevo_producto_nombre', 'Paracetamol 500mg')
+        ->assertSet('receta_nuevo_stock_disponible', 50)
+
+        // Indicar cantidad y posología y agregar a la tabla
+        ->set('receta_nuevo_cantidad', 15)
+        ->set('receta_nuevo_indicaciones', '1 comp cada 8 hrs por 5 días vía oral')
+        ->call('agregarMedicamentoAReceta')
+        ->assertDispatched('swal')
+        ->assertSet('receta_nuevo_producto_id', null)
+        ->assertCount('receta_medicamentos', 1)
+
+        // Verificar contenido en la tabla acumulada
+        ->assertSee('Paracetamol 500mg')
+        ->assertSee('1 comp cada 8 hrs por 5 días vía oral')
+
+        // Quitar medicamento de la tabla
+        ->call('removerMedicamentoReceta', 0)
+        ->assertCount('receta_medicamentos', 0)
+        ->assertSee('No se han agregado medicamentos a la receta todavía')
+
+        // Agregar de nuevo y emitir receta activa
+        ->call('seleccionarMedicamentoReceta', $prodConStock->id)
+        ->set('receta_nuevo_cantidad', 10)
+        ->set('receta_nuevo_indicaciones', '1 cada 8 horas')
+        ->call('agregarMedicamentoAReceta')
+        ->assertCount('receta_medicamentos', 1)
+        ->call('prescribirReceta')
+        ->assertDispatched('swal')
+        ->assertSet('modalRecetaOpen', false);
+
+    $receta = Receta::where('proforma_id', $proforma->id)->where('activo', true)->first();
+    expect($receta)->not->toBeNull();
+    expect($receta->detalles)->toHaveCount(1);
+    expect($receta->detalles->first()->producto_id)->toBe($prodConStock->id);
+    expect($receta->detalles->first()->cantidad)->toBe(10);
+    expect($receta->detalles->first()->indicaciones)->toBe('1 cada 8 horas');
+});
+
+test('calcula correctamente el numero de historia clinica del paciente con fecha dmY e iniciales', function () {
+    $paciente = Paciente::create([
+        'nombres' => 'Luis David',
+        'apellido_paterno' => 'Loza',
+        'apellido_materno' => 'Mamani',
+        'fecha_nacimiento' => '2000-10-23',
+        'cedula' => 'CI-HC-'.rand(1000, 9999),
+        'genero' => 'Masculino',
+    ]);
+
+    // 23-10-2000 -> 23102000 + L D L M -> 23102000LDLM
+    expect($paciente->numero_historia_clinica)->toBe('23102000LDLM');
+});
+
+test('pestañas de evolucion, indicaciones e internacion permiten crear, editar y eliminar registros', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Mario',
+        'apellido_paterno' => 'Condori',
+        'fecha_nacimiento' => '1995-05-15',
+        'cedula' => 'CI-EVO-'.rand(1000, 9999),
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    // 1. Probar Hoja de Evolución
+    $component = Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'evoluciones')
+        ->assertSet('tab', 'evoluciones')
+        ->call('abrirModalEvolucion')
+        ->assertSet('modalEvolucionOpen', true)
+        ->set('evolucion_fecha_hora', '2026-11-04T10:30')
+        ->set('evolucion_descripcion', '<p>Paciente hemodinámicamente estable, afebril.</p>')
+        ->call('guardarEvolucion')
+        ->assertDispatched('swal')
+        ->assertSet('modalEvolucionOpen', false);
+
+    $evolucion = Evolucion::where('proforma_id', $proforma->id)->first();
+    expect($evolucion)->not->toBeNull();
+    expect($evolucion->descripcion)->toContain('Paciente hemodinámicamente estable');
+
+    // Editar evolución
+    $component->call('abrirModalEvolucion', $evolucion->id)
+        ->assertSet('evolucion_id', $evolucion->id)
+        ->set('evolucion_descripcion', '<p>Paciente estable y tolerando dieta blanda.</p>')
+        ->call('guardarEvolucion')
+        ->assertDispatched('swal');
+
+    expect($evolucion->fresh()->descripcion)->toContain('tolerando dieta blanda');
+
+    // 2. Probar Hoja de Indicaciones
+    $component->call('cambiarTab', 'indicaciones')
+        ->assertSet('tab', 'indicaciones')
+        ->call('abrirModalIndicacion')
+        ->assertSet('modalIndicacionOpen', true)
+        ->set('indicacion_fecha_hora', '2026-11-04T11:00')
+        ->set('indicacion_descripcion', '<ol><li>Solución fisiológica 1000cc c/8h</li><li>Ceftriaxona 1g EV c/12h</li></ol>')
+        ->call('guardarIndicacion')
+        ->assertDispatched('swal')
+        ->assertSet('modalIndicacionOpen', false);
+
+    $indicacion = Indicacion::where('proforma_id', $proforma->id)->first();
+    expect($indicacion)->not->toBeNull();
+    expect($indicacion->descripcion)->toContain('Ceftriaxona 1g');
+
+    // 3. Probar Hoja de Internación
+    $component->call('cambiarTab', 'internaciones')
+        ->assertSet('tab', 'internaciones')
+        ->call('abrirModalInternacion')
+        ->assertSet('modalInternacionOpen', true)
+        ->set('internacion_fecha_hora', '2026-11-04T12:00')
+        ->set('internacion_descripcion', '<p>Ingreso a sala de internación cama 304.</p>')
+        ->call('guardarInternacion')
+        ->assertDispatched('swal')
+        ->assertSet('modalInternacionOpen', false);
+
+    $internacion = Internacion::where('proforma_id', $proforma->id)->first();
+    expect($internacion)->not->toBeNull();
+    expect($internacion->descripcion)->toContain('cama 304');
+
+    // 4. Probar eliminación
+    $component->call('eliminarEvolucion', $evolucion->id)
+        ->assertDispatched('swal');
+    expect(Evolucion::where('proforma_id', $proforma->id)->count())->toBe(0);
+
+    $component->call('eliminarIndicacion', $indicacion->id)
+        ->assertDispatched('swal');
+    expect(Indicacion::where('proforma_id', $proforma->id)->count())->toBe(0);
+
+    $component->call('eliminarInternacion', $internacion->id)
+        ->assertDispatched('swal');
+    expect(Internacion::where('proforma_id', $proforma->id)->count())->toBe(0);
+});
+
+test('bloquea mutaciones en evolucion, indicaciones e internacion cuando la proforma esta pagada', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Rosa',
+        'apellido_paterno' => 'Paredes',
+        'cedula' => 'CI-PAG-'.rand(1000, 9999),
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'Pagada',
+        'costo_total' => 100.00,
+    ]);
+
+    $itemEvo = Evolucion::create([
+        'proforma_id' => $proforma->id,
+        'fecha_hora' => now(),
+        'descripcion' => 'Nota previa',
+    ]);
+
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('abrirModalEvolucion')
+        ->assertSet('modalEvolucionOpen', false)
+        ->call('abrirModalIndicacion')
+        ->assertSet('modalIndicacionOpen', false)
+        ->call('abrirModalInternacion')
+        ->assertSet('modalInternacionOpen', false)
+        ->call('eliminarEvolucion', $itemEvo->id)
+        ->assertDispatched('swal');
+
+    expect($itemEvo->fresh())->not->toBeNull();
+});
+
+test('rutas de impresion pdf para evolucion, indicaciones e internacion generan documentos validos', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Juan Carlos',
+        'apellido_paterno' => 'Vargas',
+        'apellido_materno' => 'Rojas',
+        'fecha_nacimiento' => '1990-03-25',
+        'cedula' => 'CI-PDF-'.rand(1000, 9999),
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    Evolucion::create([
+        'proforma_id' => $proforma->id,
+        'fecha_hora' => now(),
+        'descripcion' => '<p>Paciente con buena tolerancia oral.</p>',
+        'usuario_creador_id' => $this->admin->id,
+    ]);
+
+    Indicacion::create([
+        'proforma_id' => $proforma->id,
+        'fecha_hora' => now(),
+        'descripcion' => '<p>Reposo relativo.</p>',
+        'usuario_creador_id' => $this->admin->id,
+    ]);
+
+    Internacion::create([
+        'proforma_id' => $proforma->id,
+        'fecha_hora' => now(),
+        'descripcion' => '<p>Ingreso a sala piso 2.</p>',
+        'usuario_creador_id' => $this->admin->id,
+    ]);
+
+    // 1. PDF Evolución
+    $respEvo = $this->get(route('proformas.pdf.evolucion', $proforma->id));
+    $respEvo->assertStatus(200);
+    $respEvo->assertHeader('content-type', 'application/pdf');
+
+    // 2. PDF Indicación
+    $respInd = $this->get(route('proformas.pdf.indicacion', $proforma->id));
+    $respInd->assertStatus(200);
+    $respInd->assertHeader('content-type', 'application/pdf');
+
+    // 3. PDF Internación
+    $respInt = $this->get(route('proformas.pdf.internacion', $proforma->id));
+    $respInt->assertStatus(200);
+    $respInt->assertHeader('content-type', 'application/pdf');
+});
+
+test('tabla de recetas muestra recetas previas y actual y genera pdf de receta con firma del medico', function () {
+    $this->actingAs($this->admin);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Alejandro',
+        'apellido_paterno' => 'Rios',
+        'fecha_nacimiento' => '1985-06-20',
+        'cedula' => 'CI-REC-'.rand(1000, 9999),
+        'genero' => 'Masculino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $prod1 = Producto::create([
+        'nombre' => 'Amoxicilina 500mg',
+        'unidad_medida' => 'Cápsula',
+        'ultimo_precio_venta' => 2.50,
+        'stock_minimo' => 10,
+    ]);
+
+    $prod2 = Producto::create([
+        'nombre' => 'Ibuprofeno 400mg',
+        'unidad_medida' => 'Tableta',
+        'ultimo_precio_venta' => 1.50,
+        'stock_minimo' => 10,
+    ]);
+
+    // Receta 1 (Histórica)
+    $recetaVieja = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->admin->id,
+        'activo' => false,
+        'observaciones' => 'Tratamiento inicial de choque',
+    ]);
+    RecetaDetalle::create([
+        'receta_id' => $recetaVieja->id,
+        'producto_id' => $prod1->id,
+        'cantidad' => 10,
+        'indicaciones' => '1 cada 8 horas por 3 días',
+        'despachado' => true,
+    ]);
+
+    // Receta 2 (Activa)
+    $recetaActiva = Receta::create([
+        'proforma_id' => $proforma->id,
+        'user_id' => $this->admin->id,
+        'activo' => true,
+        'observaciones' => 'Continuar pauta ambulatoria',
+    ]);
+    RecetaDetalle::create([
+        'receta_id' => $recetaActiva->id,
+        'producto_id' => $prod2->id,
+        'cantidad' => 6,
+        'indicaciones' => '1 cada 12 horas si hay dolor',
+        'despachado' => false,
+    ]);
+
+    // Verificar renderizado en la pestaña de recetas
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'recetas')
+        ->assertSet('tab', 'recetas')
+        ->assertSee('Historial y Registro de Recetas Médicas')
+        ->assertSee('Ibuprofeno 400mg')
+        ->assertSee('Vigente / Activa')
+        ->assertSee('Archivada / Previa');
+
+    // Probar generación del PDF de la receta activa
+    $respPdfActiva = $this->get(route('proformas.pdf.receta', [$proforma->id, $recetaActiva->id]));
+    $respPdfActiva->assertStatus(200);
+    $respPdfActiva->assertHeader('content-type', 'application/pdf');
+
+    // Probar generación del PDF de la receta histórica
+    $respPdfVieja = $this->get(route('proformas.pdf.receta', [$proforma->id, $recetaVieja->id]));
+    $respPdfVieja->assertStatus(200);
+    $respPdfVieja->assertHeader('content-type', 'application/pdf');
+});
+
+test('control de permisos granulares para evolucion, indicacion e internacion (ver, crear, editar, eliminar)', function () {
+    $this->seed(PermisoSeeder::class);
+
+    $rolOperador = Rol::firstOrCreate(['nombre' => 'Enfermería'], ['descripcion' => 'Enfermería']);
+    $usuario = User::factory()->create([
+        'rol_id' => $rolOperador->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    $paciente = Paciente::create([
+        'nombres' => 'Permiso',
+        'apellido_paterno' => 'Test',
+        'fecha_nacimiento' => '1992-01-01',
+        'cedula' => 'CI-PERM-'.rand(1000, 9999),
+        'genero' => 'Femenino',
+    ]);
+
+    $proforma = Proforma::create([
+        'sucursal_id' => $this->sucursal->id,
+        'paciente_id' => $paciente->id,
+        'fecha_ingreso' => now(),
+        'tipo_atencion' => 'Internacion',
+        'estado' => 'En Curso',
+        'costo_total' => 0.00,
+    ]);
+
+    $evolucion = Evolucion::create([
+        'proforma_id' => $proforma->id,
+        'fecha_hora' => now(),
+        'descripcion' => 'Nota original',
+    ]);
+
+    $this->actingAs($usuario);
+
+    // 1. Sin permisos asignados -> cambiarTab y acciones rechazadas
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'evoluciones')
+        ->assertDispatched('swal')
+        ->call('abrirModalEvolucion')
+        ->assertSet('modalEvolucionOpen', false)
+        ->call('abrirModalIndicacion')
+        ->assertSet('modalIndicacionOpen', false)
+        ->call('abrirModalInternacion')
+        ->assertSet('modalInternacionOpen', false)
+        ->call('eliminarEvolucion', $evolucion->id)
+        ->assertDispatched('swal');
+
+    expect($evolucion->fresh())->not->toBeNull();
+
+    // 2. Asignar permisos de ver y crear evolucion
+    $usuario->permisos()->sync([
+        Permiso::where('nombre', 'proformas.evolucion.ver')->value('id'),
+        Permiso::where('nombre', 'proformas.evolucion.crear')->value('id'),
+    ]);
+
+    Livewire::test(ProformaDetalle::class, ['proforma' => $proforma])
+        ->call('cambiarTab', 'evoluciones')
+        ->assertSet('tab', 'evoluciones')
+        ->call('abrirModalEvolucion')
+        ->assertSet('modalEvolucionOpen', true)
+        // Intentar editar sin permiso de editar
+        ->call('abrirModalEvolucion', $evolucion->id)
+        ->assertDispatched('swal')
+        // Intentar eliminar sin permiso de eliminar
+        ->call('eliminarEvolucion', $evolucion->id)
+        ->assertDispatched('swal');
 });

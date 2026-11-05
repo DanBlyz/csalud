@@ -93,6 +93,21 @@ class Proforma extends Model
         return $this->hasMany(ProformaSolicitud::class, 'proforma_id');
     }
 
+    public function evoluciones(): HasMany
+    {
+        return $this->hasMany(Evolucion::class, 'proforma_id');
+    }
+
+    public function indicaciones(): HasMany
+    {
+        return $this->hasMany(Indicacion::class, 'proforma_id');
+    }
+
+    public function internaciones(): HasMany
+    {
+        return $this->hasMany(Internacion::class, 'proforma_id');
+    }
+
     public function calendarios(): HasMany
     {
         return $this->hasMany(ProformaCalendario::class, 'proforma_id');

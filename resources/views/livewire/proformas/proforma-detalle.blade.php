@@ -360,6 +360,51 @@
                 </button>
             @endpermiso
 
+            <!-- 2.A. Hoja de Evolución -->
+            @permiso('proformas.evolucion.ver')
+                <button 
+                    wire:click="cambiarTab('evoluciones')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'evoluciones' ? 'border-sky-600 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-notes-medical text-xs"></i>
+                    <span>Hoja de Evolución</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->evoluciones->count() }}
+                    </span>
+                </button>
+            @endpermiso
+
+            <!-- 2.B. Hoja de Indicaciones -->
+            @permiso('proformas.indicacion.ver')
+                <button 
+                    wire:click="cambiarTab('indicaciones')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'indicaciones' ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-clipboard-list text-xs"></i>
+                    <span>Hoja de Indicaciones</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->indicaciones->count() }}
+                    </span>
+                </button>
+            @endpermiso
+
+            <!-- 2.C. Hoja de Internación -->
+            @permiso('proformas.internacion.ver')
+                <button 
+                    wire:click="cambiarTab('internaciones')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'internaciones' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-bed text-xs"></i>
+                    <span>Hoja de Internación</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->internaciones->count() }}
+                    </span>
+                </button>
+            @endpermiso
+
             <!-- 3. Calendario -->
             @permiso('proformas.cronograma.ver')
                 <button 
@@ -721,7 +766,388 @@
             @endif
 
             <!-- =================================================================== -->
-            <!-- TAB 3: CALENDARIO Y AGENDA (FORMATO TABLA) -->
+            <!-- TAB: HOJA DE EVOLUCIÓN -->
+            <!-- =================================================================== -->
+            @if ($tab === 'evoluciones')
+                @permiso('proformas.evolucion.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-notes-medical text-sky-600 dark:text-sky-400"></i>
+                                    Hoja de Evolución Clínica
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Registro cronológico del estado de salud, evolución y observaciones clínicas del paciente.</p>
+                            </div>
+                            <div class="flex items-center gap-2 self-start sm:self-center">
+                                <a 
+                                    href="{{ route('proformas.pdf.evolucion', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                                >
+                                    <i class="fas fa-file-pdf text-red-400"></i>
+                                    <span>Imprimir Hoja PDF</span>
+                                </a>
+                                @if ($proforma->estado !== 'Pagada')
+                                    @permiso('proformas.evolucion.crear')
+                                        <button 
+                                            wire:click="abrirModalEvolucion" 
+                                            wire:loading.attr="disabled"
+                                            type="button" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Nueva Nota de Evolución</span>
+                                        </button>
+                                    @endpermiso
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4 w-44">Fecha y Hora</th>
+                                        <th class="py-3 px-4">Evolución / Descripción Clínica</th>
+                                        <th class="py-3 px-4 w-48">Registrado Por</th>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <th class="py-3 px-4 text-center w-28">Acciones</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($evoluciones as $index => $item)
+                                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                            <td class="py-3 px-4 whitespace-nowrap">
+                                                <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                                    <i class="far fa-calendar-alt text-sky-500 text-[11px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('d/m/Y') : '-' }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                    <i class="far fa-clock text-[10px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('H:i') : '-' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans prose prose-sm dark:prose-invert max-w-none clinical-notes-content">
+                                                    {!! $item->descripcion !!}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                    <i class="fas fa-user-md text-sky-600 text-[10px]"></i>
+                                                    {{ $item->usuarioCreador->name ?? 'Usuario del Sistema' }}
+                                                </span>
+                                            </td>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        @permiso('proformas.evolucion.editar')
+                                                            <button 
+                                                                wire:click="abrirModalEvolucion({{ $item->id }})" 
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Editar Evolución"
+                                                            >
+                                                                <i class="fas fa-edit text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                        @permiso('proformas.evolucion.eliminar')
+                                                            <button 
+                                                                wire:click="eliminarEvolucion({{ $item->id }})" 
+                                                                wire:confirm="¿Está seguro de eliminar esta nota de evolución?"
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Eliminar Evolución"
+                                                            >
+                                                                <i class="fas fa-trash-alt text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                    </div>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 5 : 4 }}" class="py-12 text-center text-slate-400">
+                                                <i class="fas fa-notes-medical text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-400">No hay notas de evolución registradas</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">Presione "Nueva Nota de Evolución" para redactar el primer informe de seguimiento.</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la hoja de evolución clínica.</p>
+                    </div>
+                @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB: HOJA DE INDICACIONES -->
+            <!-- =================================================================== -->
+            @if ($tab === 'indicaciones')
+                @permiso('proformas.indicacion.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-clipboard-list text-cyan-600 dark:text-cyan-400"></i>
+                                    Hoja de Indicaciones Médicas
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Instrucciones médicas, esquema terapéutico, administración de fármacos y cuidados de enfermería.</p>
+                            </div>
+                            <div class="flex items-center gap-2 self-start sm:self-center">
+                                <a 
+                                    href="{{ route('proformas.pdf.indicacion', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                                >
+                                    <i class="fas fa-file-pdf text-red-400"></i>
+                                    <span>Imprimir Hoja PDF</span>
+                                </a>
+                                @if ($proforma->estado !== 'Pagada')
+                                    @permiso('proformas.indicacion.crear')
+                                        <button 
+                                            wire:click="abrirModalIndicacion" 
+                                            wire:loading.attr="disabled"
+                                            type="button" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold shadow-md shadow-cyan-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Nueva Indicación Médica</span>
+                                        </button>
+                                    @endpermiso
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4 w-44">Fecha y Hora</th>
+                                        <th class="py-3 px-4">Indicaciones Médicas</th>
+                                        <th class="py-3 px-4 w-48">Registrado Por</th>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <th class="py-3 px-4 text-center w-28">Acciones</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($indicaciones as $index => $item)
+                                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                            <td class="py-3 px-4 whitespace-nowrap">
+                                                <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                                    <i class="far fa-calendar-alt text-cyan-500 text-[11px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('d/m/Y') : '-' }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                    <i class="far fa-clock text-[10px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('H:i') : '-' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans prose prose-sm dark:prose-invert max-w-none clinical-notes-content">
+                                                    {!! $item->descripcion !!}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                    <i class="fas fa-user-md text-cyan-600 text-[10px]"></i>
+                                                    {{ $item->usuarioCreador->name ?? 'Médico / Personal' }}
+                                                </span>
+                                            </td>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        @permiso('proformas.indicacion.editar')
+                                                            <button 
+                                                                wire:click="abrirModalIndicacion({{ $item->id }})" 
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Editar Indicación"
+                                                            >
+                                                                <i class="fas fa-edit text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                        @permiso('proformas.indicacion.eliminar')
+                                                            <button 
+                                                                wire:click="eliminarIndicacion({{ $item->id }})" 
+                                                                wire:confirm="¿Está seguro de eliminar esta indicación médica?"
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Eliminar Indicación"
+                                                            >
+                                                                <i class="fas fa-trash-alt text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                    </div>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 5 : 4 }}" class="py-12 text-center text-slate-400">
+                                                <i class="fas fa-clipboard-list text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-400">No hay indicaciones médicas registradas</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">Presione "Nueva Indicación Médica" para ingresar el plan terapéutico.</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la hoja de indicaciones médicas.</p>
+                    </div>
+                @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB: HOJA DE INTERNACIÓN -->
+            <!-- =================================================================== -->
+            @if ($tab === 'internaciones')
+                @permiso('proformas.internacion.ver')
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i class="fas fa-bed text-indigo-600 dark:text-indigo-400"></i>
+                                    Hoja de Internación
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Registro de hospitalización, ingresos a sala, altas transitorias y notas de internación.</p>
+                            </div>
+                            <div class="flex items-center gap-2 self-start sm:self-center">
+                                <a 
+                                    href="{{ route('proformas.pdf.internacion', $proforma->id) }}" 
+                                    target="_blank"
+                                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                                >
+                                    <i class="fas fa-file-pdf text-red-400"></i>
+                                    <span>Imprimir Hoja PDF</span>
+                                </a>
+                                @if ($proforma->estado !== 'Pagada')
+                                    @permiso('proformas.internacion.crear')
+                                        <button 
+                                            wire:click="abrirModalInternacion" 
+                                            wire:loading.attr="disabled"
+                                            type="button" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Nuevo Registro de Internación</span>
+                                        </button>
+                                    @endpermiso
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4 w-44">Fecha y Hora</th>
+                                        <th class="py-3 px-4">Detalle / Nota de Internación</th>
+                                        <th class="py-3 px-4 w-48">Registrado Por</th>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <th class="py-3 px-4 text-center w-28">Acciones</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    @forelse ($internaciones as $index => $item)
+                                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                            <td class="py-3 px-4 whitespace-nowrap">
+                                                <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                                    <i class="far fa-calendar-alt text-indigo-500 text-[11px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('d/m/Y') : '-' }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                    <i class="far fa-clock text-[10px]"></i>
+                                                    {{ $item->fecha_hora ? $item->fecha_hora->format('H:i') : '-' }}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans prose prose-sm dark:prose-invert max-w-none clinical-notes-content">
+                                                    {!! $item->descripcion !!}
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                    <i class="fas fa-user-md text-indigo-600 text-[10px]"></i>
+                                                    {{ $item->usuarioCreador->name ?? 'Personal Clínico' }}
+                                                </span>
+                                            </td>
+                                            @if ($proforma->estado !== 'Pagada')
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        @permiso('proformas.internacion.editar')
+                                                            <button 
+                                                                wire:click="abrirModalInternacion({{ $item->id }})" 
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Editar Internación"
+                                                            >
+                                                                <i class="fas fa-edit text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                        @permiso('proformas.internacion.eliminar')
+                                                            <button 
+                                                                wire:click="eliminarInternacion({{ $item->id }})" 
+                                                                wire:confirm="¿Está seguro de eliminar este registro de internación?"
+                                                                type="button" 
+                                                                class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors cursor-pointer"
+                                                                title="Eliminar Internación"
+                                                            >
+                                                                <i class="fas fa-trash-alt text-xs"></i>
+                                                            </button>
+                                                        @endpermiso
+                                                    </div>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $proforma->estado !== 'Pagada' ? 5 : 4 }}" class="py-12 text-center text-slate-400">
+                                                <i class="fas fa-bed text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                <p class="font-medium text-slate-600 dark:text-slate-400">No hay registros de internación</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">Presione "Nuevo Registro de Internación" para documentar la estancia hospitalaria.</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la hoja de internación hospitalaria.</p>
+                    </div>
+                @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 6: CALENDARIO Y AGENDA (FORMATO TABLA) -->
             <!-- =================================================================== -->
             @if ($tab === 'calendario')
                 @permiso('proformas.cronograma.ver')
@@ -935,7 +1361,18 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex flex-col sm:items-end gap-1">
+                                    <div class="flex flex-col sm:items-end gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <a 
+                                                href="{{ route('proformas.pdf.receta', [$proforma->id, $proforma->recetaActiva->id]) }}" 
+                                                target="_blank"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                                title="Imprimir Receta Vigente en PDF"
+                                            >
+                                                <i class="fas fa-file-pdf text-red-300"></i>
+                                                <span>Imprimir Receta PDF</span>
+                                            </a>
+                                        </div>
                                         <div class="text-xs font-mono font-medium text-slate-500 dark:text-slate-400">
                                             Pauta Prescrita (Estimado Referencial): <span class="font-bold text-slate-700 dark:text-slate-200">Bs. {{ number_format($totalPrescripcionReferencial, 2) }}</span>
                                         </div>
@@ -1022,48 +1459,103 @@
                             </div>
                         @endif
 
-                        <!-- HISTORIAL DE RECETAS ANTERIORES (INACTIVAS) -->
-                        @php
-                            $recetasHistoricas = $proforma->recetas->where('activo', false);
-                        @endphp
-
-                        @if ($recetasHistoricas->isNotEmpty())
-                            <div class="pt-4 border-t border-slate-200 dark:border-slate-800" x-data="{ verHistorico: false }">
-                                <button 
-                                    @click="verHistorico = !verHistorico" 
-                                    type="button" 
-                                    class="flex items-center justify-between w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-history text-slate-400"></i>
-                                        <span>Historial de Recetas Anteriores ({{ $recetasHistoricas->count() }} archivadas)</span>
-                                    </div>
-                                    <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': verHistorico }"></i>
-                                </button>
-
-                                <div x-show="verHistorico" x-collapse class="mt-3 space-y-3" style="display: none;">
-                                    @foreach ($recetasHistoricas as $recOld)
-                                        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
-                                            <div class="flex items-center justify-between mb-2">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="font-bold text-slate-700 dark:text-slate-300">Receta #{{ $recOld->id }} (Histórica)</span>
-                                                    <span class="px-2 py-0.2 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">Inactiva</span>
-                                                </div>
-                                                <span class="text-slate-400 font-mono text-[11px]">{{ $recOld->created_at?->format('d/m/Y H:i') }}</span>
-                                            </div>
-
-                                            <ul class="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
-                                                @foreach ($recOld->detalles as $dOld)
-                                                    <li>
-                                                        <strong>{{ $dOld->producto->nombre ?? 'Medicamento' }}</strong> ({{ $dOld->cantidad }} un.): {{ $dOld->indicaciones }}
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    @endforeach
+                        <!-- TABLA GENERAL DE RECETAS (ACTUAL Y PREVIAS) -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <i class="fas fa-history text-teal-600 dark:text-teal-400"></i>
+                                        <span>Historial y Registro de Recetas Médicas</span>
+                                    </h4>
+                                    <p class="text-xs text-slate-400 mt-0.5">Listado cronológico de todas las prescripciones emitidas para esta proforma (receta actual e históricas).</p>
                                 </div>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 self-start sm:self-center">
+                                    Total: {{ $proforma->recetas->count() }} {{ $proforma->recetas->count() === 1 ? 'receta' : 'recetas' }}
+                                </span>
                             </div>
-                        @endif
+
+                            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                        <tr>
+                                            <th class="py-3 px-4 w-12 text-center">#</th>
+                                            <th class="py-3 px-4 w-44">Fecha y Hora</th>
+                                            <th class="py-3 px-4 w-32">Número Receta</th>
+                                            <th class="py-3 px-4">Prescrito Por</th>
+                                            <th class="py-3 px-4 text-center">Medicamentos</th>
+                                            <th class="py-3 px-4 text-center w-36">Estado</th>
+                                            <th class="py-3 px-4 text-center w-36">Opción Imprimir</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                        @forelse ($proforma->recetas as $index => $rec)
+                                            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors {{ $rec->activo ? 'bg-emerald-50/20 dark:bg-emerald-950/10' : '' }}">
+                                                <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
+                                                    {{ $index + 1 }}
+                                                </td>
+                                                <td class="py-3 px-4 whitespace-nowrap">
+                                                    <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                                        <i class="far fa-calendar-alt text-teal-500 text-[11px]"></i>
+                                                        {{ $rec->created_at ? $rec->created_at->format('d/m/Y') : '-' }}
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                        <i class="far fa-clock text-[10px]"></i>
+                                                        {{ $rec->created_at ? $rec->created_at->format('H:i') : '-' }}
+                                                    </div>
+                                                </td>
+                                                <td class="py-3 px-4 whitespace-nowrap font-mono font-bold text-slate-800 dark:text-slate-200">
+                                                    <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                        #{{ str_pad($rec->id, 4, '0', STR_PAD_LEFT) }}
+                                                    </span>
+                                                </td>
+                                                <td class="py-3 px-4">
+                                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                        <i class="fas fa-user-md text-teal-600 text-[10px]"></i>
+                                                        {{ $rec->doctor->nombre_completo ?? $rec->doctor->name ?? 'Médico Tratante' }}
+                                                    </span>
+                                                </td>
+                                                <td class="py-3 px-4 text-center font-mono">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300">
+                                                        <i class="fas fa-pills text-[10px]"></i>
+                                                        {{ $rec->detalles->count() }} {{ $rec->detalles->count() === 1 ? 'fármaco' : 'fármacos' }}
+                                                    </span>
+                                                </td>
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    @if ($rec->activo)
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                                            <i class="fas fa-check-circle text-[10px]"></i> Vigente / Activa
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                                            <i class="fas fa-archive text-[10px]"></i> Archivada / Previa
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                    <a 
+                                                        href="{{ route('proformas.pdf.receta', [$proforma->id, $rec->id]) }}" 
+                                                        target="_blank"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold shadow-2xs hover:shadow-sm transition-all transform active:scale-95 cursor-pointer"
+                                                        title="Imprimir Receta #{{ $rec->id }} en PDF"
+                                                    >
+                                                        <i class="fas fa-file-pdf text-red-400 text-xs"></i>
+                                                        <span>Imprimir PDF</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="py-12 text-center text-slate-400">
+                                                    <i class="fas fa-prescription-bottle text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                                    <p class="font-medium text-slate-600 dark:text-slate-400">No se han emitido recetas médicas todavía</p>
+                                                    <p class="text-xs text-slate-400 mt-0.5">Utilice el botón "Prescribir Nueva Receta" para emitir la primera pauta médica.</p>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 @else
                     <div class="py-12 px-4 text-center text-slate-400">
@@ -2463,111 +2955,212 @@
                             <textarea id="receta_observaciones" wire:model="receta_observaciones" rows="2" placeholder="Dieta blanda, reposo relativo, abundante hidratación..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs"></textarea>
                         </div>
 
-                        <!-- Lista Dinámica de Medicamentos -->
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                    Medicamentos a Prescribir <span class="text-rose-500">*</span>
-                                </label>
-                                <button 
-                                    type="button" 
-                                    wire:click="agregarFilaMedicamento" 
-                                    class="text-xs font-bold text-teal-600 hover:text-teal-800 dark:text-teal-400 flex items-center gap-1 cursor-pointer"
-                                >
-                                    <i class="fas fa-plus-circle"></i>
-                                    <span>+ Añadir Fármaco</span>
-                                </button>
-                            </div>
+                        <!-- Sección: Búsqueda y Selección de Medicamento con Control de Stock -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 block flex items-center justify-between">
+                                <span><i class="fas fa-pills me-1"></i> Agregar Medicamento a la Receta</span>
+                                <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">Control estricto de existencias</span>
+                            </span>
 
-                            <div class="space-y-3 max-h-60 overflow-y-auto pe-1">
-                                @foreach ($receta_medicamentos as $index => $item)
-                                    <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 space-y-2 relative">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-[11px] font-bold text-teal-700 dark:text-teal-300">Fármaco #{{ $index + 1 }}</span>
-                                            @if (count($receta_medicamentos) > 1)
-                                                <button 
-                                                    type="button" 
-                                                    wire:click="eliminarFilaMedicamento({{ $index }})" 
-                                                    wire:loading.attr="disabled"
-                                                    class="text-rose-500 hover:text-rose-700 text-xs cursor-pointer p-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    title="Quitar fármaco"
-                                                >
-                                                    <i class="fas fa-times" wire:loading.remove wire:target="eliminarFilaMedicamento({{ $index }})"></i>
-                                                    <i class="fas fa-spinner fa-spin text-xs" wire:loading wire:target="eliminarFilaMedicamento({{ $index }})"></i>
-                                                </button>
-                                            @endif
+                            @if ($receta_nuevo_producto_id)
+                                <div class="flex items-center justify-between p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                            <i class="fas fa-capsules"></i>
                                         </div>
-
-                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                            @if (! empty($item['producto_id']))
-                                                <div class="sm:col-span-2">
-                                                    <div class="flex items-center justify-between p-2 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
-                                                        <div class="flex items-center gap-2 truncate">
-                                                            <i class="fas fa-pills text-teal-600 text-xs shrink-0"></i>
-                                                            <span class="text-xs font-bold text-teal-900 dark:text-teal-200 truncate">
-                                                                {{ $item['producto_nombre'] ?? 'Medicamento' }}
-                                                            </span>
-                                                            <span class="text-[11px] text-teal-600 dark:text-teal-400 font-medium shrink-0">
-                                                                ({{ $item['unidad_medida'] ?? 'Unidad' }})
-                                                            </span>
-                                                        </div>
-                                                        <button 
-                                                            type="button" 
-                                                            wire:click="limpiarMedicamentoReceta({{ $index }})" 
-                                                            class="text-rose-500 hover:text-rose-700 text-[11px] font-bold cursor-pointer shrink-0 ms-2"
-                                                        >
-                                                            <i class="fas fa-times me-0.5"></i> Cambiar
-                                                        </button>
-                                                    </div>
-                                                    @error("receta_medicamentos.{$index}.producto_id") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
-                                                </div>
-                                            @else
-                                                <div class="sm:col-span-2 relative">
-                                                    <div class="relative">
-                                                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                                        <input 
-                                                            type="text" 
-                                                            wire:model.live.debounce.250ms="receta_medicamentos.{{ $index }}.busqueda" 
-                                                            placeholder="Escriba para buscar medicamento..." 
-                                                            class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500"
-                                                        >
-                                                    </div>
-
-                                                    @if (! empty($sugerenciasMedicamentosReceta[$index]) && count($sugerenciasMedicamentosReceta[$index]) > 0)
-                                                        <div class="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl divide-y divide-slate-100 dark:divide-slate-700/60 z-20">
-                                                            @foreach ($sugerenciasMedicamentosReceta[$index] as $sug)
-                                                                <button 
-                                                                    type="button" 
-                                                                    wire:click="seleccionarMedicamentoReceta({{ $index }}, {{ $sug->id }})" 
-                                                                    class="w-full text-left p-2 hover:bg-teal-50/70 dark:hover:bg-teal-950/40 text-xs flex items-center justify-between cursor-pointer"
-                                                                >
-                                                                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ $sug->nombre }}</span>
-                                                                    <span class="text-[10px] text-slate-400">{{ $sug->unidad_medida }}</span>
-                                                                </button>
-                                                            @endforeach
-                                                        </div>
-                                                    @elseif(! empty($item['busqueda']) && strlen(trim($item['busqueda'])) >= 2)
-                                                        <div class="absolute left-0 right-0 mt-1 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-400 z-20">
-                                                            Sin resultados para "{{ $item['busqueda'] }}"
-                                                        </div>
-                                                    @endif
-                                                    @error("receta_medicamentos.{$index}.producto_id") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
-                                                </div>
-                                            @endif
-
-                                            <div>
-                                                <input type="number" min="1" wire:model="receta_medicamentos.{{ $index }}.cantidad" placeholder="Cant." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 text-center">
-                                                @error("receta_medicamentos.{$index}.cantidad") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
+                                        <div>
+                                            <div class="text-xs font-bold text-teal-950 dark:text-teal-100">
+                                                {{ $receta_nuevo_producto_nombre }}
+                                            </div>
+                                            <div class="text-[11px] text-teal-700 dark:text-teal-300 flex items-center gap-2">
+                                                <span>{{ $receta_nuevo_unidad_medida }}</span>
+                                                @if ($receta_nuevo_marca_nombre)
+                                                    <span>&bull; {{ $receta_nuevo_marca_nombre }}</span>
+                                                @endif
+                                                <span class="inline-flex items-center px-1.5 py-0.2 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                                    Stock disponible: {{ $receta_nuevo_stock_disponible }}
+                                                </span>
                                             </div>
                                         </div>
-
-                                        <div>
-                                            <input type="text" wire:model="receta_medicamentos.{{ $index }}.indicaciones" placeholder="Dosis y horario (ej. 1 comp cada 8 hrs por 5 días vía oral)" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2">
-                                            @error("receta_medicamentos.{$index}.indicaciones") <p class="text-[10px] text-rose-500 mt-0.5">{{ $message }}</p> @enderror
-                                        </div>
                                     </div>
-                                @endforeach
+                                    <button 
+                                        type="button" 
+                                        wire:click="limpiarMedicamentoSeleccionadoReceta" 
+                                        class="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-md transition-colors cursor-pointer"
+                                    >
+                                        <i class="fas fa-times me-1"></i> Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="relative">
+                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                        Buscar Medicamento en Farmacia <span class="text-rose-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.300ms="buscarMedicamentoReceta" 
+                                            placeholder="Escriba el nombre comercial, principio activo o marca del fármaco..." 
+                                            class="w-full pl-9 pr-3 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                                        >
+                                    </div>
+
+                                    @if ($sugerenciasMedicamentosReceta->isNotEmpty())
+                                        <div class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl divide-y divide-slate-100 dark:divide-slate-700/60 z-30">
+                                            @foreach ($sugerenciasMedicamentosReceta as $sug)
+                                                @php
+                                                    $stockTotal = (int) $sug->lotes->sum('cantidad_actual');
+                                                @endphp
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="seleccionarMedicamentoReceta({{ $sug->id }})" 
+                                                    class="w-full text-left p-2.5 hover:bg-teal-50/80 dark:hover:bg-teal-950/50 transition-colors flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <div>
+                                                        <div class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ $sug->nombre }}</div>
+                                                        <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                            {{ $sug->unidad_medida }} @if ($sug->marca) &bull; {{ $sug->marca->nombre }} @endif
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        @if ($stockTotal > 0)
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-mono">
+                                                                Stock: {{ $stockTotal }}
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-mono">
+                                                                Agotado (0)
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @elseif (strlen(trim($buscarMedicamentoReceta)) >= 2)
+                                        <div class="absolute left-0 right-0 mt-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-500 z-30">
+                                            No se encontraron medicamentos coincidentes en farmacia.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @error('receta_nuevo_producto_id')
+                                <p class="text-[11px] text-rose-500">{{ $message }}</p>
+                            @enderror
+
+                            <!-- Entradas: Cantidad, Horarios y Botón Agregar -->
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+                                <div class="sm:col-span-3">
+                                    <label for="receta_nuevo_cantidad" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                        Cantidad <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="receta_nuevo_cantidad" 
+                                        min="1" 
+                                        wire:model="receta_nuevo_cantidad" 
+                                        placeholder="Cant." 
+                                        class="w-full text-xs font-bold text-center rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs"
+                                    >
+                                    @error('receta_nuevo_cantidad')
+                                        <p class="text-[10px] text-rose-500 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="sm:col-span-6">
+                                    <label for="receta_nuevo_indicaciones" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                        Horarios / Posología / Indicación <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="receta_nuevo_indicaciones" 
+                                        wire:model="receta_nuevo_indicaciones" 
+                                        placeholder="Ej. 1 comp cada 8 hrs por 5 días vía oral..." 
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs"
+                                    >
+                                    @error('receta_nuevo_indicaciones')
+                                        <p class="text-[10px] text-rose-500 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div class="sm:col-span-3 flex items-end">
+                                    <button 
+                                        type="button" 
+                                        wire:click="agregarMedicamentoAReceta" 
+                                        wire:loading.attr="disabled"
+                                        class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm shadow-teal-500/20 hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar</span>
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Tabla de Medicamentos Acumulados en la Receta -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                    Medicamentos Agregados a la Receta
+                                    <span class="font-mono text-teal-600 dark:text-teal-400">({{ count($receta_medicamentos) }})</span>
+                                </label>
+                                <span class="text-[11px] text-slate-400">Estos ítems se prescribirán para el paciente</span>
+                            </div>
+
+                            <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
+                                        <tr>
+                                            <th class="py-2.5 px-3 w-8 text-center">#</th>
+                                            <th class="py-2.5 px-3">Medicamento</th>
+                                            <th class="py-2.5 px-3 w-20 text-center">Cant.</th>
+                                            <th class="py-2.5 px-3">Indicaciones / Horario</th>
+                                            <th class="py-2.5 px-3 w-14 text-center">Quitar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                        @forelse ($receta_medicamentos as $idx => $medItem)
+                                            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
+                                                <td class="py-2.5 px-3">
+                                                    <div class="font-bold text-slate-800 dark:text-slate-100">{{ $medItem['producto_nombre'] ?? 'Medicamento' }}</div>
+                                                    <div class="text-[10px] text-slate-400 font-mono">{{ $medItem['unidad_medida'] ?? 'Unidad' }}</div>
+                                                </td>
+                                                <td class="py-2.5 px-3 text-center">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                                                        {{ $medItem['cantidad'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">
+                                                    {{ $medItem['indicaciones'] }}
+                                                </td>
+                                                <td class="py-2.5 px-3 text-center">
+                                                    <button 
+                                                        type="button" 
+                                                        wire:click="removerMedicamentoReceta({{ $idx }})" 
+                                                        class="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded transition-colors cursor-pointer"
+                                                        title="Quitar fármaco de la lista"
+                                                    >
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="py-8 text-center text-slate-400">
+                                                    <i class="fas fa-prescription-bottle-alt text-2xl mb-1 text-slate-300 dark:text-slate-600"></i>
+                                                    <p class="font-medium text-slate-600 dark:text-slate-400">No se han agregado medicamentos a la receta todavía</p>
+                                                    <p class="text-[11px] text-slate-400 mt-0.5">Busque un producto arriba, indique la cantidad y posología, y presione "Agregar".</p>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            @error('receta_medicamentos')
+                                <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
@@ -3499,4 +4092,435 @@
             </div>
         </div>
     @endif
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: HOJA DE EVOLUCIÓN CLÍNICA -->
+    <!-- ======================================================================= -->
+    @if ($modalEvolucionOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-notes-medical text-sky-600"></i>
+                            {{ $evolucion_id ? 'Editar Nota de Evolución' : 'Registrar Nota de Evolución' }}
+                        </h3>
+                        <button wire:click="cerrarModalEvolucion" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit="guardarEvolucion" class="p-6 space-y-4">
+                        <div>
+                            <label for="evolucion_fecha_hora" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Fecha y Hora del Registro <span class="text-rose-500">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="evolucion_fecha_hora" 
+                                wire:model="evolucion_fecha_hora" 
+                                class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 p-2.5 shadow-2xs"
+                            >
+                            @error('evolucion_fecha_hora')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Nota Clínica / Evolución del Paciente <span class="text-rose-500">*</span>
+                            </label>
+                            <div 
+                                wire:ignore
+                                x-data="{
+                                    init() {
+                                        let editor = null;
+                                        const startEditor = () => {
+                                            if (typeof ClassicEditor === 'undefined') {
+                                                setTimeout(startEditor, 60);
+                                                return;
+                                            }
+                                            ClassicEditor
+                                                .create(this.$refs.ckEditorEvolucion, {
+                                                    toolbar: [
+                                                        'heading', '|',
+                                                        'bold', 'italic', '|',
+                                                        'bulletedList', 'numberedList', '|',
+                                                        'undo', 'redo'
+                                                    ]
+                                                })
+                                                .then(newEditor => {
+                                                    editor = newEditor;
+                                                    this.$el._ckeditor = newEditor;
+                                                    const initial = @this.get('evolucion_descripcion') || '';
+                                                    if (initial) {
+                                                        editor.setData(initial);
+                                                    }
+                                                    editor.model.document.on('change:data', () => {
+                                                        @this.set('evolucion_descripcion', editor.getData(), false);
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error CKEditor Evolución:', err));
+                                        };
+                                        startEditor();
+
+                                        $watch('$wire.evolucion_descripcion', (val) => {
+                                            if (editor && editor.getData() !== (val || '')) {
+                                                editor.setData(val || '');
+                                            }
+                                        });
+                                    },
+                                    destroy() {
+                                        if (this.$el._ckeditor) {
+                                            this.$el._ckeditor.destroy();
+                                            this.$el._ckeditor = null;
+                                        }
+                                    }
+                                }"
+                                class="mt-1"
+                            >
+                                <textarea x-ref="ckEditorEvolucion" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 min-h-[160px]"></textarea>
+                            </div>
+                            @error('evolucion_descripcion')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalEvolucion" 
+                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarEvolucion">
+                                    <i class="fas fa-check-circle me-1"></i> Guardar Evolución
+                                </span>
+                                <span wire:loading wire:target="guardarEvolucion">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: HOJA DE INDICACIONES MÉDICAS -->
+    <!-- ======================================================================= -->
+    @if ($modalIndicacionOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-clipboard-list text-cyan-600"></i>
+                            {{ $indicacion_id ? 'Editar Indicación Médica' : 'Registrar Indicación Médica' }}
+                        </h3>
+                        <button wire:click="cerrarModalIndicacion" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit="guardarIndicacion" class="p-6 space-y-4">
+                        <div>
+                            <label for="indicacion_fecha_hora" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Fecha y Hora de la Indicación <span class="text-rose-500">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="indicacion_fecha_hora" 
+                                wire:model="indicacion_fecha_hora" 
+                                class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-cyan-500 p-2.5 shadow-2xs"
+                            >
+                            @error('indicacion_fecha_hora')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Esquema Terapéutico / Indicaciones <span class="text-rose-500">*</span>
+                            </label>
+                            <div 
+                                wire:ignore
+                                x-data="{
+                                    init() {
+                                        let editor = null;
+                                        const startEditor = () => {
+                                            if (typeof ClassicEditor === 'undefined') {
+                                                setTimeout(startEditor, 60);
+                                                return;
+                                            }
+                                            ClassicEditor
+                                                .create(this.$refs.ckEditorIndicacion, {
+                                                    toolbar: [
+                                                        'heading', '|',
+                                                        'bold', 'italic', '|',
+                                                        'bulletedList', 'numberedList', '|',
+                                                        'undo', 'redo'
+                                                    ]
+                                                })
+                                                .then(newEditor => {
+                                                    editor = newEditor;
+                                                    this.$el._ckeditor = newEditor;
+                                                    const initial = @this.get('indicacion_descripcion') || '';
+                                                    if (initial) {
+                                                        editor.setData(initial);
+                                                    }
+                                                    editor.model.document.on('change:data', () => {
+                                                        @this.set('indicacion_descripcion', editor.getData(), false);
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error CKEditor Indicación:', err));
+                                        };
+                                        startEditor();
+
+                                        $watch('$wire.indicacion_descripcion', (val) => {
+                                            if (editor && editor.getData() !== (val || '')) {
+                                                editor.setData(val || '');
+                                            }
+                                        });
+                                    },
+                                    destroy() {
+                                        if (this.$el._ckeditor) {
+                                            this.$el._ckeditor.destroy();
+                                            this.$el._ckeditor = null;
+                                        }
+                                    }
+                                }"
+                                class="mt-1"
+                            >
+                                <textarea x-ref="ckEditorIndicacion" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 min-h-[160px]"></textarea>
+                            </div>
+                            @error('indicacion_descripcion')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalIndicacion" 
+                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md shadow-cyan-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarIndicacion">
+                                    <i class="fas fa-check-circle me-1"></i> Guardar Indicación
+                                </span>
+                                <span wire:loading wire:target="guardarIndicacion">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ======================================================================= -->
+    <!-- MODAL: HOJA DE INTERNACIÓN -->
+    <!-- ======================================================================= -->
+    @if ($modalInternacionOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-bed text-indigo-600"></i>
+                            {{ $internacion_id ? 'Editar Registro de Internación' : 'Nuevo Registro de Internación' }}
+                        </h3>
+                        <button wire:click="cerrarModalInternacion" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit="guardarInternacion" class="p-6 space-y-4">
+                        <div>
+                            <label for="internacion_fecha_hora" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Fecha y Hora del Registro <span class="text-rose-500">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="internacion_fecha_hora" 
+                                wire:model="internacion_fecha_hora" 
+                                class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 p-2.5 shadow-2xs"
+                            >
+                            @error('internacion_fecha_hora')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Nota / Reporte de Internación Hospitalaria <span class="text-rose-500">*</span>
+                            </label>
+                            <div 
+                                wire:ignore
+                                x-data="{
+                                    init() {
+                                        let editor = null;
+                                        const startEditor = () => {
+                                            if (typeof ClassicEditor === 'undefined') {
+                                                setTimeout(startEditor, 60);
+                                                return;
+                                            }
+                                            ClassicEditor
+                                                .create(this.$refs.ckEditorInternacion, {
+                                                    toolbar: [
+                                                        'heading', '|',
+                                                        'bold', 'italic', '|',
+                                                        'bulletedList', 'numberedList', '|',
+                                                        'undo', 'redo'
+                                                    ]
+                                                })
+                                                .then(newEditor => {
+                                                    editor = newEditor;
+                                                    this.$el._ckeditor = newEditor;
+                                                    const initial = @this.get('internacion_descripcion') || '';
+                                                    if (initial) {
+                                                        editor.setData(initial);
+                                                    }
+                                                    editor.model.document.on('change:data', () => {
+                                                        @this.set('internacion_descripcion', editor.getData(), false);
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error CKEditor Internación:', err));
+                                        };
+                                        startEditor();
+
+                                        $watch('$wire.internacion_descripcion', (val) => {
+                                            if (editor && editor.getData() !== (val || '')) {
+                                                editor.setData(val || '');
+                                            }
+                                        });
+                                    },
+                                    destroy() {
+                                        if (this.$el._ckeditor) {
+                                            this.$el._ckeditor.destroy();
+                                            this.$el._ckeditor = null;
+                                        }
+                                    }
+                                }"
+                                class="mt-1"
+                            >
+                                <textarea x-ref="ckEditorInternacion" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 min-h-[160px]"></textarea>
+                            </div>
+                            @error('internacion_descripcion')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalInternacion" 
+                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarInternacion">
+                                    <i class="fas fa-check-circle me-1"></i> Guardar Internación
+                                </span>
+                                <span wire:loading wire:target="guardarInternacion">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
+
+@push('scripts')
+    <script src="{{ asset('plugins/ckeditor/ckeditor-classic.bundle.js') }}"></script>
+    <style>
+        .dark .ck.ck-editor__main > .ck-editor__editable {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+        .dark .ck.ck-toolbar {
+            background-color: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        .dark .ck.ck-button {
+            color: #cbd5e1 !important;
+        }
+        .dark .ck.ck-button:hover {
+            background-color: #334155 !important;
+            color: #ffffff !important;
+        }
+        .dark .ck.ck-button.ck-on {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+        }
+        .dark .ck.ck-dropdown__panel {
+            background-color: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        .dark .ck.ck-list__item, .dark .ck.ck-list__button {
+            background-color: #0f172a !important;
+            color: #cbd5e1 !important;
+        }
+        .dark .ck.ck-list__button:hover {
+            background-color: #334155 !important;
+            color: #ffffff !important;
+        }
+        .ck-editor__editable_inline {
+            min-height: 180px;
+            max-height: 380px;
+        }
+        /* List formatting override for CKEditor & Clinical Notes (counteracting Tailwind reset) */
+        .ck-content ul,
+        .ck.ck-content ul,
+        .ck-editor__editable ul,
+        .clinical-notes-content ul {
+            list-style-type: disc !important;
+            padding-left: 1.5rem !important;
+            margin-top: 0.35rem !important;
+            margin-bottom: 0.35rem !important;
+        }
+        .ck-content ol,
+        .ck.ck-content ol,
+        .ck-editor__editable ol,
+        .clinical-notes-content ol {
+            list-style-type: decimal !important;
+            padding-left: 1.5rem !important;
+            margin-top: 0.35rem !important;
+            margin-bottom: 0.35rem !important;
+        }
+        .ck-content li,
+        .ck.ck-content li,
+        .ck-editor__editable li,
+        .clinical-notes-content li {
+            display: list-item !important;
+            margin-bottom: 0.2rem !important;
+        }
+    </style>
+@endpush

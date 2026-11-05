@@ -51,7 +51,7 @@ class PermisoSeeder extends Seeder
             26 => ['nombre' => 'instituciones.gestionar', 'descripcion' => 'Crear, editar y administrar instituciones y convenios'],
 
             // ==========================================
-            // MÓDULO 3: PROFORMAS CLÍNICAS Y ADMISIÓN (6-8, 27-46)
+            // MÓDULO 3: PROFORMAS CLÍNICAS Y ADMISIÓN (6-8, 27-46, 73-84)
             // ==========================================
             6 => ['nombre' => 'crear-proforma', 'descripcion' => 'Apertura y registro inicial de proformas (Admisión de pacientes)'],
             7 => ['nombre' => 'gestionar-proforma', 'descripcion' => 'Acceso y visualización del listado general de proformas clínicas'],
@@ -68,6 +68,24 @@ class PermisoSeeder extends Seeder
             33 => ['nombre' => 'proformas.solicitudes.ver', 'descripcion' => 'Visualizar pestaña de solicitudes y exámenes de laboratorio/imagen'],
             34 => ['nombre' => 'proformas.solicitudes.agregar', 'descripcion' => 'Solicitar nuevos exámenes y adjuntar archivos de resultados'],
             35 => ['nombre' => 'proformas.solicitudes.eliminar', 'descripcion' => 'Eliminar solicitudes médicas o resultados adjuntos'],
+
+            // Pestaña Hoja de Evolución
+            73 => ['nombre' => 'proformas.evolucion.ver', 'descripcion' => 'Visualizar pestaña y notas de evolución clínica del paciente'],
+            74 => ['nombre' => 'proformas.evolucion.crear', 'descripcion' => 'Registrar nuevas notas de evolución médica'],
+            75 => ['nombre' => 'proformas.evolucion.editar', 'descripcion' => 'Modificar notas de evolución médica registradas'],
+            76 => ['nombre' => 'proformas.evolucion.eliminar', 'descripcion' => 'Eliminar notas de evolución médica de la proforma'],
+
+            // Pestaña Hoja de Indicaciones
+            77 => ['nombre' => 'proformas.indicacion.ver', 'descripcion' => 'Visualizar pestaña y hoja de indicaciones médicas'],
+            78 => ['nombre' => 'proformas.indicacion.crear', 'descripcion' => 'Registrar nuevas indicaciones médicas y esquemas terapéuticos'],
+            79 => ['nombre' => 'proformas.indicacion.editar', 'descripcion' => 'Modificar indicaciones médicas registradas'],
+            80 => ['nombre' => 'proformas.indicacion.eliminar', 'descripcion' => 'Eliminar indicaciones médicas de la proforma'],
+
+            // Pestaña Hoja de Internación
+            81 => ['nombre' => 'proformas.internacion.ver', 'descripcion' => 'Visualizar pestaña y hoja de notas de internación hospitalaria'],
+            82 => ['nombre' => 'proformas.internacion.crear', 'descripcion' => 'Registrar nuevos reportes y notas de internación hospitalaria'],
+            83 => ['nombre' => 'proformas.internacion.editar', 'descripcion' => 'Modificar notas y reportes de internación hospitalaria'],
+            84 => ['nombre' => 'proformas.internacion.eliminar', 'descripcion' => 'Eliminar registros de internación hospitalaria de la proforma'],
 
             // Pestaña Cronograma / Calendario
             36 => ['nombre' => 'proformas.cronograma.ver', 'descripcion' => 'Visualizar pestaña de cronograma, calendario y citas'],
