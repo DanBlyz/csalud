@@ -133,6 +133,13 @@ class PermisoSeeder extends Seeder
             58 => ['nombre' => 'farmacia.movimientos.transferir', 'descripcion' => 'Realizar transferencias de stock entre secciones y ajustes'],
             59 => ['nombre' => 'farmacia.catalogos.gestionar', 'descripcion' => 'Administrar marcas de laboratorios y proveedores farmacéuticos'],
 
+            // Bajas de Medicamentos e Insumos
+            89 => ['nombre' => 'farmacia.bajas.ver', 'descripcion' => 'Consultar listado de bajas de medicamentos y reportes'],
+            90 => ['nombre' => 'farmacia.bajas.crear', 'descripcion' => 'Registrar nuevas solicitudes de baja de medicamentos'],
+            91 => ['nombre' => 'farmacia.bajas.editar', 'descripcion' => 'Modificar solicitudes de baja de medicamentos pendientes'],
+            92 => ['nombre' => 'farmacia.bajas.eliminar', 'descripcion' => 'Anular o eliminar solicitudes de baja de medicamentos'],
+            93 => ['nombre' => 'farmacia.bajas.aprobar', 'descripcion' => 'Aprobar bajas de medicamentos y aplicar el descuento de inventario'],
+
             // ==========================================
             // MÓDULO 5: CAJA Y FINANZAS (10, 60-70)
             // ==========================================

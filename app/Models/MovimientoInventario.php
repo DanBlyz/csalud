@@ -23,6 +23,7 @@ class MovimientoInventario extends Model
         'tipo_movimiento',
         'receta_id',
         'proforma_id',
+        'baja_medicamento_id',
         'movimiento_origen_id',
         'seccion_origen_id',
         'seccion_destino_id',
@@ -74,6 +75,11 @@ class MovimientoInventario extends Model
     public function proforma(): BelongsTo
     {
         return $this->belongsTo(Proforma::class, 'proforma_id');
+    }
+
+    public function bajaMedicamento(): BelongsTo
+    {
+        return $this->belongsTo(BajaMedicamento::class, 'baja_medicamento_id');
     }
 
     public function movimientoOrigen(): BelongsTo

@@ -137,7 +137,7 @@
         @endanypermiso
 
         <!-- Section: FARMACIA E INVENTARIO -->
-        @anypermiso([7, 9, 'farmacia.despacho.gestionar', 'farmacia.medicamentos.ver', 'farmacia.lotes.ver', 'farmacia.secciones.ver', 'farmacia.marcas.ver', 'farmacia.proveedores.ver', 'farmacia.kardex.ver'])
+        @anypermiso([7, 9, 'farmacia.despacho.gestionar', 'farmacia.medicamentos.ver', 'farmacia.lotes.ver', 'farmacia.secciones.ver', 'farmacia.marcas.ver', 'farmacia.proveedores.ver', 'farmacia.kardex.ver', 'farmacia.bajas.ver'])
             <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Farmacia e Inventario
             </div>
@@ -223,6 +223,18 @@
                 >
                     <i class="fas fa-clipboard-list w-5 text-sm {{ request()->routeIs('farmacia.movimientos') ? 'text-white' : 'text-teal-400' }}"></i>
                     <span class="ms-2">Kardex de Movimientos</span>
+                </a>
+            @endanypermiso
+
+            <!-- Baja de Medicamentos -->
+            @anypermiso([9, 'farmacia.bajas.ver'])
+                <a 
+                    href="{{ route('farmacia.bajas') }}" 
+                    {{ request()->routeIs('farmacia.bajas*') ? 'data-sidebar-active=true' : '' }}
+                    class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('farmacia.bajas*') ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}"
+                >
+                    <i class="fas fa-calendar-times w-5 text-sm {{ request()->routeIs('farmacia.bajas*') ? 'text-white' : 'text-teal-400' }}"></i>
+                    <span class="ms-2">Baja de Medicamentos</span>
                 </a>
             @endanypermiso
         @endanypermiso

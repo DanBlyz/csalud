@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BajaMedicamentoPdfController;
 use App\Http\Controllers\CajaPdfController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProformaPdfController;
@@ -15,6 +16,7 @@ use App\Livewire\Administracion\UsuariosIndex;
 use App\Livewire\Caja\CajaIndex;
 use App\Livewire\Caja\CierresIndex;
 use App\Livewire\DashboardIndex;
+use App\Livewire\Farmacia\BajasMedicamentosIndex;
 use App\Livewire\Farmacia\DespachosIndex;
 use App\Livewire\Farmacia\LotesIndex;
 use App\Livewire\Farmacia\MarcasIndex;
@@ -146,6 +148,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/proveedores', ProveedoresIndex::class)
             ->middleware('permiso:9')
             ->name('proveedores');
+
+        Route::get('/bajas', BajasMedicamentosIndex::class)
+            ->middleware('permiso:farmacia.bajas.ver')
+            ->name('bajas');
+
+        Route::get('/bajas/{baja}/pdf', [BajaMedicamentoPdfController::class, 'pdf'])
+            ->middleware('permiso:farmacia.bajas.ver')
+            ->name('bajas.pdf');
     });
 
     // Módulo Caja y Pagos

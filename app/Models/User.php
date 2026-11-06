@@ -152,7 +152,7 @@ class User extends Authenticatable
             6 => [6, 27],                  // crear proforma
             7 => array_merge(range(27, 46), range(73, 84)), // proformas
             8 => [8, 39, 40],              // recetas
-            9 => range(47, 59),            // farmacia
+            9 => array_merge(range(47, 59), range(89, 93)), // farmacia
             10 => range(60, 70),           // caja
         ];
 

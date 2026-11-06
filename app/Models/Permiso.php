@@ -48,7 +48,7 @@ class Permiso extends Model
             return 'Proformas Clínicas y Admisión';
         }
 
-        if ($id === 9 || ($id >= 47 && $id <= 59)) {
+        if ($id === 9 || ($id >= 47 && $id <= 59) || ($id >= 89 && $id <= 93)) {
             return 'Farmacia e Inventario';
         }
 
