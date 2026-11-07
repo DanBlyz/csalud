@@ -48,6 +48,8 @@ class LotesIndex extends Component
 
     public string $codigo_lote = '';
 
+    public ?string $nro_documento = null;
+
     public ?int $cantidad_ingresada = null;
 
     public ?string $fecha_compra = null;
@@ -75,6 +77,8 @@ class LotesIndex extends Component
     public ?int $edit_proveedor_id = null;
 
     public string $edit_codigo_lote = '';
+
+    public ?string $edit_nro_documento = null;
 
     public ?string $edit_fecha_compra = null;
 
@@ -121,6 +125,7 @@ class LotesIndex extends Component
             'producto_id' => 'required|exists:productos,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'codigo_lote' => 'required|string|max:100',
+            'nro_documento' => 'nullable|string|max:100',
             'cantidad_ingresada' => 'required|integer|min:1',
             'fecha_compra' => 'required|date',
             'fecha_vencimiento' => 'nullable|date',
@@ -184,6 +189,7 @@ class LotesIndex extends Component
         $this->producto_id = null;
         $this->proveedor_id = null;
         $this->codigo_lote = 'LOT-'.strtoupper(substr(uniqid(), -6));
+        $this->nro_documento = null;
         $this->cantidad_ingresada = null;
         $this->fecha_compra = now()->toDateString();
         $this->fecha_vencimiento = null;
@@ -253,6 +259,7 @@ class LotesIndex extends Component
             'producto_id' => 'required|exists:productos,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'codigo_lote' => 'required|string|max:100',
+            'nro_documento' => 'nullable|string|max:100',
             'cantidad_ingresada' => 'required|integer|min:1',
             'fecha_compra' => 'required|date',
             'fecha_vencimiento' => 'nullable|date',
@@ -267,6 +274,7 @@ class LotesIndex extends Component
                 'producto_id' => $this->producto_id,
                 'proveedor_id' => $this->proveedor_id,
                 'codigo_lote' => trim($this->codigo_lote),
+                'nro_documento' => ! empty($this->nro_documento) ? trim($this->nro_documento) : null,
                 'cantidad_ingresada' => $this->cantidad_ingresada,
                 'cantidad_actual' => $this->cantidad_ingresada,
                 'fecha_compra' => $this->fecha_compra ?: now()->toDateString(),
@@ -343,6 +351,7 @@ class LotesIndex extends Component
         $this->edit_sucursal_nombre = $lote->sucursal->nombre ?? 'Sede Central';
         $this->edit_proveedor_id = $lote->proveedor_id;
         $this->edit_codigo_lote = $lote->codigo_lote ?? '';
+        $this->edit_nro_documento = $lote->nro_documento ?? '';
         $this->edit_fecha_compra = $lote->fecha_compra ? $lote->fecha_compra->format('Y-m-d') : null;
         $this->edit_fecha_vencimiento = $lote->fecha_vencimiento ? $lote->fecha_vencimiento->format('Y-m-d') : null;
         $this->edit_precio_compra = (string) $lote->precio_compra;
@@ -363,6 +372,7 @@ class LotesIndex extends Component
         $this->edit_sucursal_nombre = '';
         $this->edit_proveedor_id = null;
         $this->edit_codigo_lote = '';
+        $this->edit_nro_documento = null;
         $this->edit_fecha_compra = null;
         $this->edit_fecha_vencimiento = null;
         $this->edit_precio_compra = '';
@@ -387,6 +397,7 @@ class LotesIndex extends Component
         $this->validate([
             'loteEdicionId' => 'required|exists:lotes,id',
             'edit_codigo_lote' => 'required|string|max:100',
+            'edit_nro_documento' => 'nullable|string|max:100',
             'edit_proveedor_id' => 'nullable|exists:proveedores,id',
             'edit_fecha_compra' => 'required|date',
             'edit_fecha_vencimiento' => 'nullable|date',
@@ -403,6 +414,7 @@ class LotesIndex extends Component
         DB::transaction(function () use ($lote) {
             $lote->update([
                 'codigo_lote' => trim($this->edit_codigo_lote),
+                'nro_documento' => ! empty($this->edit_nro_documento) ? trim($this->edit_nro_documento) : null,
                 'proveedor_id' => $this->edit_proveedor_id,
                 'fecha_compra' => $this->edit_fecha_compra,
                 'fecha_vencimiento' => $this->edit_fecha_vencimiento,
@@ -656,6 +668,7 @@ class LotesIndex extends Component
             $search = '%'.trim($this->search).'%';
             $query->where(function (Builder $q) use ($search) {
                 $q->where('codigo_lote', 'like', $search)
+                    ->orWhere('nro_documento', 'like', $search)
                     ->orWhereHas('producto', function (Builder $p) use ($search) {
                         $p->where('nombre', 'like', $search);
                     })

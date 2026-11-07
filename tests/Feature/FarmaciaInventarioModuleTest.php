@@ -1064,3 +1064,51 @@ test('devolucion actualiza el saldo pendiente en la bandeja de despachos y en el
     expect($movDev['cantidad_entrada'])->toBe(2);
     expect($movDev['referencia'])->toContain('Paciente suspendió tratamiento');
 });
+
+test('puede registrar, editar y buscar un lote por su nro_documento de compra', function () {
+    $this->actingAs($this->admin);
+
+    $producto = Producto::create([
+        'nombre' => 'Paracetamol 500mg Gotas',
+        'marca_id' => $this->marca->id,
+        'unidad_medida' => 'Frasco',
+        'ultimo_precio_venta' => 15.00,
+        'stock_minimo' => 5,
+    ]);
+
+    // 1. Registro con nro_documento
+    Livewire::test(LotesIndex::class)
+        ->call('abrirModalLote')
+        ->set('sucursal_id', $this->sucursal->id)
+        ->set('producto_id', $producto->id)
+        ->set('proveedor_id', $this->proveedor->id)
+        ->set('codigo_lote', 'PAR-DOC-001')
+        ->set('nro_documento', 'FAC-778899')
+        ->set('cantidad_ingresada', 25)
+        ->set('fecha_compra', now()->toDateString())
+        ->set('fecha_vencimiento', now()->addYear()->toDateString())
+        ->set('precio_compra', '8.00')
+        ->set('precio_venta', '15.00')
+        ->call('guardarLote')
+        ->assertDispatched('swal');
+
+    $lote = Lote::where('codigo_lote', 'PAR-DOC-001')->first();
+    expect($lote)->not->toBeNull();
+    expect($lote->nro_documento)->toBe('FAC-778899');
+
+    // 2. Edición de nro_documento
+    Livewire::test(LotesIndex::class)
+        ->call('abrirModalEdicion', $lote->id)
+        ->assertSet('edit_nro_documento', 'FAC-778899')
+        ->set('edit_nro_documento', 'REC-12345')
+        ->call('actualizarLote')
+        ->assertDispatched('swal');
+
+    expect($lote->fresh()->nro_documento)->toBe('REC-12345');
+
+    // 3. Búsqueda en el listado por nro_documento
+    Livewire::test(LotesIndex::class)
+        ->set('search', 'REC-12345')
+        ->assertSee('PAR-DOC-001')
+        ->assertSee('REC-12345');
+});

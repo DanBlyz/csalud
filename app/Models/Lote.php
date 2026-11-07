@@ -29,6 +29,7 @@ class Lote extends Model
         'precio_compra',
         'precio_venta',
         'fecha_compra',
+        'nro_documento', // numero de recibo o factura
         'usuario_creador_id',
         'usuario_modificador_id',
         'usuario_eliminador_id',

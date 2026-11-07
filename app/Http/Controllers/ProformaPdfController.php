@@ -309,4 +309,280 @@ class ProformaPdfController extends Controller
 
         return $pdf->stream("hoja-enfermeria-{$cirugia->numero}-proforma-{$proforma->id}.pdf");
     }
+
+    /**
+     * Genera e imprime la Solicitud de Alta Voluntaria (Alta Solicitada) en PDF.
+     */
+    public function altaSolicitada(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'medicos.especialidad',
+            'historiaClinica',
+            'servicios.servicio',
+            'cirugias',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-alta-solicitada', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y'),
+            'horaEmision' => now()->format('H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("alta-solicitada-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Registro de Enfermería en Emergencia en PDF.
+     */
+    public function registroEnfermeria(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'historiaClinica',
+            'servicios.servicio',
+            'cirugias',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-registro-enfermeria', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("registro-enfermeria-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Planilla de Control de Signos Vitales en PDF.
+     */
+    public function signosVitales(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'historiaClinica',
+            'servicios.servicio',
+            'cirugias',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-control-signos-vitales', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("control-signos-vitales-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Kardex de Enfermería en PDF.
+     */
+    public function kardexEnfermeria(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'medicos.especialidad',
+            'cirugias',
+            'historiaClinica',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-kardex-enfermeria', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("kardex-enfermeria-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Hoja de Control de Líquidos (Balance Hídrico) en PDF.
+     */
+    public function controlLiquidos(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'historiaClinica',
+            'servicios.servicio',
+            'cirugias',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-control-liquidos', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'landscape');
+
+        return $pdf->stream("control-liquidos-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Consentimiento Informado para Anestesia Raquídea en PDF.
+     */
+    public function consentimientoAnestesia(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'medicos.especialidad',
+            'cirugias.cirujano',
+            'cirugias.anestesiologo',
+            'historiaClinica',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-consentimiento-anestesia', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y'),
+            'horaEmision' => now()->format('H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("consentimiento-anestesia-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Consentimiento Informado para Procedimiento Quirúrgico en PDF.
+     */
+    public function consentimientoQuirurgico(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente.institucion',
+            'sucursal',
+            'medicos.especialidad',
+            'cirugias.cirujano',
+            'cirugias.anestesiologo',
+            'historiaClinica',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-consentimiento-quirurgico', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y'),
+            'horaEmision' => now()->format('H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("consentimiento-quirurgico-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Tarjeta Única de Tratamiento y Soluciones Parenterales en PDF.
+     */
+    public function tarjetaTratamiento(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'cirugias',
+            'historiaClinica',
+            'recetaActiva.detalles.producto',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-tarjeta-tratamiento', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("tarjeta-tratamiento-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Registro de Tratamiento de Enfermería (Medicamentos y Venoclisis) en PDF.
+     */
+    public function tratamientoEnfermeria(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'cirugias',
+            'historiaClinica',
+            'recetaActiva.detalles.producto',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-tratamiento-enfermeria', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("tratamiento-enfermeria-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Gráfica de Signos Vitales (Curva Térmica, Pulso y Respiración) en PDF.
+     */
+    public function graficaSignosVitales(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'cirugias',
+            'historiaClinica',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-grafica-signos-vitales', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("grafica-signos-vitales-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Registro de Glucemias en PDF.
+     */
+    public function registroGlucemias(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'cirugias',
+            'historiaClinica',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-registro-glucemias', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("registro-glucemias-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime el Descargo de Insumos y Medicamentos (Piso / Sala) en PDF.
+     */
+    public function descargoMedicamentosInsumos(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'cirugias',
+            'medicos',
+            'historiaClinica',
+            'consumosExtras.producto',
+            'consumosExtras.user',
+            'servicios.servicio',
+            'epicrisis',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.proforma-descargo-medicamentos-insumos', [
+            'proforma' => $proforma,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("descargo-medicamentos-insumos-proforma-{$proforma->id}.pdf");
+    }
 }

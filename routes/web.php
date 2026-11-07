@@ -187,6 +187,18 @@ Route::middleware('auth')->group(function () {
         Route::get('/cirugias/{cirugia}', [ProformaPdfController::class, 'cirugia'])->name('cirugia');
         Route::get('/cirugias/{cirugia}/anestesiologia', [ProformaPdfController::class, 'cirugiaAnestesiologia'])->name('cirugia_anestesiologia');
         Route::get('/cirugias/{cirugia}/enfermeria', [ProformaPdfController::class, 'cirugiaEnfermeria'])->name('cirugia_enfermeria');
+        Route::get('/alta-solicitada', [ProformaPdfController::class, 'altaSolicitada'])->name('alta_solicitada');
+        Route::get('/registro-enfermeria', [ProformaPdfController::class, 'registroEnfermeria'])->name('registro_enfermeria');
+        Route::get('/signos-vitales', [ProformaPdfController::class, 'signosVitales'])->name('signos_vitales');
+        Route::get('/kardex-enfermeria', [ProformaPdfController::class, 'kardexEnfermeria'])->name('kardex_enfermeria');
+        Route::get('/control-liquidos', [ProformaPdfController::class, 'controlLiquidos'])->name('control_liquidos');
+        Route::get('/consentimiento-anestesia', [ProformaPdfController::class, 'consentimientoAnestesia'])->name('consentimiento_anestesia');
+        Route::get('/consentimiento-quirurgico', [ProformaPdfController::class, 'consentimientoQuirurgico'])->name('consentimiento_quirurgico');
+        Route::get('/tarjeta-tratamiento', [ProformaPdfController::class, 'tarjetaTratamiento'])->name('tarjeta_tratamiento');
+        Route::get('/tratamiento-enfermeria', [ProformaPdfController::class, 'tratamientoEnfermeria'])->name('tratamiento_enfermeria');
+        Route::get('/grafica-signos-vitales', [ProformaPdfController::class, 'graficaSignosVitales'])->name('grafica_signos_vitales');
+        Route::get('/registro-glucemias', [ProformaPdfController::class, 'registroGlucemias'])->name('registro_glucemias');
+        Route::get('/descargo-medicamentos-insumos', [ProformaPdfController::class, 'descargoMedicamentosInsumos'])->name('descargo_medicamentos_insumos');
     });
 });
 

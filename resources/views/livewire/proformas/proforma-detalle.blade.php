@@ -623,6 +623,19 @@
                     </span>
                 </button>
             @endpermiso
+
+            <!-- 8. Impresiones Clínicas y Formularios (Libre acceso sin restricciones de permisos) -->
+            <button 
+                wire:click="cambiarTab('impresiones')" 
+                type="button" 
+                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'impresiones' ? 'border-sky-600 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+            >
+                <i class="fas fa-print text-xs"></i>
+                <span>Impresiones</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 font-bold">
+                    PDF
+                </span>
+            </button>
         </div>
 
         <!-- CONTENIDO DEL TAB SELECCIONADO -->
@@ -2706,6 +2719,843 @@
                         <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la liquidación y honorarios médicos.</p>
                     </div>
                 @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 8: IMPRESIONES Y FORMULARIOS CLÍNICOS (LIBRE ACCESO) -->
+            <!-- =================================================================== -->
+            @if ($tab === 'impresiones')
+                <div>
+                    <!-- Header del Tab -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-print text-sky-600 dark:text-sky-400"></i>
+                                Centro de Impresiones y Documentación Clínica
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                Emisión y descarga en formato PDF de formularios de enfermería, hospitalización, expediente clínico y reportes administrativos con datos del paciente pre-cargados.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 text-xs font-bold">
+                                <i class="fas fa-check-circle text-xs"></i> Acceso Habilitado
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 1: FORMULARIOS DE ENFERMERÍA Y HOSPITALIZACIÓN -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 text-xs font-bold">
+                                <i class="fas fa-user-nurse"></i>
+                            </span>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[12px]">
+                                Formularios de Enfermería y Hospitalización
+                            </h4>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Documento / Formulario</th>
+                                        <th class="py-3 px-4">Categoría</th>
+                                        <th class="py-3 px-4">Descripción y Contenido</th>
+                                        <th class="py-3 px-4 text-center">Datos Pre-cargados</th>
+                                        <th class="py-3 px-4 text-center w-36">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <!-- 1. Alta Solicitada -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">1</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-file-signature text-rose-500 text-sm"></i>
+                                                <span>Alta Solicitada (Alta Voluntaria)</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                                                Legal / Egreso
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Documento formal de exoneración legal y retiro voluntario con membrete institucional, diagnósticos del caso y cláusulas de descargo de responsabilidad con firmas.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Diagnóstico, Cama
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.alta_solicitada', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 2. Registro de Enfermería en Emergencia -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">2</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-notes-medical text-amber-500 text-sm"></i>
+                                                <span>Registro de Enfermería en Emergencia</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                                Emergencias
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Ficha de triaje y valoración inicial de enfermería, dolor, alergias, necesidades básicas, signos vitales horarios y Escala de Coma de Glasgow estructurada.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Teléfono, HC, Vitals
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.registro_enfermeria', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 3. Control de Signos Vitales -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">3</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-heartbeat text-emerald-500 text-sm"></i>
+                                                <span>Control de Signos Vitales</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                Monitoreo
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Planilla limpia para registro manual y continuo de signos vitales (PA, FC, FR, Temperatura, Saturación O2) durante la estadía hospitalaria.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Ficha Paciente y Sala/Cama
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.signos_vitales', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 4. Kardex de Enfermería -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">4</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-id-card-alt text-sky-500 text-sm"></i>
+                                                <span>Kardex de Enfermería (Doble Ficha)</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                                Kardex / Dietas
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Ficha duplicada por hoja para control de exámenes complementarios, cuidados específicos de enfermería y control de dieta por turno.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Médico, Diagnóstico
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.kardex_enfermeria', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 5. Hoja de Control de Líquidos -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">5</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-tint text-blue-500 text-sm"></i>
+                                                <span>Hoja de Control de Líquidos (Balance Hídrico)</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                                                Balance Hídrico
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Planilla apaisada (horizontal) de ingresos (sueros, plasma, sangre, VO) y egresos (orina, heces, vómitos, drenajes) en 3 turnos (08-14, 14-20, 20-08) y control ponderal.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, H.CL, Sala, Cama
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.control_liquidos', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 6. Tarjeta Única de Tratamiento -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">6</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-pills text-teal-500 text-sm"></i>
+                                                <span>Tarjeta Única de Tratamiento</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                                                Tratamiento / Soluciones
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Ficha duplicada con línea de corte (2 páginas). Anverso: horarios de medicación por turno (TM, TT, TN), dosis y vía. Reverso: control de Soluciones Parenterales con estados y sello/firma.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Sala/Cama, HC, Pauta
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.tarjeta_tratamiento', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 7. Registro Tratamiento de Enfermería -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">7</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clipboard-check text-cyan-600 text-sm"></i>
+                                                <span>Registro Tratamiento de Enfermería</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300">
+                                                Enfermería / Venoclisis
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Formato institucional de 2 páginas con filiación completa de enfermería, grilla horaria extendida de fármacos por fecha/firma, tabla de Venoclisis, observaciones y firma/sello.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Nombres, Apellidos, Sexo, Sala/Cama
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.tratamiento_enfermeria', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 8. Gráfica de Signos Vitales -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">8</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-chart-line text-rose-500 text-sm"></i>
+                                                <span>Gráfica de Signos Vitales (Curva Térmica y Pulso)</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                                                Gráfica / Turnos
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Hoja gráfica institucional de curva térmica (35°-42°C), pulso (60-160 lpm), respiración (10-70 rpm), frecuencia por turnos (M, T, N en 7 días) y control de PA, heces, orina, dieta, peso y satO2.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Sala/Cama, Ingreso, HC
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.grafica_signos_vitales', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 9. Registro de Glucemias -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">9</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-tint text-amber-500 text-sm"></i>
+                                                <span>Registro de Glucemias</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                                Glucemias / Rescate
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Planilla de monitoreo de glicemia capilar con datos del paciente pre-cargados en la cabecera, fecha, hora, valor en mg/dL, rescate de insulina/fármaco, costo y observaciones.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Edad, Sala/Cama, Ingreso
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.registro_glucemias', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 10. Descargo de Insumos y Medicamentos (Piso / Sala) -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">10</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-boxes text-emerald-600 text-sm"></i>
+                                                <span>Descargo de Insumos y Medicamentos (Piso)</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                Insumos / Descargos
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Hoja oficial de control de materiales e insumos gastados en sala/habitación con médico tratante, fecha, hora, medicamento/insumo, cantidad, precio, solicitante y firma.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Médico, Sala/Cama, HC
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.descargo_medicamentos_insumos', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 2: CONSENTIMIENTOS INFORMADOS Y DOCUMENTOS MÉDICO-LEGALES -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 text-xs font-bold">
+                                <i class="fas fa-file-contract"></i>
+                            </span>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[12px]">
+                                Consentimientos Informados y Formularios Médico-Legales
+                            </h4>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Documento / Consentimiento</th>
+                                        <th class="py-3 px-4">Categoría</th>
+                                        <th class="py-3 px-4">Descripción y Contenido</th>
+                                        <th class="py-3 px-4 text-center">Datos Pre-cargados</th>
+                                        <th class="py-3 px-4 text-center w-36">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <!-- Consentimiento Anestesia Raquídea -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">1</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-syringe text-indigo-500 text-sm"></i>
+                                                <span>Consentimiento Informado - Anestesia Raquídea</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                                Anestesiología / Legal
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Documento médico-legal oficial (2 páginas) con consideraciones clínicas, riesgos y complicaciones, aceptación formal del procedimiento anestésico, constancia de firmas y hojas de revocación / minoría de edad.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Procedimiento, Servicio, Cédula
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.consentimiento_anestesia', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Consentimiento Quirúrgico -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">2</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-procedures text-purple-500 text-sm"></i>
+                                                <span>Consentimiento y Aceptación de Procedimiento Quirúrgico</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
+                                                Quirúrgico / Legal
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Documento médico-legal oficial (2 páginas) de información, declaración del paciente (alergias/antecedentes), consentimiento y aceptación del tratamiento quirúrgico programado con firmas de paciente, familiar y cirujano.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                <i class="fas fa-check-double text-[10px]"></i> Paciente, Cirugía, Médico Cirujano
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.consentimiento_quirurgico', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 3: EXPEDIENTE CLÍNICO DE LA ATENCIÓN -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 text-xs font-bold">
+                                <i class="fas fa-folder-open"></i>
+                            </span>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[12px]">
+                                Expediente Clínico de la Atención
+                            </h4>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Documento Clínico</th>
+                                        <th class="py-3 px-4">Tipo</th>
+                                        <th class="py-3 px-4">Estado / Registros Disponibles</th>
+                                        <th class="py-3 px-4 text-center w-36">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <!-- Historia Clínica -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">1</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-file-medical-alt text-teal-600 text-sm"></i>
+                                                <span>Historia Clínica Completa</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                                                Admisión / Consulta
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Filiación, antecedentes personales patológicos/no patológicos, examen físico y diagnóstico.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.historia_clinica', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Epicrisis -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">2</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-file-invoice text-indigo-600 text-sm"></i>
+                                                <span>Epicrisis Médica de Egreso</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                                Alta Médica
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Resumen clínico al retiro del paciente, diagnóstico de ingreso y egreso, tratamiento realizado e indicaciones.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.epicrisis', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Evoluciones -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">3</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-stethoscope text-cyan-600 text-sm"></i>
+                                                <span>Notas de Evolución Clínica</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300">
+                                                Seguimiento
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Historial cronológico de notas de progreso y evolución médica registrada ({{ $proforma->evoluciones->count() }} registradas).
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.evolucion', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Indicaciones Médicas -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">4</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clipboard-list text-emerald-600 text-sm"></i>
+                                                <span>Indicaciones Médicas</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                                Tratamiento
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Órdenes e indicaciones médicas para enfermería y piso ({{ $proforma->indicaciones->count() }} registradas).
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.indicacion', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Internaciones -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">5</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-bed text-blue-600 text-sm"></i>
+                                                <span>Hoja de Internación</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                                                Hospitalización
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Historial de internación, cama, sala y altas de servicio asignadas al paciente.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.internacion', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Receta Médica -->
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">6</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-prescription text-teal-600 text-sm"></i>
+                                                <span>Receta Médica Oficial</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300">
+                                                Farmacia
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            @if ($proforma->recetaActiva)
+                                                Receta activa con {{ $proforma->recetaActiva->detalles->count() }} ítems prescritos e indicaciones.
+                                            @else
+                                                Formato de prescripción médica con membrete y datos del paciente.
+                                            @endif
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.receta', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN 3: REPORTES DE QUIRÓFANO (SI EXISTEN CIRUGÍAS) -->
+                    @if ($proforma->cirugias->isNotEmpty())
+                        <div class="mb-8">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 text-xs font-bold">
+                                    <i class="fas fa-procedures"></i>
+                                </span>
+                                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[12px]">
+                                    Cirugías y Descargo de Quirófano ({{ $proforma->cirugias->count() }})
+                                </h4>
+                            </div>
+
+                            <div class="space-y-3">
+                                @foreach ($proforma->cirugias as $cirugia)
+                                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-900 dark:text-white text-xs">
+                                                    Cirugía {{ $cirugia->numero }}: {{ $cirugia->cirugia_efectuada ?? $cirugia->diagnostico_operacion }}
+                                                </span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                                                    {{ $cirugia->tipo_cirugia ?? 'Procedimiento' }}
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                                Cirujano: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ $cirugia->cirujano->name ?? '---' }}</span> | Fecha: {{ $cirugia->created_at->format('d/m/Y') }}
+                                            </p>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia', [$proforma->id, $cirugia->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold transition-colors"
+                                                title="Descargo Completo"
+                                            >
+                                                <i class="fas fa-file-medical"></i> Descargo Completo
+                                            </a>
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia_anestesiologia', [$proforma->id, $cirugia->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-semibold transition-colors"
+                                                title="Hoja de Anestesiología"
+                                            >
+                                                <i class="fas fa-syringe"></i> Anestesiología
+                                            </a>
+                                            <a 
+                                                href="{{ route('proformas.pdf.cirugia_enfermeria', [$proforma->id, $cirugia->id]) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-semibold transition-colors"
+                                                title="Hoja de Enfermería"
+                                            >
+                                                <i class="fas fa-user-nurse"></i> Enfermería Quirófano
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- SECCIÓN 4: INFORMES ADMINISTRATIVOS Y FINANCIEROS -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-bold">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </span>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[12px]">
+                                Informes Administrativos y Financieros
+                            </h4>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                    <tr>
+                                        <th class="py-3 px-4 w-12 text-center">#</th>
+                                        <th class="py-3 px-4">Informe / Comprobante</th>
+                                        <th class="py-3 px-4">Tipo</th>
+                                        <th class="py-3 px-4">Descripción</th>
+                                        <th class="py-3 px-4 text-center w-36">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">1</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-list-alt text-slate-600 dark:text-slate-300 text-sm"></i>
+                                                <span>Detalle Clínico-Administrativo de Proforma</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+                                                Auditoría / Detallado
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Desglose completo y minucioso de cada servicio, consumo extra, despacho de farmacia y pagos asentados.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.detalle', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                                        <td class="py-3.5 px-4 text-center font-mono text-slate-400 font-bold">2</td>
+                                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-receipt text-indigo-600 text-sm"></i>
+                                                <span>Resumen Financiero Consolidado de Proforma</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3.5 px-4">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                                Finanzas / Facturación
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                                            Consolidado de costos finales acordados para caja, aseguradoras o convenios institucionales.
+                                        </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <a 
+                                                href="{{ route('proformas.pdf.resumen', $proforma->id) }}" 
+                                                target="_blank" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-semibold text-xs shadow-xs hover:shadow transition-colors"
+                                            >
+                                                <i class="fas fa-print"></i>
+                                                <span>Imprimir PDF</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             @endif
         </div>
     </div>
