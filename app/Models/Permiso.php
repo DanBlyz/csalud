@@ -44,7 +44,7 @@ class Permiso extends Model
             return 'Pacientes e Instituciones';
         }
 
-        if (in_array($id, [6, 7, 8], true) || ($id >= 27 && $id <= 46) || ($id >= 73 && $id <= 88)) {
+        if (in_array($id, [6, 7, 8], true) || ($id >= 27 && $id <= 46) || ($id >= 73 && $id <= 88) || ($id >= 94 && $id <= 96)) {
             return 'Proformas Clínicas y Admisión';
         }
 

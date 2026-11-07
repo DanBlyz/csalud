@@ -23,6 +23,8 @@ use App\Models\ProformaServicio;
 use App\Models\ProformaSolicitud;
 use App\Models\Receta;
 use App\Models\RecetaDetalle;
+use App\Models\RecetaExterna;
+use App\Models\RecetaExternaDetalle;
 use App\Models\Seccion;
 use App\Models\Servicio;
 use App\Models\TipoSolicitud;
@@ -325,6 +327,25 @@ class ProformaDetalle extends Component
 
     public array $cola_eventos = [];
 
+    // Modal Emitir Nueva Receta Externa
+    public bool $modalRecetaExternaOpen = false;
+
+    public ?int $receta_externa_medico_id = null;
+
+    public string $receta_externa_medico_nombre = '';
+
+    public string $receta_externa_diagnostico = '';
+
+    public string $receta_externa_observaciones = '';
+
+    public array $receta_externa_medicamentos = [];
+
+    public string $receta_externa_nuevo_medicamento = '';
+
+    public string $receta_externa_nuevo_cantidad = '1';
+
+    public string $receta_externa_nuevo_indicaciones = '';
+
     // Modal Prescribir Nueva Receta
     public bool $modalRecetaOpen = false;
 
@@ -420,6 +441,7 @@ class ProformaDetalle extends Component
         'internaciones' => 'proformas.internacion.ver',
         'calendario' => 'proformas.cronograma.ver',
         'cirugias' => 'proformas.cirugia.ver',
+        'recetas_externas' => 'proformas.recetas_externas.ver',
         'recetas' => 'proformas.recetas.ver',
         'consumos' => 'proformas.consumos.ver',
         'despachos' => 'despachar-farmacia',
@@ -465,6 +487,9 @@ class ProformaDetalle extends Component
             'cirugias.receta.detalles.producto',
             'cirugias.receta.detalles.seccion',
             'cirugias.usuarioCreador',
+            'recetasExternas.detalles',
+            'recetasExternas.doctor',
+            'recetasExternas.usuarioCreador',
             'recetaActiva.detalles.producto',
             'recetaActiva.doctor',
             'recetas.detalles.producto',
@@ -2167,6 +2192,161 @@ class ProformaDetalle extends Component
             'icon' => 'success',
             'title' => 'Evento Eliminado',
             'text' => 'La actividad ha sido removida del cronograma.',
+        ]);
+    }
+
+    // =========================================================================
+    // 4.B. RECETAS EXTERNAS (PARA COMPRA DEL PACIENTE FUERA DE LA CLÍNICA)
+    // =========================================================================
+    public function abrirModalRecetaExterna(): void
+    {
+        if (! $this->autorizarAccion('proformas.recetas_externas.crear', 'No cuenta con autorización para emitir recetas externas.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->resetValidation();
+        $this->receta_externa_medico_id = $this->proforma->medicos->first()?->id ?? Auth::id();
+        $this->receta_externa_medico_nombre = '';
+        $this->receta_externa_diagnostico = $this->proforma->diagnostico ?? '';
+        $this->receta_externa_observaciones = '';
+        $this->receta_externa_medicamentos = [];
+        $this->limpiarMedicamentoRecetaExterna();
+        $this->modalRecetaExternaOpen = true;
+    }
+
+    public function cerrarModalRecetaExterna(): void
+    {
+        $this->modalRecetaExternaOpen = false;
+        $this->limpiarMedicamentoRecetaExterna();
+        $this->receta_externa_medicamentos = [];
+        $this->resetValidation();
+    }
+
+    public function limpiarMedicamentoRecetaExterna(): void
+    {
+        $this->receta_externa_nuevo_medicamento = '';
+        $this->receta_externa_nuevo_cantidad = '1';
+        $this->receta_externa_nuevo_indicaciones = '';
+    }
+
+    public function agregarMedicamentoARecetaExterna(): void
+    {
+        $medNombre = trim($this->receta_externa_nuevo_medicamento);
+        if (empty($medNombre)) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Ingrese el Medicamento',
+                'text' => 'Debe escribir el nombre del medicamento o insumo a solicitar.',
+            ]);
+
+            return;
+        }
+
+        $cantidad = trim($this->receta_externa_nuevo_cantidad);
+        if (empty($cantidad)) {
+            $cantidad = '1';
+        }
+
+        $this->receta_externa_medicamentos[] = [
+            'medicamento' => $medNombre,
+            'cantidad' => $cantidad,
+            'indicaciones' => trim($this->receta_externa_nuevo_indicaciones),
+        ];
+
+        $this->limpiarMedicamentoRecetaExterna();
+    }
+
+    public function removerMedicamentoRecetaExterna(int $index): void
+    {
+        if (isset($this->receta_externa_medicamentos[$index])) {
+            unset($this->receta_externa_medicamentos[$index]);
+            $this->receta_externa_medicamentos = array_values($this->receta_externa_medicamentos);
+        }
+    }
+
+    public function guardarRecetaExterna(): void
+    {
+        if (! $this->autorizarAccion('proformas.recetas_externas.crear', 'No cuenta con autorización para emitir recetas externas.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        if (! empty(trim($this->receta_externa_nuevo_medicamento))) {
+            $this->agregarMedicamentoARecetaExterna();
+        }
+
+        $this->validate([
+            'receta_externa_medico_id' => ['nullable', 'exists:users,id'],
+            'receta_externa_medico_nombre' => ['nullable', 'string', 'max:255'],
+            'receta_externa_diagnostico' => ['nullable', 'string', 'max:500'],
+            'receta_externa_observaciones' => ['nullable', 'string', 'max:1000'],
+            'receta_externa_medicamentos' => ['required', 'array', 'min:1'],
+            'receta_externa_medicamentos.*.medicamento' => ['required', 'string', 'min:2', 'max:255'],
+            'receta_externa_medicamentos.*.cantidad' => ['required', 'string', 'max:100'],
+            'receta_externa_medicamentos.*.indicaciones' => ['nullable', 'string', 'max:500'],
+        ], [
+            'receta_externa_medicamentos.required' => 'Debe agregar al menos un medicamento a la receta externa.',
+            'receta_externa_medicamentos.min' => 'Debe agregar al menos un medicamento a la receta externa.',
+            'receta_externa_medicamentos.*.medicamento.required' => 'El nombre del medicamento es requerido.',
+            'receta_externa_medicamentos.*.cantidad.required' => 'Indique la cantidad solicitada.',
+        ]);
+
+        $recetaExterna = RecetaExterna::create([
+            'proforma_id' => $this->proforma->id,
+            'user_id' => $this->receta_externa_medico_id,
+            'medico_nombre' => trim($this->receta_externa_medico_nombre) ?: null,
+            'fecha' => now(),
+            'diagnostico' => trim($this->receta_externa_diagnostico) ?: null,
+            'observaciones' => trim($this->receta_externa_observaciones) ?: null,
+            'activo' => true,
+        ]);
+
+        foreach ($this->receta_externa_medicamentos as $med) {
+            RecetaExternaDetalle::create([
+                'receta_externa_id' => $recetaExterna->id,
+                'medicamento' => $med['medicamento'],
+                'cantidad' => $med['cantidad'],
+                'indicaciones' => $med['indicaciones'] ?: null,
+            ]);
+        }
+
+        $this->cerrarModalRecetaExterna();
+        $this->proforma->load(['recetasExternas.detalles', 'recetasExternas.doctor']);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Receta Externa Emitida',
+            'text' => 'La orden de receta médica externa se ha registrado correctamente.',
+        ]);
+    }
+
+    public function eliminarRecetaExterna(int $id): void
+    {
+        if (! $this->autorizarAccion('proformas.recetas_externas.eliminar', 'No cuenta con autorización para eliminar recetas externas.')) {
+            return;
+        }
+
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $receta = RecetaExterna::where('proforma_id', $this->proforma->id)->findOrFail($id);
+        $receta->detalles()->delete();
+        $receta->delete();
+
+        $this->proforma->load(['recetasExternas.detalles', 'recetasExternas.doctor']);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Receta Externa Eliminada',
+            'text' => 'La receta externa ha sido removida del expediente.',
         ]);
     }
 
@@ -3930,6 +4110,7 @@ class ProformaDetalle extends Component
             'personalClinica' => $personalClinica,
             'sugerenciasMedicamentosCirugia' => $sugerenciasMedicamentosCirugia,
             'cirugias' => $this->proforma->cirugias()->with(['cirujano', 'anestesiologo', 'primerAyudante', 'segundoAyudante', 'instrumentador', 'circulante', 'receta.detalles.producto', 'receta.detalles.seccion'])->latest('fecha')->get(),
+            'recetasExternas' => $this->proforma->recetasExternas()->with(['doctor.especialidad', 'detalles', 'usuarioCreador'])->latest('id')->get(),
             'serviciosFiltrados' => $serviciosFiltrados,
             'servicioSeleccionado' => $servicioSeleccionado,
             'sugerenciasMedicamentosReceta' => $sugerenciasMedicamentosReceta,

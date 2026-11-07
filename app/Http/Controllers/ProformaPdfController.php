@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cirugia;
 use App\Models\Proforma;
 use App\Models\Receta;
+use App\Models\RecetaExterna;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 
@@ -584,5 +585,22 @@ class ProformaPdfController extends Controller
         ])->setPaper('letter', 'portrait');
 
         return $pdf->stream("descargo-medicamentos-insumos-proforma-{$proforma->id}.pdf");
+    }
+
+    /**
+     * Genera e imprime la Receta Médica Externa en PDF.
+     */
+    public function recetaExterna(Proforma $proforma, RecetaExterna $recetaExterna): Response
+    {
+        $proforma->load(['paciente', 'sucursal']);
+        $recetaExterna->load(['doctor.especialidad', 'detalles']);
+
+        $pdf = Pdf::loadView('pdf.proforma-receta-externa', [
+            'proforma' => $proforma,
+            'recetaExterna' => $recetaExterna,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("receta-externa-{$recetaExterna->id}-proforma-{$proforma->id}.pdf");
     }
 }

@@ -182,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/indicacion', [ProformaPdfController::class, 'indicacion'])->name('indicacion');
         Route::get('/internacion', [ProformaPdfController::class, 'internacion'])->name('internacion');
         Route::get('/receta/{receta?}', [ProformaPdfController::class, 'receta'])->name('receta');
+        Route::get('/recetas-externas/{recetaExterna}', [ProformaPdfController::class, 'recetaExterna'])->name('receta_externa');
         Route::get('/historia-clinica', [ProformaPdfController::class, 'historiaClinica'])->name('historia_clinica');
         Route::get('/epicrisis', [ProformaPdfController::class, 'epicrisis'])->name('epicrisis');
         Route::get('/cirugias/{cirugia}', [ProformaPdfController::class, 'cirugia'])->name('cirugia');

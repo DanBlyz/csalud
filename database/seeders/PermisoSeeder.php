@@ -98,6 +98,11 @@ class PermisoSeeder extends Seeder
             87 => ['nombre' => 'proformas.cirugia.editar', 'descripcion' => 'Modificar cirugías y descargos de quirófano'],
             88 => ['nombre' => 'proformas.cirugia.eliminar', 'descripcion' => 'Eliminar registros de cirugías de la proforma'],
 
+            // Pestaña Recetas Externas
+            94 => ['nombre' => 'proformas.recetas_externas.ver', 'descripcion' => 'Visualizar pestaña de recetas externas'],
+            95 => ['nombre' => 'proformas.recetas_externas.crear', 'descripcion' => 'Emitir y registrar recetas externas para compra del paciente'],
+            96 => ['nombre' => 'proformas.recetas_externas.eliminar', 'descripcion' => 'Eliminar o anular recetas externas emitidas'],
+
             // Pestaña Recetas Médicas
             8 => ['nombre' => 'emitir-receta', 'descripcion' => 'Prescribir medicamentos y emitir recetas médicas'],
             39 => ['nombre' => 'proformas.recetas.ver', 'descripcion' => 'Visualizar pestaña de prescripciones y recetas médicas'],

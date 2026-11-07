@@ -560,6 +560,21 @@
                 </button>
             @endpermiso
 
+            <!-- 3.B. Recetas Externas (Compra externa para el paciente) -->
+            @permiso('proformas.recetas_externas.ver')
+                <button 
+                    wire:click="cambiarTab('recetas_externas')" 
+                    type="button" 
+                    class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'recetas_externas' ? 'border-sky-600 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+                >
+                    <i class="fas fa-file-prescription text-xs"></i>
+                    <span>Recetas Externas</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        {{ $proforma->recetasExternas->count() }}
+                    </span>
+                </button>
+            @endpermiso
+
             <!-- 4. Recetas Médicas -->
             @permiso('proformas.recetas.ver')
                 <button 
@@ -1739,6 +1754,184 @@
                         <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
                         <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
                         <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar los descargos de quirófano.</p>
+                    </div>
+                @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB 3.B: RECETAS EXTERNAS (COMPRA DEL PACIENTE)                     -->
+            <!-- =================================================================== -->
+            @if ($tab === 'recetas_externas')
+                @permiso('proformas.recetas_externas.ver')
+                    <div class="space-y-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <i class="fas fa-file-prescription text-sky-600 dark:text-sky-400"></i>
+                                        Recetas Médicas Externas
+                                    </h3>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                        Compra Externa por el Paciente
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-0.5">
+                                    Órdenes médicas de fármacos e insumos indicados para su adquisición fuera de la clínica. No afectan el stock ni la liquidación interna de farmacia.
+                                </p>
+                            </div>
+                            @if ($proforma->estado !== 'Pagada')
+                                @permiso('proformas.recetas_externas.crear')
+                                    <button 
+                                        wire:click="abrirModalRecetaExterna" 
+                                        wire:loading.attr="disabled"
+                                        type="button" 
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer self-start sm:self-center"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Emitir Receta Externa</span>
+                                    </button>
+                                @endpermiso
+                            @endif
+                        </div>
+
+                        <!-- BANNER EXPLICATIVO -->
+                        <div class="p-3.5 rounded-xl bg-sky-50/80 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 flex items-start gap-3 text-xs text-sky-900 dark:text-sky-200">
+                            <i class="fas fa-info-circle text-sky-600 dark:text-sky-400 mt-0.5 text-sm shrink-0"></i>
+                            <div class="space-y-1">
+                                <span class="font-bold">Propósito de las Recetas Externas:</span>
+                                <p class="text-sky-800/90 dark:text-sky-300 leading-relaxed">
+                                    Este módulo permite registrar recetas cuando el médico o el paciente requieren comprar medicamentos, insumos o reactivos en farmacias o proveedores externos. Permite imprimir la orden formal en PDF con la firma y sello del profesional para su entrega al paciente.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- LISTADO DE RECETAS EXTERNAS EMITIDAS -->
+                        @if ($recetasExternas->count() > 0)
+                            <div class="space-y-4">
+                                @foreach ($recetasExternas as $re)
+                                    <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 shadow-xs hover:border-sky-300 dark:hover:border-sky-800 transition-colors">
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white text-base shadow-sm">
+                                                    <i class="fas fa-file-prescription"></i>
+                                                </span>
+                                                <div>
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="font-bold text-sm text-slate-900 dark:text-white">
+                                                            Receta Externa #{{ str_pad($re->id, 5, '0', STR_PAD_LEFT) }}
+                                                        </h4>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300">
+                                                            {{ $re->detalles->count() }} {{ $re->detalles->count() === 1 ? 'Ítem' : 'Ítems' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-400 mt-0.5">
+                                                        Prescrita por: <strong class="text-slate-700 dark:text-slate-300">{{ $re->nombre_medico_prescriptor }}</strong> • {{ $re->fecha?->format('d/m/Y H:i') ?: $re->created_at?->format('d/m/Y H:i') }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center gap-2 self-start sm:self-center">
+                                                <a 
+                                                    href="{{ route('proformas.pdf.receta_externa', [$proforma->id, $re->id]) }}" 
+                                                    target="_blank"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                                    title="Imprimir Receta Externa en PDF"
+                                                >
+                                                    <i class="fas fa-print"></i>
+                                                    <span>Imprimir PDF</span>
+                                                </a>
+
+                                                @if ($proforma->estado !== 'Pagada')
+                                                    @permiso('proformas.recetas_externas.eliminar')
+                                                        <button 
+                                                            wire:click="eliminarRecetaExterna({{ $re->id }})" 
+                                                            wire:confirm="¿Está seguro de eliminar esta receta externa? Esta acción removerá la orden emitida."
+                                                            type="button" 
+                                                            class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                                                            title="Eliminar Receta Externa"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    @endpermiso
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        @if ($re->diagnostico)
+                                            <div class="mb-3 text-xs text-slate-600 dark:text-slate-400">
+                                                <strong class="text-slate-700 dark:text-slate-200">Diagnóstico / Motivo:</strong> {{ $re->diagnostico }}
+                                            </div>
+                                        @endif
+
+                                        <!-- Tabla de Medicamentos -->
+                                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                            <table class="w-full text-left text-xs">
+                                                <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
+                                                    <tr>
+                                                        <th class="py-2 px-3 w-10 text-center">#</th>
+                                                        <th class="py-2 px-3">Medicamento o Insumo Solicitado</th>
+                                                        <th class="py-2 px-3 text-center w-28">Cantidad</th>
+                                                        <th class="py-2 px-3">Posología / Instrucciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                                    @foreach ($re->detalles as $idx => $det)
+                                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                            <td class="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">
+                                                                {{ $idx + 1 }}
+                                                            </td>
+                                                            <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
+                                                                {{ $det->medicamento }}
+                                                            </td>
+                                                            <td class="py-2.5 px-3 text-center font-bold text-sky-600 dark:text-sky-400">
+                                                                {{ $det->cantidad }}
+                                                            </td>
+                                                            <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">
+                                                                {{ $det->indicaciones ?: 'Según indicación médica directa' }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        @if ($re->observaciones)
+                                            <div class="mt-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+                                                <strong class="text-slate-700 dark:text-slate-200">Observaciones Generales:</strong> {{ $re->observaciones }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 dark:bg-sky-950/40 text-sky-500 mx-auto mb-3">
+                                    <i class="fas fa-file-prescription text-xl"></i>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-700 dark:text-slate-200">No hay recetas externas emitidas</h4>
+                                <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                                    Si el paciente o médico requiere la compra de medicamentos fuera de la clínica, puede emitir una orden de receta externa aquí.
+                                </p>
+                                @if ($proforma->estado !== 'Pagada')
+                                    @permiso('proformas.recetas_externas.crear')
+                                        <button 
+                                            wire:click="abrirModalRecetaExterna" 
+                                            type="button" 
+                                            class="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Emitir Primera Receta Externa</span>
+                                        </button>
+                                    @endpermiso
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <div class="py-12 px-4 text-center text-slate-400">
+                        <i class="fas fa-lock text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                        <p class="font-bold text-slate-700 dark:text-slate-300">Acceso Restringido</p>
+                        <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar las recetas externas.</p>
                     </div>
                 @endpermiso
             @endif
@@ -5207,6 +5400,244 @@
                                 </span>
                             </button>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: EMITIR NUEVA RECETA EXTERNA (COMPRA FUERA DE LA CLÍNICA)           -->
+    <!-- ========================================================================= -->
+    @if ($modalRecetaExternaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity" wire:click="cerrarModalRecetaExterna"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">
+                                <i class="fas fa-file-prescription text-base"></i>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">
+                                    Emitir Receta Médica Externa
+                                </h3>
+                                <p class="text-xs text-slate-400">
+                                    Para compra directa del paciente o familiares fuera de la clínica.
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            wire:click="cerrarModalRecetaExterna" 
+                            type="button" 
+                            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        >
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                        <!-- Médico Prescriptor y Diagnóstico -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Médico Prescriptor de la Clínica
+                                </label>
+                                <select 
+                                    wire:model="receta_externa_medico_id" 
+                                    class="w-full text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                                >
+                                    <option value="">-- Seleccionar médico (opcional) --</option>
+                                    @foreach ($personalClinica as $med)
+                                        <option value="{{ $med->id }}">{{ $med->nombre_completo ?? $med->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    O Nombre de Médico Externo / Guardia
+                                </label>
+                                <input 
+                                    wire:model="receta_externa_medico_nombre" 
+                                    type="text" 
+                                    placeholder="Ej: Dr. Roberto Gómez (si no está registrado)"
+                                    class="w-full text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                Diagnóstico / Motivo de Prescripción
+                            </label>
+                            <input 
+                                wire:model="receta_externa_diagnostico" 
+                                type="text" 
+                                placeholder="Diagnóstico clínico o motivo de la prescripción..."
+                                class="w-full text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                            >
+                        </div>
+
+                        <!-- SECCIÓN: ENCOLAR MEDICAMENTOS O INSUMOS -->
+                        <div class="p-4 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/50 dark:bg-sky-950/20 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-sky-900 dark:text-sky-300 flex items-center gap-1.5">
+                                    <i class="fas fa-pills"></i>
+                                    <span>Agregar Medicamento o Insumo Solicitado</span>
+                                </span>
+                                <span class="text-[11px] text-sky-700 dark:text-sky-400">
+                                    Escriba libremente el nombre comercial o genérico
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                                <div class="sm:col-span-6">
+                                    <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">
+                                        Medicamento o Insumo <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input 
+                                        wire:model="receta_externa_nuevo_medicamento" 
+                                        type="text" 
+                                        placeholder="Ej: Ceftriaxona 1g ampolla..."
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                                    >
+                                </div>
+
+                                <div class="sm:col-span-3">
+                                    <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">
+                                        Cantidad <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input 
+                                        wire:model="receta_externa_nuevo_cantidad" 
+                                        type="text" 
+                                        placeholder="Ej: 1 caja, 5..."
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500 text-center"
+                                    >
+                                </div>
+
+                                <div class="sm:col-span-3 flex items-end">
+                                    <button 
+                                        wire:click="agregarMedicamentoARecetaExterna" 
+                                        type="button" 
+                                        class="w-full py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar</span>
+                                    </button>
+                                </div>
+
+                                <div class="sm:col-span-12">
+                                    <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">
+                                        Posología / Indicaciones de Administración
+                                    </label>
+                                    <input 
+                                        wire:model="receta_externa_nuevo_indicaciones" 
+                                        type="text" 
+                                        placeholder="Ej: 1 ampolla EV cada 12 horas diluida en 100ml de suero fisiológico..."
+                                        class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABLA ACUMULATIVA DE MEDICAMENTOS ENCOLADOS -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                                Lista de Medicamentos e Insumos en la Receta Externa ({{ count($receta_externa_medicamentos) }})
+                            </label>
+                            @if (count($receta_externa_medicamentos) > 0)
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold uppercase text-[10px]">
+                                            <tr>
+                                                <th class="py-2 px-3 w-8 text-center">#</th>
+                                                <th class="py-2 px-3">Medicamento / Insumo</th>
+                                                <th class="py-2 px-3 text-center w-24">Cantidad</th>
+                                                <th class="py-2 px-3">Posología</th>
+                                                <th class="py-2 px-3 text-center w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                            @foreach ($receta_externa_medicamentos as $idx => $item)
+                                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                                    <td class="py-2 px-3 text-center font-mono text-slate-400">
+                                                        {{ $idx + 1 }}
+                                                    </td>
+                                                    <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">
+                                                        {{ $item['medicamento'] }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-center font-bold text-sky-600 dark:text-sky-400">
+                                                        {{ $item['cantidad'] }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-slate-500 dark:text-slate-400">
+                                                        {{ $item['indicaciones'] ?: 'Según indicación directa' }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-center">
+                                                        <button 
+                                                            wire:click="removerMedicamentoRecetaExterna({{ $idx }})" 
+                                                            type="button" 
+                                                            class="text-rose-500 hover:text-rose-700 p-1 transition-colors cursor-pointer"
+                                                            title="Remover de la lista"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                                    <i class="fas fa-prescription-bottle text-lg text-slate-300 dark:text-slate-600 mb-1 block"></i>
+                                    Aún no ha agregado medicamentos. Ingrese el nombre y presione "+ Agregar".
+                                </div>
+                            @endif
+                            @error('receta_externa_medicamentos')
+                                <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Observaciones / Instrucciones de compra -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                Observaciones e Instrucciones Generales para la Compra
+                            </label>
+                            <textarea 
+                                wire:model="receta_externa_observaciones" 
+                                rows="2" 
+                                placeholder="Instrucciones al paciente, farmacias recomendadas, marcas sugeridas o precauciones..."
+                                class="w-full text-xs rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-sky-500"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                        <button 
+                            wire:click="cerrarModalRecetaExterna" 
+                            type="button" 
+                            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            wire:click="guardarRecetaExterna" 
+                            wire:loading.attr="disabled"
+                            type="button" 
+                            class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                        >
+                            <span wire:loading.remove wire:target="guardarRecetaExterna">
+                                <i class="fas fa-check mr-1"></i> Guardar y Emitir Receta
+                            </span>
+                            <span wire:loading wire:target="guardarRecetaExterna">
+                                <i class="fas fa-spinner fa-spin mr-1"></i> Guardando...
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

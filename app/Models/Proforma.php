@@ -128,6 +128,18 @@ class Proforma extends Model
         return $this->hasMany(Cirugia::class, 'proforma_id');
     }
 
+    public function recetasExternas(): HasMany
+    {
+        return $this->hasMany(RecetaExterna::class, 'proforma_id');
+    }
+
+    public function recetaExternaActiva(): HasOne
+    {
+        return $this->hasOne(RecetaExterna::class, 'proforma_id')
+            ->where('activo', true)
+            ->latest('id');
+    }
+
     public function recetas(): HasMany
     {
         return $this->hasMany(Receta::class, 'proforma_id');
