@@ -15,11 +15,33 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2.5">
             <span class="px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-900 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center gap-2">
                 <i class="fas fa-clock text-teal-600"></i>
                 <span>Pendientes por Atender: <strong>{{ $totalPendientes }}</strong></span>
             </span>
+
+            @if (Auth::user()?->tienePermiso('despachar-farmacia') || Auth::user()?->tienePermiso('emitir-receta'))
+                <button 
+                    type="button" 
+                    wire:click="abrirModalCrearReceta" 
+                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm shadow-teal-500/20 transition-all transform active:scale-95 cursor-pointer"
+                >
+                    <i class="fas fa-file-prescription"></i>
+                    <span>Crear Receta</span>
+                </button>
+            @endif
+
+            @if (Auth::user()?->tienePermiso('despachar-farmacia') || Auth::user()?->tienePermiso('proformas.consumos.agregar'))
+                <button 
+                    type="button" 
+                    wire:click="abrirModalDespachoExtraDirecto" 
+                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm shadow-indigo-500/20 transition-all transform active:scale-95 cursor-pointer"
+                >
+                    <i class="fas fa-boxes-packing"></i>
+                    <span>Despachar Insumos Extras</span>
+                </button>
+            @endif
         </div>
     </div>
 
@@ -322,9 +344,11 @@
                                         <tr>
                                             <th class="py-2.5 px-3">Medicamento</th>
                                             <th class="py-2.5 px-3 text-center">Prescrito / Saldo</th>
-                                            <th class="py-2.5 px-3 w-44">Área / Sección de Origen</th>
+                                            <th class="py-2.5 px-3 w-40">Área / Sección de Origen</th>
                                             <th class="py-2.5 px-3">Lote a Descargar</th>
-                                            <th class="py-2.5 px-3 text-center w-28">Cant. a Despachar</th>
+                                            <th class="py-2.5 px-3 text-right">P. Unitario</th>
+                                            <th class="py-2.5 px-3 text-center w-24">Cant. a Despachar</th>
+                                            <th class="py-2.5 px-3 text-right">Subtotal</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -332,6 +356,9 @@
                                             @php
                                                 $lotesDisponibles = $lotesDisponiblesPorItem[$detId] ?? collect();
                                                 $saldo = $item['saldo_pendiente'];
+                                                $cantDesp = (int) ($item['cantidad_despachar'] ?? 0);
+                                                $pUnit = (float) ($item['precio_unitario'] ?? 0);
+                                                $subtotalItem = $cantDesp * $pUnit;
                                             @endphp
                                             <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
                                                 <td class="py-2.5 px-3">
@@ -391,22 +418,38 @@
                                                         </span>
                                                     @endif
                                                 </td>
+                                                <td class="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
+                                                    Bs. {{ number_format($pUnit, 2) }}
+                                                </td>
                                                 <td class="py-2.5 px-3 text-center">
                                                     @if ($saldo > 0 && $lotesDisponibles->isNotEmpty())
                                                         <input 
                                                             type="number" 
                                                             min="0" 
                                                             max="{{ $saldo }}"
-                                                            wire:model="despachosItems.{{ $detId }}.cantidad_despachar"
+                                                            wire:model.live.debounce.250ms="despachosItems.{{ $detId }}.cantidad_despachar"
                                                             class="w-20 text-xs text-center rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2 focus:ring-2 focus:ring-teal-500 shadow-2xs font-mono font-bold"
                                                         />
                                                     @else
                                                         <span class="font-mono text-slate-400 font-bold">0</span>
                                                     @endif
                                                 </td>
+                                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800 dark:text-white">
+                                                    Bs. {{ number_format($subtotalItem, 2) }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
+                                    <tfoot class="bg-slate-50 dark:bg-slate-800/80 font-semibold border-t border-slate-200 dark:border-slate-700 text-xs">
+                                        <tr>
+                                            <td colspan="5" class="py-2.5 px-3 text-right text-slate-600 dark:text-slate-400">
+                                                Subtotal Medicamentos a Despachar:
+                                            </td>
+                                            <td colspan="2" class="py-2.5 px-3 text-right font-mono font-bold text-teal-600 dark:text-teal-400 text-sm">
+                                                Bs. {{ number_format($this->totalRecetaDespachar, 2) }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
@@ -677,16 +720,24 @@
                         </div>
 
                         <!-- Modal Footer -->
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                            <div class="text-xs text-slate-500">
-                                @php
-                                    $totalExtrasMonto = array_sum(array_column($extrasItems, 'subtotal'));
-                                @endphp
-                                @if ($totalExtrasMonto > 0)
-                                    <span>Monto adicional en extras: <strong class="text-indigo-600 font-mono">Bs. {{ number_format($totalExtrasMonto, 2) }}</strong></span>
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="flex flex-wrap items-center gap-2.5 text-xs w-full sm:w-auto">
+                                <div class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                                    <span class="text-slate-500">Receta:</span>
+                                    <strong class="font-mono text-teal-600 dark:text-teal-400 font-bold">Bs. {{ number_format($this->totalRecetaDespachar, 2) }}</strong>
+                                </div>
+                                @if ($this->totalExtrasDespachar > 0)
+                                    <div class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/60 flex items-center gap-1.5">
+                                        <span class="text-indigo-700 dark:text-indigo-300">Extras:</span>
+                                        <strong class="font-mono text-indigo-600 dark:text-indigo-400 font-bold">Bs. {{ number_format($this->totalExtrasDespachar, 2) }}</strong>
+                                    </div>
                                 @endif
+                                <div class="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1.5 shadow-2xs">
+                                    <span class="text-emerald-800 dark:text-emerald-300 font-bold">Costo Total a Despachar:</span>
+                                    <strong class="font-mono text-emerald-600 dark:text-emerald-400 font-bold text-sm">Bs. {{ number_format($this->costoTotalDespacho, 2) }}</strong>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2.5">
+                            <div class="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
                                 <button 
                                     wire:click="cerrarModalDespacho" 
                                     type="button" 
@@ -710,6 +761,731 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 1: CREAR RECETA MÉDICA DESDE FARMACIA -->
+    <!-- ========================================================================= -->
+    @if ($modalCrearRecetaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-file-prescription text-teal-600"></i>
+                                Prescribir y Crear Receta Médica
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                                Seleccione una proforma en curso para prescribir medicamentos que ingresarán directamente a la bandeja de farmacia.
+                            </p>
+                        </div>
+                        <button wire:click="cerrarModalCrearReceta" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit.prevent="guardarNuevaReceta" class="p-6 space-y-4">
+                        <!-- Paso 1: Selección de Paciente / Proforma -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-user-injured text-teal-600"></i>
+                                    Paciente / Proforma (En Curso) <span class="text-rose-500">*</span>
+                                </span>
+                                <span class="text-[10px] text-teal-600 font-semibold">Proformas activas</span>
+                            </label>
+
+                            @if ($receta_proforma_id && $proformaSeleccionadaReceta)
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-teal-950 dark:text-teal-100 flex items-center gap-2">
+                                                <span>{{ $proformaSeleccionadaReceta->paciente?->nombre_completo ?? 'Paciente' }}</span>
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] bg-teal-200/80 dark:bg-teal-900 text-teal-800 dark:text-teal-200 font-mono font-bold">
+                                                    Proforma #{{ $proformaSeleccionadaReceta->id }}
+                                                </span>
+                                            </div>
+                                            <div class="text-[11px] text-teal-700 dark:text-teal-300 flex flex-wrap items-center gap-2 mt-0.5">
+                                                <span>CI: {{ $proformaSeleccionadaReceta->paciente?->cedula ?? 'S/C' }}</span>
+                                                <span>&bull; Sede: {{ $proformaSeleccionadaReceta->sucursal?->nombre ?? 'Principal' }}</span>
+                                                @if ($proformaSeleccionadaReceta->medicos->isNotEmpty())
+                                                    <span>&bull; Médico: Dr(a). {{ $proformaSeleccionadaReceta->medicos->first()->nombre_completo }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        wire:click="limpiarProformaSeleccionadaReceta" 
+                                        class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                                    >
+                                        <i class="fas fa-times me-1"></i> Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="relative">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.250ms="buscarProformaReceta" 
+                                            placeholder="Buscar por paciente, CI o N° de proforma..." 
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                                        />
+                                        @if ($buscarProformaReceta !== '')
+                                            <button type="button" wire:click="$set('buscarProformaReceta', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    @if ($proformasSugeridasReceta->isNotEmpty())
+                                        <div class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl divide-y divide-slate-100 dark:divide-slate-700/60 z-30">
+                                            @foreach ($proformasSugeridasReceta as $prof)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="seleccionarProformaReceta({{ $prof->id }})" 
+                                                    class="w-full text-left p-2.5 hover:bg-teal-50/80 dark:hover:bg-teal-950/50 transition-colors flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <div>
+                                                        <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                                            <span>{{ $prof->paciente?->nombre_completo ?? 'Paciente sin nombre' }}</span>
+                                                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">
+                                                                CI: {{ $prof->paciente?->cedula ?? 'S/C' }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                            Proforma #{{ $prof->id }} &bull; Sede: {{ $prof->sucursal?->nombre ?? 'N/D' }} &bull; Ingreso: {{ $prof->created_at?->format('d/m/Y') }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300">
+                                                            Seleccionar <i class="fas fa-chevron-right ms-1 text-[9px]"></i>
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @elseif (strlen(trim($buscarProformaReceta)) >= 2)
+                                        <div class="absolute left-0 right-0 mt-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-500 z-30">
+                                            No se encontraron proformas en curso que coincidan con la búsqueda.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                            @error('receta_proforma_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        @if ($receta_proforma_id)
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="receta_medico_id_farm" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Médico Prescriptor <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select id="receta_medico_id_farm" wire:model="receta_medico_id" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs">
+                                        @foreach ($medicos as $m)
+                                            <option value="{{ $m->id }}">Dr(a). {{ $m->nombre_completo }} ({{ $m->especialidad?->nombre ?? 'General' }})</option>
+                                        @endforeach
+                                    </select>
+                                    @error('receta_medico_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div>
+                                    <label for="receta_observaciones_farm" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Indicaciones / Tratamiento General
+                                    </label>
+                                    <input type="text" id="receta_observaciones_farm" wire:model="receta_observaciones" placeholder="Ej. Dieta blanda, reposo, control de signos..." class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2.5 shadow-2xs" />
+                                </div>
+                            </div>
+
+                            <!-- Búsqueda y Selección de Medicamento con Control de Stock -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                                <span class="text-xs font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 block flex items-center justify-between">
+                                    <span><i class="fas fa-pills me-1"></i> Adjuntar Medicamento a la Receta</span>
+                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">Existencias en sede</span>
+                                </span>
+
+                                @if ($receta_nuevo_producto_id)
+                                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                                <i class="fas fa-capsules"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold text-teal-950 dark:text-teal-100">
+                                                    {{ $receta_nuevo_producto_nombre }}
+                                                </div>
+                                                <div class="text-[11px] text-teal-700 dark:text-teal-300 flex items-center gap-2">
+                                                    <span>{{ $receta_nuevo_unidad_medida }}</span>
+                                                    @if ($receta_nuevo_marca_nombre)
+                                                        <span>&bull; {{ $receta_nuevo_marca_nombre }}</span>
+                                                    @endif
+                                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                                        Stock disponible: {{ $receta_nuevo_stock_disponible }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            wire:click="limpiarMedicamentoSeleccionadoReceta" 
+                                            class="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-md transition-colors cursor-pointer"
+                                        >
+                                            <i class="fas fa-times me-1"></i> Cambiar
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                                Cantidad <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                min="1" 
+                                                wire:model="receta_nuevo_cantidad" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs font-bold"
+                                            />
+                                        </div>
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                                Posología e Indicaciones <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                wire:model="receta_nuevo_indicaciones" 
+                                                placeholder="Ej. 1 comp cada 8 hrs por 5 días" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 p-2 shadow-2xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end pt-1">
+                                        <button 
+                                            type="button" 
+                                            wire:click="agregarMedicamentoAReceta" 
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Agregar a la Receta</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="relative">
+                                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                            Buscar Fármaco / Medicamento <span class="text-rose-500">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                            <input 
+                                                type="text" 
+                                                wire:model.live.debounce.250ms="buscarMedicamentoReceta" 
+                                                placeholder="Escriba el nombre comercial, principio activo o marca del fármaco..." 
+                                                class="w-full pl-9 pr-3 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 shadow-2xs"
+                                            />
+                                        </div>
+
+                                        @if ($sugerenciasMedicamentosReceta->isNotEmpty())
+                                            <div class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl divide-y divide-slate-100 dark:divide-slate-700/60 z-30">
+                                                @foreach ($sugerenciasMedicamentosReceta as $sug)
+                                                    @php
+                                                        $stockTotal = (int) $sug->lotes->sum('cantidad_actual');
+                                                    @endphp
+                                                    <button 
+                                                        type="button" 
+                                                        wire:click="seleccionarMedicamentoReceta({{ $sug->id }})" 
+                                                        class="w-full text-left p-2.5 hover:bg-teal-50/80 dark:hover:bg-teal-950/50 transition-colors flex items-center justify-between cursor-pointer"
+                                                    >
+                                                        <div>
+                                                            <div class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ $sug->nombre }}</div>
+                                                            <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                                {{ $sug->unidad_medida }} @if ($sug->marca) &bull; {{ $sug->marca->nombre }} @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            @if ($stockTotal > 0)
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-mono">
+                                                                    Stock: {{ $stockTotal }}
+                                                                </span>
+                                                            @else
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-mono">
+                                                                    Agotado (0)
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @elseif (strlen(trim($buscarMedicamentoReceta)) >= 2)
+                                            <div class="absolute left-0 right-0 mt-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-500 z-30">
+                                                No se encontraron medicamentos coincidentes en farmacia.
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Tabla de Medicamentos Agregados a la Receta -->
+                            @if (! empty($receta_medicamentos))
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <table class="w-full text-xs text-left">
+                                        <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 uppercase tracking-wider text-[11px]">
+                                            <tr>
+                                                <th class="py-2.5 px-3">Medicamento</th>
+                                                <th class="py-2.5 px-3 text-center">Cant.</th>
+                                                <th class="py-2.5 px-3">Indicaciones / Posología</th>
+                                                <th class="py-2.5 px-3 text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                                            @foreach ($receta_medicamentos as $idx => $med)
+                                                <tr>
+                                                    <td class="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                                                        {{ $med['producto_nombre'] }}
+                                                        <span class="block text-[10px] text-slate-400 font-normal">
+                                                            {{ $med['unidad_medida'] }} @if (! empty($med['marca_nombre'])) &bull; {{ $med['marca_nombre'] }} @endif
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center font-bold text-teal-700 dark:text-teal-300">
+                                                        {{ $med['cantidad'] }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">
+                                                        {{ $med['indicaciones'] }}
+                                                    </td>
+                                                    <td class="py-2.5 px-3 text-center">
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="removerMedicamentoReceta({{ $idx }})" 
+                                                            class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                                            title="Quitar de la receta"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        @endif
+
+                        <!-- Footer del Modal -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalCrearReceta" 
+                                class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled" 
+                                @if (! $receta_proforma_id || empty($receta_medicamentos)) disabled @endif
+                                class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarNuevaReceta">
+                                    <i class="fas fa-check-circle me-1"></i> Prescribir y Crear Receta
+                                </span>
+                                <span wire:loading wire:target="guardarNuevaReceta">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 2: DESPACHAR INSUMOS EXTRAS DIRECTO -->
+    <!-- ========================================================================= -->
+    @if ($modalDespachoExtraDirectoOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-2xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-boxes-packing text-indigo-600"></i>
+                                Despachar Insumos y Medicamentos Extras
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                                Despacho directo con descuento de stock por área y cargo al estado de cuenta del paciente.
+                            </p>
+                        </div>
+                        <button wire:click="cerrarModalDespachoExtraDirecto" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit.prevent="procesarDespachoExtraDirecto" class="p-6 space-y-4">
+                        <!-- Paso 1: Selección de Paciente / Proforma -->
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fas fa-user-injured text-indigo-600"></i>
+                                    Paciente / Proforma Destino (En Curso) <span class="text-rose-500">*</span>
+                                </span>
+                                <span class="text-[10px] text-indigo-600 font-semibold">Proformas activas</span>
+                            </label>
+
+                            @if ($extra_directo_proforma_id && $proformaSeleccionadaExtraDirecto)
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                                            <i class="fas fa-user-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-indigo-950 dark:text-indigo-100 flex items-center gap-2">
+                                                <span>{{ $proformaSeleccionadaExtraDirecto->paciente?->nombre_completo ?? 'Paciente' }}</span>
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] bg-indigo-200/80 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 font-mono font-bold">
+                                                    Proforma #{{ $proformaSeleccionadaExtraDirecto->id }}
+                                                </span>
+                                            </div>
+                                            <div class="text-[11px] text-indigo-700 dark:text-indigo-300 flex flex-wrap items-center gap-2 mt-0.5">
+                                                <span>CI: {{ $proformaSeleccionadaExtraDirecto->paciente?->cedula ?? 'S/C' }}</span>
+                                                <span>&bull; Sede: {{ $proformaSeleccionadaExtraDirecto->sucursal?->nombre ?? 'Principal' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        wire:click="limpiarProformaSeleccionadaExtraDirecto" 
+                                        class="px-2.5 py-1 text-xs font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                                    >
+                                        <i class="fas fa-times me-1"></i> Cambiar
+                                    </button>
+                                </div>
+                            @else
+                                <div class="relative">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input 
+                                            type="text" 
+                                            wire:model.live.debounce.250ms="buscarProformaExtraDirecto" 
+                                            placeholder="Buscar por paciente, CI o N° de proforma..." 
+                                            class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                                        />
+                                        @if ($buscarProformaExtraDirecto !== '')
+                                            <button type="button" wire:click="$set('buscarProformaExtraDirecto', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    @if ($proformasSugeridasExtraDirecto->isNotEmpty())
+                                        <div class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl divide-y divide-slate-100 dark:divide-slate-700/60 z-30">
+                                            @foreach ($proformasSugeridasExtraDirecto as $prof)
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="seleccionarProformaExtraDirecto({{ $prof->id }})" 
+                                                    class="w-full text-left p-2.5 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/50 transition-colors flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <div>
+                                                        <div class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                                            <span>{{ $prof->paciente?->nombre_completo ?? 'Paciente sin nombre' }}</span>
+                                                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">
+                                                                CI: {{ $prof->paciente?->cedula ?? 'S/C' }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                            Proforma #{{ $prof->id }} &bull; Sede: {{ $prof->sucursal?->nombre ?? 'N/D' }} &bull; Ingreso: {{ $prof->created_at?->format('d/m/Y') }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                                                            Seleccionar <i class="fas fa-chevron-right ms-1 text-[9px]"></i>
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @elseif (strlen(trim($buscarProformaExtraDirecto)) >= 2)
+                                        <div class="absolute left-0 right-0 mt-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl text-center text-xs text-slate-500 z-30">
+                                            No se encontraron proformas en curso que coincidan con la búsqueda.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                            @error('extra_directo_proforma_id') <p class="text-[11px] text-rose-500 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        @if ($extra_directo_proforma_id)
+                            <!-- Paso 2: Selección de Sección / Almacén de Origen -->
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fas fa-layer-group text-indigo-500"></i>
+                                        Sección / Depósito de Origen (Descargo de Stock) <span class="text-rose-500">*</span>
+                                    </span>
+                                    <span class="text-[10px] text-indigo-600 font-semibold">existencias por sección</span>
+                                </label>
+                                <select 
+                                    wire:model.live="extra_directo_seccion_id" 
+                                    class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-indigo-500 font-medium"
+                                >
+                                    @foreach ($seccionesSucursalExtraDirecto as $sec)
+                                        <option value="{{ $sec->id }}">
+                                            {{ $sec->nombre }} {{ $sec->es_almacen_principal ? '(Almacén Principal)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Paso 3: Buscador de Insumos / Medicamentos Extras -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                                <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 block flex items-center justify-between">
+                                    <span><i class="fas fa-box-open me-1"></i> Adjuntar Insumo o Medicamento Extra</span>
+                                    <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400">Stock disponible en la sección</span>
+                                </span>
+
+                                @if ($extra_directo_producto_id)
+                                    <div class="p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold text-indigo-950 dark:text-indigo-200">
+                                                    {{ $extra_directo_producto_nombre }}
+                                                </div>
+                                                <div class="text-[11px] text-indigo-700 dark:text-indigo-400 flex flex-wrap items-center gap-2 mt-0.5">
+                                                    <span>Unidad: {{ $extra_directo_unidad_medida }}</span>
+                                                    <span>&bull; P. Sugerido: Bs. {{ $extra_directo_precio_unitario }}</span>
+                                                    <span class="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 text-[10px]">
+                                                        Stock en área: {{ $extra_directo_stock_disponible }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            wire:click="limpiarInsumoExtraDirecto" 
+                                            class="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                        >
+                                            <i class="fas fa-times me-1"></i> Cambiar
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                                Cantidad <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                min="1" 
+                                                max="{{ $extra_directo_stock_disponible }}" 
+                                                wire:model.live.debounce.250ms="extra_directo_cantidad" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 p-2 shadow-2xs font-bold"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                                Precio Unitario (Bs.) <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                step="0.01" 
+                                                min="0" 
+                                                wire:model.live.debounce.250ms="extra_directo_precio_unitario" 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 p-2 shadow-2xs font-mono font-bold"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                                                Observación / Motivo
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                wire:model="extra_directo_observaciones" 
+                                                placeholder="Ej. Solicitado en quirófano / piso..." 
+                                                class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 p-2 shadow-2xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-1">
+                                        <div class="text-xs text-slate-600 dark:text-slate-400">
+                                            @php
+                                                $subtotalItemDirecto = ((int) ($extra_directo_cantidad ?: 0)) * ((float) ($extra_directo_precio_unitario ?: 0));
+                                            @endphp
+                                            <span>Subtotal estimado: <strong class="font-mono text-indigo-600 dark:text-indigo-400 font-bold">Bs. {{ number_format($subtotalItemDirecto, 2) }}</strong></span>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            wire:click="agregarItemExtraDirecto" 
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                                        >
+                                            <i class="fas fa-plus"></i>
+                                            <span>Agregar a la Lista</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="space-y-1.5">
+                                        <div class="relative">
+                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                            <input 
+                                                type="text" 
+                                                wire:model.live.debounce.250ms="buscarInsumoExtraDirecto" 
+                                                placeholder="Buscar por nombre, código o descripción de producto..." 
+                                                class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                                            />
+                                            @if ($buscarInsumoExtraDirecto !== '')
+                                                <button type="button" wire:click="$set('buscarInsumoExtraDirecto', '')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        <div class="max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg divide-y divide-slate-100 dark:divide-slate-700/60">
+                                            @forelse ($productosParaExtraDirecto as $pDir)
+                                                @php
+                                                    $stkEnSec = $pDir->lotes->sum(fn ($l) => $l->stockEnSeccion($extra_directo_seccion_id));
+                                                @endphp
+                                                <button 
+                                                    type="button" 
+                                                    wire:click="seleccionarInsumoExtraDirecto({{ $pDir->id }})" 
+                                                    class="w-full text-left p-2.5 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-colors flex items-center justify-between group cursor-pointer"
+                                                >
+                                                    <div>
+                                                        <div class="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                                                            {{ $pDir->nombre }}
+                                                        </div>
+                                                        <div class="text-[11px] text-slate-400">
+                                                            {{ $pDir->unidad_medida }} &bull; {{ $pDir->marca?->nombre ?? 'Genérico' }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                                            Bs. {{ number_format($pDir->ultimo_precio_venta, 2) }}
+                                                        </span>
+                                                        <span class="block text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                            <i class="fas fa-boxes text-[9px] me-0.5"></i> Stock en área: {{ $stkEnSec }}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            @empty
+                                                <div class="p-3 text-center text-xs text-slate-400">
+                                                    <i class="fas fa-box-open me-1"></i> No se encontraron productos con existencias disponibles en esta área.
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Tabla de Insumos Extras Encolados para Despacho -->
+                            @if (! empty($cola_despachos_extras_directos))
+                                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <table class="w-full text-xs text-left">
+                                        <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 uppercase tracking-wider text-[11px]">
+                                            <tr>
+                                                <th class="py-2 px-3">Insumo / Medicamento</th>
+                                                <th class="py-2 px-3">Área Origen</th>
+                                                <th class="py-2 px-3 text-center">Cant.</th>
+                                                <th class="py-2 px-3 text-right">P. Unit</th>
+                                                <th class="py-2 px-3 text-right">Subtotal</th>
+                                                <th class="py-2 px-3">Observaciones</th>
+                                                <th class="py-2 px-3 text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                                            @foreach ($cola_despachos_extras_directos as $idx => $item)
+                                                <tr>
+                                                    <td class="py-2 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                                                        {{ $item['producto_nombre'] }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-slate-500">
+                                                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                            {{ $item['seccion_nombre'] }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="py-2 px-3 text-center font-bold text-indigo-700 dark:text-indigo-300">
+                                                        {{ $item['cantidad'] }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
+                                                        Bs. {{ number_format($item['precio_unitario'], 2) }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-right font-mono font-bold text-slate-800 dark:text-white">
+                                                        Bs. {{ number_format($item['subtotal'], 2) }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-slate-500 text-[11px] truncate max-w-xs">
+                                                        {{ $item['observaciones'] ?: '—' }}
+                                                    </td>
+                                                    <td class="py-2 px-3 text-center">
+                                                        <button 
+                                                            type="button" 
+                                                            wire:click="removerItemExtraDirecto({{ $idx }})" 
+                                                            class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                                            title="Quitar este insumo"
+                                                        >
+                                                            <i class="fas fa-trash-alt text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="bg-slate-50 dark:bg-slate-850 font-bold border-t border-slate-200 dark:border-slate-800">
+                                            <tr>
+                                                <td colspan="4" class="py-2 px-3 text-right text-slate-600 dark:text-slate-300">Total Despacho Extra:</td>
+                                                <td class="py-2 px-3 text-right font-mono text-indigo-600 dark:text-indigo-400">
+                                                    Bs. {{ number_format(array_sum(array_column($cola_despachos_extras_directos, 'subtotal')), 2) }}
+                                                </td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            @endif
+                        @endif
+
+                        <!-- Footer del Modal -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <button 
+                                    type="button" 
+                                    wire:click="cerrarModalDespachoExtraDirecto" 
+                                    class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer"
+                                >
+                                    Cancelar
+                                </button>
+                                @if (!empty($cola_despachos_extras_directos))
+                                    <div class="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/60 flex items-center gap-1.5 shadow-2xs">
+                                        <span class="text-xs text-indigo-700 dark:text-indigo-300 font-semibold">Costo Total Extra:</span>
+                                        <strong class="font-mono text-indigo-600 dark:text-indigo-400 font-bold text-sm">Bs. {{ number_format($this->totalExtraDirectoDespachar, 2) }}</strong>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled" 
+                                @if (! $extra_directo_proforma_id || empty($cola_despachos_extras_directos)) disabled @endif
+                                class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="procesarDespachoExtraDirecto">
+                                    <i class="fas fa-check-double me-1"></i> Confirmar Despacho Extra
+                                </span>
+                                <span wire:loading wire:target="procesarDespachoExtraDirecto">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Despachando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
