@@ -25,6 +25,7 @@ use App\Models\Receta;
 use App\Models\RecetaDetalle;
 use App\Models\RecetaExterna;
 use App\Models\RecetaExternaDetalle;
+use App\Models\ReporteEnfermeria;
 use App\Models\Seccion;
 use App\Models\Servicio;
 use App\Models\TipoSolicitud;
@@ -314,6 +315,17 @@ class ProformaDetalle extends Component
 
     public string $internacion_descripcion = '';
 
+    // Modal Reporte de Enfermería
+    public bool $modalReporteEnfermeriaOpen = false;
+
+    public ?int $reporte_enfermeria_id = null;
+
+    public string $rep_enf_fecha_hora = '';
+
+    public string $rep_enf_procedimiento = '';
+
+    public string $rep_enf_observaciones = '';
+
     // Modal Agregar Eventos Calendario en Lote
     public bool $modalCalendarioOpen = false;
 
@@ -477,6 +489,7 @@ class ProformaDetalle extends Component
             'evoluciones.usuarioCreador',
             'indicaciones.usuarioCreador',
             'internaciones.usuarioCreador',
+            'reportesEnfermeria.usuarioCreador',
             'calendarios',
             'cirugias.cirujano',
             'cirugias.primerAyudante',
@@ -2051,6 +2064,108 @@ class ProformaDetalle extends Component
             'icon' => 'success',
             'title' => 'Registro Eliminado',
             'text' => 'El registro de internación fue eliminado correctamente.',
+        ]);
+    }
+
+    // =========================================================================
+    // REPORTE DE ENFERMERÍA DE LA PROFORMA
+    // =========================================================================
+    public function abrirModalReporteEnfermeria(?int $id = null): void
+    {
+        if ($id) {
+            $item = ReporteEnfermeria::where('proforma_id', $this->proforma->id)->findOrFail($id);
+            $this->reporte_enfermeria_id = $item->id;
+            $this->rep_enf_fecha_hora = $item->fecha_hora ? $item->fecha_hora->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->rep_enf_procedimiento = $item->procedimiento_medicacion ?? '';
+            $this->rep_enf_observaciones = $item->observaciones ?? '';
+        } else {
+            if (! $this->asegurarProformaModificable()) {
+                return;
+            }
+            $this->reporte_enfermeria_id = null;
+            $this->rep_enf_fecha_hora = now()->format('Y-m-d\TH:i');
+            $this->rep_enf_procedimiento = '';
+            $this->rep_enf_observaciones = '';
+        }
+
+        $this->modalReporteEnfermeriaOpen = true;
+    }
+
+    public function cerrarModalReporteEnfermeria(): void
+    {
+        $this->modalReporteEnfermeriaOpen = false;
+        $this->reporte_enfermeria_id = null;
+        $this->rep_enf_fecha_hora = '';
+        $this->rep_enf_procedimiento = '';
+        $this->rep_enf_observaciones = '';
+        $this->resetValidation();
+    }
+
+    public function guardarReporteEnfermeria(): void
+    {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $this->validate([
+            'rep_enf_fecha_hora' => 'required|date',
+            'rep_enf_procedimiento' => 'nullable|string',
+            'rep_enf_observaciones' => 'nullable|string',
+        ], [
+            'rep_enf_fecha_hora.required' => 'La fecha y hora del reporte es obligatoria.',
+        ]);
+
+        if (empty(trim(strip_tags($this->rep_enf_procedimiento))) && empty(trim(strip_tags($this->rep_enf_observaciones)))) {
+            $this->addError('rep_enf_procedimiento', 'Debe registrar al menos un procedimiento/medicación o una observación/síntoma.');
+
+            return;
+        }
+
+        $data = [
+            'fecha_hora' => $this->rep_enf_fecha_hora,
+            'procedimiento_medicacion' => $this->rep_enf_procedimiento,
+            'observaciones' => $this->rep_enf_observaciones,
+        ];
+
+        if ($this->reporte_enfermeria_id) {
+            $item = ReporteEnfermeria::where('proforma_id', $this->proforma->id)->findOrFail($this->reporte_enfermeria_id);
+            $item->update(array_merge($data, [
+                'usuario_modificador_id' => Auth::id(),
+            ]));
+            $mensaje = 'Reporte de enfermería actualizado correctamente.';
+        } else {
+            $this->proforma->reportesEnfermeria()->create(array_merge($data, [
+                'usuario_creador_id' => Auth::id(),
+            ]));
+            $mensaje = 'Reporte de enfermería registrado correctamente.';
+        }
+
+        $this->cerrarModalReporteEnfermeria();
+        $this->proforma->load('reportesEnfermeria.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => '¡Reporte Guardado!',
+            'text' => $mensaje,
+        ]);
+    }
+
+    public function eliminarReporteEnfermeria(int $id): void
+    {
+        if (! $this->asegurarProformaModificable()) {
+            return;
+        }
+
+        $item = ReporteEnfermeria::where('proforma_id', $this->proforma->id)->findOrFail($id);
+        $item->update(['usuario_eliminador_id' => Auth::id()]);
+        $item->delete();
+
+        $this->proforma->load('reportesEnfermeria.usuarioCreador');
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Reporte Eliminado',
+            'text' => 'El registro del reporte de enfermería fue eliminado correctamente.',
         ]);
     }
 
@@ -3878,6 +3993,7 @@ class ProformaDetalle extends Component
             'evoluciones.usuarioCreador',
             'indicaciones.usuarioCreador',
             'internaciones.usuarioCreador',
+            'reportesEnfermeria.usuarioCreador',
             'calendarios' => fn ($q) => $q->orderBy('fecha')->orderBy('hora'),
             'recetaActiva.detalles.producto',
             'recetas' => fn ($q) => $q->with(['detalles.producto', 'doctor'])->latest(),
@@ -4130,6 +4246,7 @@ class ProformaDetalle extends Component
             'evoluciones' => $this->proforma->evoluciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
             'indicaciones' => $this->proforma->indicaciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
             'internaciones' => $this->proforma->internaciones()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
+            'reportesEnfermeria' => $this->proforma->reportesEnfermeria()->with('usuarioCreador')->orderBy('fecha_hora', 'desc')->get(),
         ]);
     }
 }

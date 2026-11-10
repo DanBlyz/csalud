@@ -530,6 +530,19 @@
                 </button>
             @endpermiso
 
+            <!-- 2.D. Reporte de Enfermería -->
+            <button 
+                wire:click="cambiarTab('reportes_enfermeria')" 
+                type="button" 
+                class="px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-colors flex items-center gap-2 shrink-0 cursor-pointer {{ $tab === 'reportes_enfermeria' ? 'border-sky-600 text-sky-600 dark:text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200' }}"
+            >
+                <i class="fas fa-user-nurse text-xs"></i>
+                <span>Reporte Enfermería</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                    {{ $proforma->reportesEnfermeria->count() }}
+                </span>
+            </button>
+
             <!-- 3. Calendario -->
             @permiso('proformas.cronograma.ver')
                 <button 
@@ -1312,6 +1325,146 @@
                         <p class="text-xs text-slate-400 mt-1">No cuenta con autorización para visualizar la hoja de internación hospitalaria.</p>
                     </div>
                 @endpermiso
+            @endif
+
+            <!-- =================================================================== -->
+            <!-- TAB: REPORTE DE ENFERMERÍA -->
+            <!-- =================================================================== -->
+            @if ($tab === 'reportes_enfermeria')
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fas fa-user-nurse text-sky-600 dark:text-sky-400"></i>
+                                Reporte de Enfermería
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Control de procedimientos, administración de medicación, evolución y notas de enfermería.</p>
+                        </div>
+                        <div class="flex items-center gap-2 self-start sm:self-center">
+                            <a 
+                                href="{{ route('proformas.pdf.reporte_enfermeria_doc', $proforma->id) }}" 
+                                target="_blank"
+                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                            >
+                                <i class="fas fa-file-pdf text-red-400"></i>
+                                <span>Imprimir Reporte PDF</span>
+                            </a>
+                            @if ($proforma->estado !== 'Pagada')
+                                <button 
+                                    wire:click="abrirModalReporteEnfermeria" 
+                                    wire:loading.attr="disabled"
+                                    type="button" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <i class="fas fa-plus"></i>
+                                    <span>Nuevo Registro de Enfermería</span>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Ficha del Paciente y Ubicación -->
+                    <div class="mb-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">HC Nº</span>
+                            <span class="text-xs font-mono font-bold text-sky-700 dark:text-sky-400">{{ $proforma->paciente->numero_historia_clinica ?? '---' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Nombre del Paciente</span>
+                            <span class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ $proforma->paciente->nombre_completo ?? '---' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Servicio (Tipo de Atención)</span>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $proforma->tipo_atencion ?? 'Internacion' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Pieza (Sala / Cama)</span>
+                            <span class="text-xs font-bold text-slate-800 dark:text-white">{{ $proforma->pieza ?: '---' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Registros -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th class="py-3 px-3 w-10 text-center">#</th>
+                                    <th class="py-3 px-3 w-36">Fecha y Hora</th>
+                                    <th class="py-3 px-4 w-5/12">Procedimiento y Medicación</th>
+                                    <th class="py-3 px-4 w-5/12">Descripción de Síntomas y Observaciones</th>
+                                    <th class="py-3 px-3 w-40">Firma / Registrado</th>
+                                    @if ($proforma->estado !== 'Pagada')
+                                        <th class="py-3 px-3 text-center w-24">Acciones</th>
+                                    @endif
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                @forelse ($reportesEnfermeria as $index => $item)
+                                    <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td class="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $index + 1 }}</td>
+                                        <td class="py-3 px-3 whitespace-nowrap">
+                                            <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                                <i class="far fa-calendar-alt text-sky-500 text-[11px]"></i>
+                                                {{ $item->fecha_hora ? $item->fecha_hora->format('d/m/Y') : '-' }}
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                <i class="far fa-clock text-[10px]"></i>
+                                                {{ $item->fecha_hora ? $item->fecha_hora->format('H:i') : '-' }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans prose prose-sm dark:prose-invert max-w-none clinical-notes-content">
+                                                {!! $item->procedimiento_medicacion ?: '<span class="text-slate-400 italic">Sin procedimiento registrado</span>' !!}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans prose prose-sm dark:prose-invert max-w-none clinical-notes-content">
+                                                {!! $item->observaciones ?: '<span class="text-slate-400 italic">Sin observaciones registradas</span>' !!}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                <i class="fas fa-user-nurse text-sky-600 text-[10px]"></i>
+                                                {{ $item->usuarioCreador->name ?? 'Enfermería' }}
+                                            </span>
+                                        </td>
+                                        @if ($proforma->estado !== 'Pagada')
+                                            <td class="py-3 px-3 text-center whitespace-nowrap">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button 
+                                                        wire:click="abrirModalReporteEnfermeria({{ $item->id }})" 
+                                                        type="button" 
+                                                        class="p-1.5 text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded transition-colors cursor-pointer"
+                                                        title="Editar Reporte"
+                                                    >
+                                                        <i class="fas fa-edit text-xs"></i>
+                                                    </button>
+                                                    <button 
+                                                        wire:click="eliminarReporteEnfermeria({{ $item->id }})" 
+                                                        wire:confirm="¿Está seguro de eliminar este registro del reporte de enfermería?"
+                                                        type="button" 
+                                                        class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors cursor-pointer"
+                                                        title="Eliminar Reporte"
+                                                    >
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ $proforma->estado !== 'Pagada' ? 6 : 5 }}" class="py-12 text-center text-slate-400">
+                                            <i class="fas fa-user-nurse text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+                                            <p class="font-medium text-slate-600 dark:text-slate-400">No hay registros de reporte de enfermería</p>
+                                            <p class="text-xs text-slate-400 mt-0.5">Presione "Nuevo Registro de Enfermería" para documentar procedimientos, medicamentos y síntomas.</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             @endif
 
             <!-- =================================================================== -->
@@ -7175,6 +7328,205 @@
                                     <i class="fas fa-check-circle me-1"></i> Guardar Internación
                                 </span>
                                 <span wire:loading wire:target="guardarInternacion">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL REPORTE DE ENFERMERÍA (CKEDITOR) -->
+    @if ($modalReporteEnfermeriaOpen)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"></div>
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left shadow-2xl transition-all sm:my-8 w-full sm:max-w-3xl">
+                    <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fas fa-user-nurse text-sky-600"></i>
+                            {{ $reporte_enfermeria_id ? 'Editar Registro de Reporte de Enfermería' : 'Nuevo Registro de Reporte de Enfermería' }}
+                        </h3>
+                        <button wire:click="cerrarModalReporteEnfermeria" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg cursor-pointer">
+                            <i class="fas fa-times text-base"></i>
+                        </button>
+                    </div>
+
+                    <form wire:submit="guardarReporteEnfermeria" class="p-6 space-y-4">
+                        <!-- Datos Informativos del Expediente -->
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div>
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Paciente</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-100">{{ $proforma->paciente->nombre_completo ?? '---' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Servicio (Tipo Atención)</span>
+                                <span class="font-semibold text-sky-700 dark:text-sky-300">{{ $proforma->tipo_atencion }}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 font-bold uppercase text-[10px] block">Pieza (Sala / Cama)</span>
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">{{ $proforma->pieza ?: '---' }}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="rep_enf_fecha_hora" class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                Fecha y Hora del Reporte <span class="text-rose-500">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="rep_enf_fecha_hora" 
+                                wire:model="rep_enf_fecha_hora" 
+                                class="w-full text-xs font-mono rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 p-2.5 shadow-2xs"
+                            >
+                            @error('rep_enf_fecha_hora')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Procedimiento y Medicación (CKEditor) -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                                <span><i class="fas fa-pills text-sky-600 me-1"></i> Procedimiento y Medicación</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Dosis, vía, sueros, curaciones o intervenciones</span>
+                            </label>
+                            <div 
+                                wire:ignore
+                                x-data="{
+                                    init() {
+                                        let editor = null;
+                                        const startEditor = () => {
+                                            if (typeof ClassicEditor === 'undefined') {
+                                                setTimeout(startEditor, 60);
+                                                return;
+                                            }
+                                            ClassicEditor
+                                                .create(this.$refs.ckEditorProcedimiento, {
+                                                    toolbar: [
+                                                        'heading', '|',
+                                                        'bold', 'italic', '|',
+                                                        'bulletedList', 'numberedList', '|',
+                                                        'undo', 'redo'
+                                                    ]
+                                                })
+                                                .then(newEditor => {
+                                                    editor = newEditor;
+                                                    this.$el._ckeditor = newEditor;
+                                                    const initial = @this.get('rep_enf_procedimiento') || '';
+                                                    if (initial) {
+                                                        editor.setData(initial);
+                                                    }
+                                                    editor.model.document.on('change:data', () => {
+                                                        @this.set('rep_enf_procedimiento', editor.getData(), false);
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error CKEditor Procedimiento:', err));
+                                        };
+                                        startEditor();
+
+                                        $watch('$wire.rep_enf_procedimiento', (val) => {
+                                            if (editor && editor.getData() !== (val || '')) {
+                                                editor.setData(val || '');
+                                            }
+                                        });
+                                    },
+                                    destroy() {
+                                        if (this.$el._ckeditor) {
+                                            this.$el._ckeditor.destroy();
+                                            this.$el._ckeditor = null;
+                                        }
+                                    }
+                                }"
+                                class="mt-1"
+                            >
+                                <textarea x-ref="ckEditorProcedimiento" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 min-h-[140px]"></textarea>
+                            </div>
+                            @error('rep_enf_procedimiento')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Descripción de Síntomas y Observaciones (CKEditor) -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                                <span><i class="fas fa-notes-medical text-sky-600 me-1"></i> Descripción de Síntomas y Observaciones</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Estado del paciente, dolor, respuesta al tratamiento, signos</span>
+                            </label>
+                            <div 
+                                wire:ignore
+                                x-data="{
+                                    init() {
+                                        let editor = null;
+                                        const startEditor = () => {
+                                            if (typeof ClassicEditor === 'undefined') {
+                                                setTimeout(startEditor, 60);
+                                                return;
+                                            }
+                                            ClassicEditor
+                                                .create(this.$refs.ckEditorObservaciones, {
+                                                    toolbar: [
+                                                        'heading', '|',
+                                                        'bold', 'italic', '|',
+                                                        'bulletedList', 'numberedList', '|',
+                                                        'undo', 'redo'
+                                                    ]
+                                                })
+                                                .then(newEditor => {
+                                                    editor = newEditor;
+                                                    this.$el._ckeditor = newEditor;
+                                                    const initial = @this.get('rep_enf_observaciones') || '';
+                                                    if (initial) {
+                                                        editor.setData(initial);
+                                                    }
+                                                    editor.model.document.on('change:data', () => {
+                                                        @this.set('rep_enf_observaciones', editor.getData(), false);
+                                                    });
+                                                })
+                                                .catch(err => console.error('Error CKEditor Observaciones:', err));
+                                        };
+                                        startEditor();
+
+                                        $watch('$wire.rep_enf_observaciones', (val) => {
+                                            if (editor && editor.getData() !== (val || '')) {
+                                                editor.setData(val || '');
+                                            }
+                                        });
+                                    },
+                                    destroy() {
+                                        if (this.$el._ckeditor) {
+                                            this.$el._ckeditor.destroy();
+                                            this.$el._ckeditor = null;
+                                        }
+                                    }
+                                }"
+                                class="mt-1"
+                            >
+                                <textarea x-ref="ckEditorObservaciones" class="w-full text-xs rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-2.5 min-h-[140px]"></textarea>
+                            </div>
+                            @error('rep_enf_observaciones')
+                                <p class="text-rose-500 text-[11px] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                wire:click="cerrarModalReporteEnfermeria" 
+                                class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <span wire:loading.remove wire:target="guardarReporteEnfermeria">
+                                    <i class="fas fa-check-circle me-1"></i> Guardar Reporte
+                                </span>
+                                <span wire:loading wire:target="guardarReporteEnfermeria">
                                     <i class="fas fa-spinner fa-spin me-1"></i> Guardando...
                                 </span>
                             </button>

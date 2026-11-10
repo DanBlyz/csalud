@@ -603,4 +603,26 @@ class ProformaPdfController extends Controller
 
         return $pdf->stream("receta-externa-{$recetaExterna->id}-proforma-{$proforma->id}.pdf");
     }
+
+    /**
+     * Genera e imprime la Hoja de Reporte de Enfermería en PDF.
+     */
+    public function reporteEnfermeriaDoc(Proforma $proforma): Response
+    {
+        $proforma->load([
+            'paciente',
+            'sucursal',
+            'reportesEnfermeria.usuarioCreador',
+        ]);
+
+        $reportes = $proforma->reportesEnfermeria()->with('usuarioCreador')->orderBy('fecha_hora', 'asc')->get();
+
+        $pdf = Pdf::loadView('pdf.proforma-reporte-enfermeria', [
+            'proforma' => $proforma,
+            'reportes' => $reportes,
+            'fechaEmision' => now()->format('d/m/Y H:i'),
+        ])->setPaper('letter', 'portrait');
+
+        return $pdf->stream("reporte-enfermeria-proforma-{$proforma->id}.pdf");
+    }
 }

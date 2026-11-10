@@ -200,6 +200,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/grafica-signos-vitales', [ProformaPdfController::class, 'graficaSignosVitales'])->name('grafica_signos_vitales');
         Route::get('/registro-glucemias', [ProformaPdfController::class, 'registroGlucemias'])->name('registro_glucemias');
         Route::get('/descargo-medicamentos-insumos', [ProformaPdfController::class, 'descargoMedicamentosInsumos'])->name('descargo_medicamentos_insumos');
+        Route::get('/reporte-enfermeria-doc', [ProformaPdfController::class, 'reporteEnfermeriaDoc'])->name('reporte_enfermeria_doc');
     });
 });
 
