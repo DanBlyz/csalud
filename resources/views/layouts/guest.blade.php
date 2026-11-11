@@ -6,6 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'Centro de Salud') }} - Acceso</title>
+        <link rel="shortcut icon" href="{{ asset('img/logo_clinica_title.png') }}" />
 
         <!-- Dark Mode Initializer Script (Prevents FOUC) -->
         <script>

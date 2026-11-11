@@ -27,4 +27,9 @@ class Institucion extends Model
     {
         return $this->hasMany(Paciente::class, 'institucion_id');
     }
+
+    public function reintegros(): HasMany
+    {
+        return $this->hasMany(ReintegroInstitucion::class, 'institucion_id');
+    }
 }

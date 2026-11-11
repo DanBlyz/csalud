@@ -4,6 +4,7 @@ use App\Http\Controllers\BajaMedicamentoPdfController;
 use App\Http\Controllers\CajaPdfController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProformaPdfController;
+use App\Http\Controllers\ReintegroInstitucionPdfController;
 use App\Http\Controllers\ReporteExcelController;
 use App\Http\Controllers\ReportePdfController;
 use App\Livewire\Administracion\EspecialidadesIndex;
@@ -23,6 +24,7 @@ use App\Livewire\Farmacia\MarcasIndex;
 use App\Livewire\Farmacia\MovimientosIndex;
 use App\Livewire\Farmacia\ProductosIndex;
 use App\Livewire\Farmacia\ProveedoresIndex;
+use App\Livewire\Farmacia\ReintegrosInstitucionIndex;
 use App\Livewire\Farmacia\SeccionesIndex;
 use App\Livewire\Pacientes\InstitucionesIndex;
 use App\Livewire\Pacientes\PacientesIndex;
@@ -156,6 +158,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/bajas/{baja}/pdf', [BajaMedicamentoPdfController::class, 'pdf'])
             ->middleware('permiso:farmacia.bajas.ver')
             ->name('bajas.pdf');
+
+        Route::get('/reintegros', ReintegrosInstitucionIndex::class)
+            ->middleware('permiso:9')
+            ->name('reintegros');
+
+        Route::get('/reintegros/{reintegro}/pdf', [ReintegroInstitucionPdfController::class, 'pdf'])
+            ->middleware('permiso:9')
+            ->name('reintegros.pdf');
     });
 
     // Módulo Caja y Pagos

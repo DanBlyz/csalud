@@ -119,7 +119,7 @@ class PermisoSeeder extends Seeder
             46 => ['nombre' => 'proformas.honorarios.eliminar', 'descripcion' => 'Eliminar pagos o registros de honorarios médicos'],
 
             // ==========================================
-            // MÓDULO 4: FARMACIA E INVENTARIO (9, 47-59)
+            // MÓDULO 4: FARMACIA E INVENTARIO (9, 47-59, 89-93, 97-98)
             // ==========================================
             9 => ['nombre' => 'despachar-farmacia', 'descripcion' => 'Acceso al módulo y despacho de recetas e insumos en farmacia'],
             47 => ['nombre' => 'farmacia.productos.ver', 'descripcion' => 'Consultar catálogo de medicamentos, fármacos e insumos'],
@@ -144,6 +144,10 @@ class PermisoSeeder extends Seeder
             91 => ['nombre' => 'farmacia.bajas.editar', 'descripcion' => 'Modificar solicitudes de baja de medicamentos pendientes'],
             92 => ['nombre' => 'farmacia.bajas.eliminar', 'descripcion' => 'Anular o eliminar solicitudes de baja de medicamentos'],
             93 => ['nombre' => 'farmacia.bajas.aprobar', 'descripcion' => 'Aprobar bajas de medicamentos y aplicar el descuento de inventario'],
+
+            // Reintegro de Medicamentos por Institución
+            97 => ['nombre' => 'farmacia.reintegros.ver', 'descripcion' => 'Consultar listado de reintegros por institución, detalles y reportes PDF'],
+            98 => ['nombre' => 'farmacia.reintegros.crear', 'descripcion' => 'Registrar nuevos reintegros de medicamentos por institución y descontar en proformas'],
 
             // ==========================================
             // MÓDULO 5: CAJA Y FINANZAS (10, 60-70)

@@ -150,9 +150,9 @@ class User extends Authenticatable
             4 => [19, 71, 72],             // especialidades, servicios y tipos de solicitud
             5 => [22, 23, 24, 25, 26],     // pacientes e instituciones
             6 => [6, 27],                  // crear proforma
-            7 => array_merge(range(27, 46), range(73, 84)), // proformas
+            7 => array_merge(range(27, 46), range(73, 88), range(94, 96)), // proformas
             8 => [8, 39, 40],              // recetas
-            9 => array_merge(range(47, 59), range(89, 93)), // farmacia
+            9 => array_merge(range(47, 59), range(89, 93), range(97, 98)), // farmacia
             10 => range(60, 70),           // caja
         ];
 
