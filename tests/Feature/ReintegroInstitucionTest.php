@@ -402,3 +402,26 @@ test('puede generar el documento pdf del reintegro por institucion con firmas', 
     $response->assertStatus(200);
     expect($response->headers->get('content-type'))->toContain('application/pdf');
 });
+
+test('sidebar muestra unicamente las opciones correspondientes a los permisos granulares del usuario', function (): void {
+    $usuarioParcial = User::factory()->create([
+        'rol_id' => $this->rolOperador->id,
+        'sucursal_id' => $this->sucursal->id,
+        'activo' => true,
+    ]);
+
+    // Asignar solo permiso 47 (farmacia.productos.ver) y 20 (reportes.ver)
+    $usuarioParcial->permisos()->sync([47, 20]);
+
+    $this->actingAs($usuarioParcial);
+
+    $response = $this->get(route('farmacia.productos'));
+
+    $response->assertStatus(200)
+        ->assertSee('<span class="ms-2">Catálogo de Fármacos</span>', false)
+        ->assertSee('<span class="ms-2">Reportes</span>', false)
+        ->assertDontSee('<span class="ms-2">Lotes y Stock</span>', false)
+        ->assertDontSee('<span class="ms-2">Baja de Medicamentos</span>', false)
+        ->assertDontSee('<span class="ms-2">Reintegro por Institución</span>', false)
+        ->assertDontSee('<span class="ms-2">Personal y Usuarios</span>', false);
+});

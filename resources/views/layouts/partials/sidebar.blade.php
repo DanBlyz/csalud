@@ -82,13 +82,22 @@
         </a>
 
         <!-- Section: ATENCIÓN CLÍNICA -->
-        @anypermiso([5, 6, 7, 'pacientes.ver', 'pacientes.instituciones.ver', 'proformas.ver', 'proformas.crear'])
+        @anypermiso([
+            'instituciones.ver', 'instituciones.gestionar',
+            'gestion-pacientes', 'pacientes.crear', 'pacientes.editar', 'pacientes.eliminar',
+            'crear-proforma',
+            'gestionar-proforma', 'proformas.editar', 'proformas.anular', 'proformas.imprimir', 'emitir-receta',
+            'proformas.servicios.ver', 'proformas.solicitudes.ver', 'proformas.evolucion.ver',
+            'proformas.indicacion.ver', 'proformas.internacion.ver', 'proformas.cronograma.ver',
+            'proformas.cirugia.ver', 'proformas.recetas_externas.ver', 'proformas.recetas.ver',
+            'proformas.consumos.ver', 'proformas.honorarios.ver',
+        ])
             <div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Atención Clínica
             </div>
 
             <!-- Instituciones y Convenios -->
-            @anypermiso(['pacientes.instituciones.ver', 'pacientes.instituciones.crear'])
+            @anypermiso(['instituciones.ver', 'instituciones.gestionar'])
                 <a 
                     href="{{ route('pacientes.instituciones') }}" 
                     {{ request()->routeIs('pacientes.instituciones*') ? 'data-sidebar-active=true' : '' }}
@@ -100,7 +109,7 @@
             @endanypermiso
 
             <!-- Pacientes -->
-            @anypermiso(['pacientes.ver', 'pacientes.crear'])
+            @anypermiso(['gestion-pacientes', 'pacientes.crear', 'pacientes.editar', 'pacientes.eliminar'])
                 <a 
                     href="{{ route('pacientes.index') }}" 
                     {{ request()->routeIs('pacientes.index') ? 'data-sidebar-active=true' : '' }}
@@ -112,7 +121,13 @@
             @endanypermiso
 
             <!-- Proformas / Admisión -->
-            @anypermiso(['proformas.ver'])
+            @anypermiso([
+                'gestionar-proforma', 'proformas.editar', 'proformas.anular', 'proformas.imprimir', 'emitir-receta',
+                'proformas.servicios.ver', 'proformas.solicitudes.ver', 'proformas.evolucion.ver',
+                'proformas.indicacion.ver', 'proformas.internacion.ver', 'proformas.cronograma.ver',
+                'proformas.cirugia.ver', 'proformas.recetas_externas.ver', 'proformas.recetas.ver',
+                'proformas.consumos.ver', 'proformas.honorarios.ver',
+            ])
                 <a 
                     href="{{ route('proformas.index') }}" 
                     {{ request()->routeIs('proformas.index') || request()->routeIs('proformas.show') ? 'data-sidebar-active=true' : '' }}
@@ -124,7 +139,7 @@
             @endanypermiso
 
             <!-- Nueva Proforma (Admisión) -->
-            @anypermiso(['proformas.crear'])
+            @anypermiso(['crear-proforma'])
                 <a 
                     href="{{ route('proformas.crear') }}" 
                     {{ request()->routeIs('proformas.crear') ? 'data-sidebar-active=true' : '' }}
@@ -137,13 +152,22 @@
         @endanypermiso
 
         <!-- Section: FARMACIA E INVENTARIO -->
-        @anypermiso([7, 9, 'farmacia.despacho.gestionar', 'farmacia.medicamentos.ver', 'farmacia.lotes.ver', 'farmacia.secciones.ver', 'farmacia.marcas.ver', 'farmacia.proveedores.ver', 'farmacia.kardex.ver', 'farmacia.bajas.ver', 'farmacia.reintegros.ver'])
+        @anypermiso([
+            'despachar-farmacia', 'farmacia.despachos.revertir',
+            'farmacia.productos.ver', 'farmacia.productos.crear', 'farmacia.productos.editar', 'farmacia.productos.eliminar',
+            'farmacia.lotes.ver', 'farmacia.lotes.crear', 'farmacia.lotes.editar', 'farmacia.lotes.anular',
+            'farmacia.secciones.gestionar',
+            'farmacia.catalogos.gestionar',
+            'farmacia.movimientos.ver', 'farmacia.movimientos.transferir',
+            'farmacia.bajas.ver',
+            'farmacia.reintegros.ver', 'farmacia.reintegros.crear',
+        ])
             <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Farmacia e Inventario
             </div>
 
             <!-- Despacho de Recetas -->
-            @anypermiso(['farmacia.despacho.gestionar', 'despachar-farmacia'])
+            @anypermiso(['despachar-farmacia', 'farmacia.despachos.revertir'])
                 <a 
                     href="{{ route('farmacia.despachos') }}" 
                     {{ request()->routeIs('farmacia.despachos') ? 'data-sidebar-active=true' : '' }}
@@ -155,7 +179,7 @@
             @endanypermiso
 
             <!-- Catálogo de Medicamentos e Insumos -->
-            @anypermiso(['farmacia.medicamentos.ver'])
+            @anypermiso(['farmacia.productos.ver', 'farmacia.productos.crear', 'farmacia.productos.editar', 'farmacia.productos.eliminar'])
                 <a 
                     href="{{ route('farmacia.productos') }}" 
                     {{ request()->routeIs('farmacia.productos') ? 'data-sidebar-active=true' : '' }}
@@ -167,7 +191,7 @@
             @endanypermiso
 
             <!-- Control de Lotes y Abastecimiento -->
-            @anypermiso(['farmacia.lotes.ver'])
+            @anypermiso(['farmacia.lotes.ver', 'farmacia.lotes.crear', 'farmacia.lotes.editar', 'farmacia.lotes.anular'])
                 <a 
                     href="{{ route('farmacia.lotes') }}" 
                     {{ request()->routeIs('farmacia.lotes') ? 'data-sidebar-active=true' : '' }}
@@ -179,7 +203,7 @@
             @endanypermiso
 
             <!-- Secciones y Áreas Hospitalarias -->
-            @anypermiso(['farmacia.secciones.ver'])
+            @anypermiso(['farmacia.secciones.gestionar'])
                 <a 
                     href="{{ route('farmacia.secciones') }}" 
                     {{ request()->routeIs('farmacia.secciones') ? 'data-sidebar-active=true' : '' }}
@@ -191,7 +215,7 @@
             @endanypermiso
 
             <!-- Marcas y Laboratorios -->
-            @anypermiso(['farmacia.marcas.ver'])
+            @anypermiso(['farmacia.catalogos.gestionar'])
                 <a 
                     href="{{ route('farmacia.marcas') }}" 
                     {{ request()->routeIs('farmacia.marcas') ? 'data-sidebar-active=true' : '' }}
@@ -203,7 +227,7 @@
             @endanypermiso
 
             <!-- Proveedores y Droguerías -->
-            @anypermiso(['farmacia.proveedores.ver'])
+            @anypermiso(['farmacia.catalogos.gestionar'])
                 <a 
                     href="{{ route('farmacia.proveedores') }}" 
                     {{ request()->routeIs('farmacia.proveedores') ? 'data-sidebar-active=true' : '' }}
@@ -215,7 +239,7 @@
             @endanypermiso
 
             <!-- Kardex de Movimientos -->
-            @anypermiso(['farmacia.kardex.ver'])
+            @anypermiso(['farmacia.movimientos.ver', 'farmacia.movimientos.transferir', 'farmacia.despachos.revertir'])
                 <a 
                     href="{{ route('farmacia.movimientos') }}" 
                     {{ request()->routeIs('farmacia.movimientos') ? 'data-sidebar-active=true' : '' }}
@@ -239,7 +263,7 @@
             @endanypermiso
 
             <!-- Reintegro por Institución -->
-            @anypermiso(['farmacia.reintegros.ver', 'despachar-farmacia'])
+            @anypermiso(['farmacia.reintegros.ver', 'farmacia.reintegros.crear'])
                 <a 
                     href="{{ route('farmacia.reintegros') }}" 
                     {{ request()->routeIs('farmacia.reintegros*') ? 'data-sidebar-active=true' : '' }}
@@ -252,13 +276,16 @@
         @endanypermiso
 
         <!-- Section: CAJA Y FACTURACIÓN -->
-        @anypermiso([8, 10, 'caja.sesiones.abrir', 'caja.recibos.crear', 'caja.cierres.ver', 'cobro-caja'])
+        @anypermiso([
+            'cobro-caja', 'caja.aperturar', 'caja.cerrar', 'caja.cobrar', 'caja.cobro.anular', 'caja.movimientos.extra',
+            'caja.cierres.ver', 'caja.cierres.crear', 'caja.cierres.sincronizar', 'caja.cierres.partidas', 'caja.cierres.finalizar', 'caja.cierres.eliminar',
+        ])
             <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Cobros y Recibos
             </div>
 
             <!-- Caja y Pagos -->
-            @anypermiso(['caja.sesiones.abrir', 'caja.recibos.crear', 'cobro-caja'])
+            @anypermiso(['cobro-caja', 'caja.aperturar', 'caja.cerrar', 'caja.cobrar', 'caja.cobro.anular', 'caja.movimientos.extra'])
                 <a 
                     href="{{ route('caja.index') }}" 
                     {{ request()->routeIs('caja.index') ? 'data-sidebar-active=true' : '' }}
@@ -270,7 +297,7 @@
             @endanypermiso
 
             <!-- Cierres Mensuales y Utilidades -->
-            @anypermiso(['caja.cierres.ver', 'caja.cierres.gestionar'])
+            @anypermiso(['caja.cierres.ver', 'caja.cierres.crear', 'caja.cierres.sincronizar', 'caja.cierres.partidas', 'caja.cierres.finalizar', 'caja.cierres.eliminar'])
                 <a 
                     href="{{ route('caja.cierres') }}" 
                     {{ request()->routeIs('caja.cierres') ? 'data-sidebar-active=true' : '' }}
@@ -283,13 +310,20 @@
         @endanypermiso
 
         <!-- Section: SISTEMA -->
-        @anypermiso([1, 2, 3, 4, 'admin.sucursales.ver', 'admin.roles.ver', 'admin.usuarios.ver', 'admin.especialidades.ver', 'admin.servicios.ver', 'admin.reportes.ver', 'tipos-solicitudes.ver', 'tipos-solicitudes.gestionar'])
+        @anypermiso([
+            'gestion-sucursales', 'sucursales.crear', 'sucursales.editar', 'sucursales.eliminar',
+            'gestion-roles', 'roles.gestionar',
+            'gestion-usuarios', 'usuarios.crear', 'usuarios.editar', 'usuarios.eliminar', 'usuarios.permisos',
+            'gestion-catalogos', 'catalogos.gestionar',
+            'tipos-solicitudes.ver', 'tipos-solicitudes.gestionar',
+            'reportes.ver', 'reportes.exportar',
+        ])
             <div class="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Administración
             </div>
 
             <!-- Sedes / Sucursales -->
-            @anypermiso(['admin.sucursales.ver', 'admin.sucursales.crear'])
+            @anypermiso(['gestion-sucursales', 'sucursales.crear', 'sucursales.editar', 'sucursales.eliminar'])
                 <a href="{{ route('administracion.sucursales') }}" {{ request()->routeIs('administracion.sucursales') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.sucursales') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-hospital w-5 text-sm {{ request()->routeIs('administracion.sucursales') ? 'text-white' : 'text-blue-400' }}"></i>
                     <span class="ms-2">Sedes y Sucursales</span>
@@ -297,7 +331,7 @@
             @endanypermiso
 
             <!-- Roles y Permisos -->
-            @anypermiso(['admin.roles.ver', 'admin.roles.crear'])
+            @anypermiso(['gestion-roles', 'roles.gestionar'])
                 <a href="{{ route('administracion.roles') }}" {{ request()->routeIs('administracion.roles') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.roles') ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-user-tag w-5 text-sm {{ request()->routeIs('administracion.roles') ? 'text-white' : 'text-purple-400' }}"></i>
                     <span class="ms-2">Roles de Acceso</span>
@@ -305,7 +339,7 @@
             @endanypermiso
 
             <!-- Usuarios y Personal -->
-            @anypermiso(['admin.usuarios.ver', 'admin.usuarios.crear'])
+            @anypermiso(['gestion-usuarios', 'usuarios.crear', 'usuarios.editar', 'usuarios.eliminar', 'usuarios.permisos'])
                 <a href="{{ route('administracion.usuarios') }}" {{ request()->routeIs('administracion.usuarios') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.usuarios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-users-cog w-5 text-sm {{ request()->routeIs('administracion.usuarios') ? 'text-white' : 'text-teal-400' }}"></i>
                     <span class="ms-2">Personal y Usuarios</span>
@@ -313,7 +347,7 @@
             @endanypermiso
 
             <!-- Especialidades -->
-            @anypermiso(['admin.especialidades.ver', 'admin.especialidades.crear'])
+            @anypermiso(['gestion-catalogos', 'catalogos.gestionar'])
                 <a href="{{ route('administracion.especialidades') }}" {{ request()->routeIs('administracion.especialidades') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.especialidades') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-stethoscope w-5 text-sm {{ request()->routeIs('administracion.especialidades') ? 'text-white' : 'text-teal-400' }}"></i>
                     <span class="ms-2">Especialidades</span>
@@ -321,7 +355,7 @@
             @endanypermiso
 
             <!-- Servicios -->
-            @anypermiso(['admin.servicios.ver', 'admin.servicios.crear'])
+            @anypermiso(['gestion-catalogos', 'catalogos.gestionar'])
                 <a href="{{ route('administracion.servicios') }}" {{ request()->routeIs('administracion.servicios') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.servicios') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-clinic-medical w-5 text-sm {{ request()->routeIs('administracion.servicios') ? 'text-white' : 'text-teal-400' }}"></i>
                     <span class="ms-2">Servicios</span>
@@ -337,7 +371,7 @@
             @endanypermiso
 
             <!-- Reportes del Sistema -->
-            @anypermiso(['admin.reportes.ver'])
+            @anypermiso(['reportes.ver', 'reportes.exportar'])
                 <a href="{{ route('administracion.reportes') }}" {{ request()->routeIs('administracion.reportes*') ? 'data-sidebar-active=true' : '' }} class="flex items-center px-3 py-2 rounded-md font-medium text-xs transition-colors {{ request()->routeIs('administracion.reportes*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fas fa-file-invoice w-5 text-sm {{ request()->routeIs('administracion.reportes*') ? 'text-white' : 'text-teal-400' }}"></i>
                     <span class="ms-2">Reportes</span>

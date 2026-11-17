@@ -15,7 +15,7 @@ class ReintegroInstitucionPdfController extends Controller
     public function pdf(ReintegroInstitucion $reintegro): Response
     {
         $user = Auth::user();
-        if ($user && ! $user->tienePermiso('farmacia.reintegros.ver') && ! $user->tienePermiso(9)) {
+        if ($user && ! $user->tieneAlgunPermiso(['farmacia.reintegros.ver', 'farmacia.reintegros.crear'])) {
             abort(403, 'No cuenta con autorización para visualizar este reporte.');
         }
 

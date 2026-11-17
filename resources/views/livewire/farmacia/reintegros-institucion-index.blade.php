@@ -14,13 +14,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            @anypermiso(['farmacia.reintegros.crear', 9])
+            @permiso('farmacia.reintegros.crear')
                 <button wire:click="abrirModalReintegro" wire:loading.attr="disabled" type="button"
                     class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-semibold shadow-md shadow-teal-500/20 hover:shadow-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                     <i class="fas fa-plus"></i>
                     <span>Registrar Reintegro por Institución</span>
                 </button>
-            @endanypermiso
+            @endpermiso
         </div>
     </div>
 

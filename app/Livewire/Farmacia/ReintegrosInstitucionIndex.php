@@ -102,7 +102,7 @@ class ReintegrosInstitucionIndex extends Component
     public function mount(): void
     {
         $user = Auth::user();
-        if ($user && ! $user->tienePermiso('farmacia.reintegros.ver') && ! $user->tienePermiso(9)) {
+        if ($user && ! $user->tieneAlgunPermiso(['farmacia.reintegros.ver', 'farmacia.reintegros.crear'])) {
             abort(403, 'No cuenta con autorización para acceder al módulo de Reintegro por Institución.');
         }
 
@@ -157,7 +157,7 @@ class ReintegrosInstitucionIndex extends Component
     public function abrirModalReintegro(): void
     {
         $user = Auth::user();
-        if ($user && ! $user->tienePermiso('farmacia.reintegros.crear') && ! $user->tienePermiso(9)) {
+        if ($user && ! $user->tienePermiso('farmacia.reintegros.crear')) {
             $this->dispatch('swal', [
                 'icon' => 'error',
                 'title' => 'Acceso denegado',
@@ -501,7 +501,7 @@ class ReintegrosInstitucionIndex extends Component
     public function guardarReintegro(): void
     {
         $user = Auth::user();
-        if ($user && ! $user->tienePermiso('farmacia.reintegros.crear') && ! $user->tienePermiso(9)) {
+        if ($user && ! $user->tienePermiso('farmacia.reintegros.crear')) {
             $this->dispatch('swal', [
                 'icon' => 'error',
                 'title' => 'Acceso denegado',
