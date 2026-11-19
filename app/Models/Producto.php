@@ -66,6 +66,11 @@ class Producto extends Model
         return $this->hasMany(ConsumoExtra::class, 'producto_id');
     }
 
+    public function despachosFarmacia(): HasMany
+    {
+        return $this->hasMany(DespachoFarmacia::class, 'producto_id');
+    }
+
     public function movimientosInventario(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'producto_id');

@@ -465,7 +465,7 @@ class CajaIndex extends Component
             return;
         }
 
-        $proforma = Proforma::with(['paciente', 'servicios', 'movimientosInventario', 'consumosExtras', 'pagos'])->find($proformaId);
+        $proforma = Proforma::with(['paciente', 'servicios', 'movimientosInventario', 'despachosFarmacia', 'consumosExtras', 'pagos'])->find($proformaId);
 
         if (! $proforma) {
             $this->dispatch('swal', [
@@ -783,7 +783,7 @@ class CajaIndex extends Component
         $cajasHistoricas = null;
 
         if ($this->activeTab === 'pendientes' || $this->activeTab === 'pagadas') {
-            $proformasQuery = Proforma::with(['paciente', 'sucursal', 'pagos', 'servicios', 'movimientosInventario', 'consumosExtras'])
+            $proformasQuery = Proforma::with(['paciente', 'sucursal', 'pagos', 'servicios', 'movimientosInventario', 'despachosFarmacia', 'consumosExtras'])
                 ->where('estado', '!=', 'Anulada')
                 ->when($sucursalId, fn ($q) => $q->where('sucursal_id', $sucursalId))
                 ->when($this->search, function ($query) {

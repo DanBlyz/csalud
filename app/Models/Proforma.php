@@ -161,6 +161,11 @@ class Proforma extends Model
         return $this->hasMany(ConsumoExtra::class, 'proforma_id');
     }
 
+    public function despachosFarmacia(): HasMany
+    {
+        return $this->hasMany(DespachoFarmacia::class, 'proforma_id');
+    }
+
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class, 'proforma_id');
@@ -203,29 +208,14 @@ class Proforma extends Model
     }
 
     /**
-     * Total de salidas/despachos de farmacia efectivamente entregados para esta proforma (neto de devoluciones).
+     * Total de salidas/despachos de farmacia efectivamente entregados para esta proforma (neto de devoluciones)
+     * utilizando el precio unitario congelado a la fecha de cada despacho en despachos_farmacia.
      */
     public function totalDespachosFarmacia(): float
     {
-        $salidas = (float) $this->movimientosInventario()
-            ->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia'])
-            ->join('productos', 'movimientos_inventario.producto_id', '=', 'productos.id')
-            ->selectRaw('SUM(movimientos_inventario.cantidad * COALESCE(productos.ultimo_precio_venta, 0)) as total')
+        return (float) $this->despachosFarmacia()
+            ->selectRaw('SUM(cantidad * COALESCE(precio_unitario, 0)) as total')
             ->value('total');
-
-        $devoluciones = (float) $this->movimientosInventario()
-            ->whereIn('tipo_movimiento', ['Devolución', 'Devolucion', 'Devolución Farmacia', 'Devolucion Farmacia'])
-            ->where(function ($q) {
-                $q->whereNotNull('receta_id')
-                    ->orWhereHas('movimientoOrigen', function ($orig) {
-                        $orig->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia']);
-                    });
-            })
-            ->join('productos', 'movimientos_inventario.producto_id', '=', 'productos.id')
-            ->selectRaw('SUM(movimientos_inventario.cantidad * COALESCE(productos.ultimo_precio_venta, 0)) as total')
-            ->value('total');
-
-        return max(0.00, $salidas - $devoluciones);
     }
 
     /**

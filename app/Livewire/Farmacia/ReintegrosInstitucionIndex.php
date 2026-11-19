@@ -281,7 +281,7 @@ class ReintegrosInstitucionIndex extends Component
                     'unidad_medida' => $prod->unidad_medida ?? 'Unidad',
                     'marca_nombre' => $prod->marca?->nombre ?? 'Genérico',
                     'precio_compra_sugerido' => (float) ($ultimoLote?->precio_compra ?? 0),
-                    'precio_venta_sugerido' => (float) ($prod->ultimo_precio_venta ?: ($ultimoLote?->precio_venta ?? 0)),
+                    'precio_venta_sugerido' => (float) ($prod->ultimo_precio_venta ?? 0),
                     'cantidad_total_usada' => 0,
                     'desglose_proformas' => [],
                 ];
@@ -660,7 +660,7 @@ class ReintegrosInstitucionIndex extends Component
                             continue;
                         }
 
-                        $precioUnitarioAplicado = $precioOriginalProducto;
+                        $precioUnitarioAplicado = $movOrigen->precioUnitarioAplicado() ?: $precioOriginalProducto;
 
                         if ($movOrigen->tipo_movimiento === 'Salida Receta') {
                             // Actualizar o quitar de RecetaDetalle según la cantidad reintegrada
@@ -670,9 +670,6 @@ class ReintegrosInstitucionIndex extends Component
                                     ->first();
 
                                 if ($recDetalle) {
-                                    if ($recDetalle->costo_unitario > 0) {
-                                        $precioUnitarioAplicado = (float) $recDetalle->costo_unitario;
-                                    }
                                     if ($recDetalle->cantidad > $cantAplicar) {
                                         $recDetalle->decrement('cantidad', $cantAplicar);
                                     } else {

@@ -106,6 +106,8 @@ class ReportePlanillaConvenioService
                 'paciente',
                 'servicios.servicio',
                 'consumosExtras.producto',
+                'despachosFarmacia.producto',
+                'despachosFarmacia.seccion',
                 'movimientosInventario.producto',
                 'movimientosInventario.seccionOrigen',
             ]);
@@ -225,22 +227,20 @@ class ReportePlanillaConvenioService
                     }
                 }
 
-                // 2. Salidas directas de farmacia (recetas despachadas)
-                foreach ($proforma->movimientosInventario as $mov) {
-                    if (in_array($mov->tipo_movimiento, ['Salida Receta', 'Salida Farmacia'], true)) {
-                        $origenId = $mov->seccion_origen_id;
-                        $esDeEstaSeccion = false;
+                // 2. Salidas directas de farmacia (recetas despachadas con precio unitario congelado)
+                foreach ($proforma->despachosFarmacia as $despacho) {
+                    $origenId = $despacho->seccion_id;
+                    $esDeEstaSeccion = false;
 
-                        if ($origenId === $sec->id) {
-                            $esDeEstaSeccion = true;
-                        } elseif (! $origenId && ($sec->es_almacen_principal || stripos($sec->nombre, 'farmacia') !== false)) {
-                            $esDeEstaSeccion = true;
-                        }
+                    if ($origenId === $sec->id) {
+                        $esDeEstaSeccion = true;
+                    } elseif (! $origenId && ($sec->es_almacen_principal || stripos($sec->nombre, 'farmacia') !== false)) {
+                        $esDeEstaSeccion = true;
+                    }
 
-                        if ($esDeEstaSeccion && $mov->producto) {
-                            $precioVenta = (float) ($mov->producto->ultimo_precio_venta ?? 0);
-                            $montoSeccion += (float) ($mov->cantidad * $precioVenta);
-                        }
+                    if ($esDeEstaSeccion && $despacho->cantidad > 0) {
+                        $precioVenta = (float) ($despacho->precio_unitario ?? 0);
+                        $montoSeccion += (float) ($despacho->cantidad * $precioVenta);
                     }
                 }
 

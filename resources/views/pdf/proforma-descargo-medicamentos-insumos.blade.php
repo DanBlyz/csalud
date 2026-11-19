@@ -106,8 +106,12 @@
         $hc = $paciente?->numero_historia_clinica ?: '---';
         $medicoTratante = $proforma->medicos->pluck('nombre_completo')->filter()->join(', ') ?: ($cirugia?->cirujano?->nombre_completo ?? 'No asignado');
 
-        // Consumos de insumos y medicamentos extras cargados en piso
-        $consumosExtras = $proforma->consumosExtras ?? collect();
+        // Despachos de farmacia y consumos de insumos extras cargados en piso (con precio congelado a la fecha)
+        $despachosFarmacia = $proforma->despachosFarmacia ?? collect();
+        $consumosExtras = ($proforma->consumosExtras ?? collect())
+            ->concat($despachosFarmacia)
+            ->sortBy('created_at')
+            ->values();
     @endphp
 
     <!-- Cabecera Institucional -->

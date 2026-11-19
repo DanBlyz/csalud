@@ -10,6 +10,7 @@ use App\Models\Paciente;
 use App\Models\Producto;
 use App\Models\Proforma;
 use App\Models\Receta;
+use App\Models\RecetaDetalle;
 use App\Models\Rol;
 use App\Models\Seccion;
 use App\Models\Sucursal;
@@ -242,4 +243,59 @@ test('calcula visualmente el costo total en el modal de despacho de receta y en 
     expect($testExtra->get('totalExtraDirectoDespachar'))->toBe(15.00);
     $testExtra->assertSee('Costo Total Extra:');
     $testExtra->assertSee('15.00');
+});
+
+test('despacho de receta congela el precio unitario en despachos_farmacia y no altera el costo_total de la proforma cuando sube el precio del producto', function () {
+    $this->actingAs($this->admin);
+
+    // 1. El producto cuesta inicialmente Bs. 2.50
+    $receta = Receta::create([
+        'proforma_id' => $this->proforma->id,
+        'user_id' => $this->admin->id,
+        'activo' => true,
+    ]);
+
+    $detalle = RecetaDetalle::create([
+        'receta_id' => $receta->id,
+        'producto_id' => $this->producto->id,
+        'cantidad' => 3,
+        'indicaciones' => 'Cada 8 horas',
+        'despachado' => false,
+    ]);
+
+    // 2. Realizar despacho de 3 unidades desde Farmacia (3 * 2.50 = Bs. 7.50)
+    Livewire::test(DespachosIndex::class)
+        ->call('abrirModalDespacho', $receta->id)
+        ->set("despachosItems.{$detalle->id}.cantidad_despachar", 3)
+        ->call('procesarDespacho');
+
+    $this->proforma->refresh();
+    expect((float) $this->proforma->costo_total)->toBe(7.50)
+        ->and((float) $this->proforma->totalDespachosFarmacia())->toBe(7.50)
+        ->and($this->proforma->despachosFarmacia()->count())->toBe(1);
+
+    $despacho = $this->proforma->despachosFarmacia()->first();
+    expect($despacho->cantidad)->toBe(3)
+        ->and((float) $despacho->precio_unitario)->toBe(2.50);
+
+    // 3. Posteriormente ingresa un nuevo lote del mismo producto con un precio de venta más alto (Bs. 10.00)
+    Lote::create([
+        'sucursal_id' => $this->sucursal->id,
+        'producto_id' => $this->producto->id,
+        'codigo_lote' => 'LOT-NUEVO-CARO',
+        'cantidad_ingresada' => 50,
+        'cantidad_actual' => 50,
+        'fecha_vencimiento' => now()->addYears(2)->toDateString(),
+        'precio_compra' => 6.00,
+        'precio_venta' => 10.00,
+    ]);
+
+    expect((float) $this->producto->fresh()->ultimo_precio_venta)->toBe(10.00);
+
+    // 4. Al recalcular el total de la proforma, el costo de lo ya despachado debe mantenerse en Bs. 7.50 (y NO subir a Bs. 30.00)
+    $this->proforma->refresh();
+    $this->proforma->recalcularTotal();
+
+    expect((float) $this->proforma->fresh()->costo_total)->toBe(7.50)
+        ->and((float) $this->proforma->fresh()->totalDespachosFarmacia())->toBe(7.50);
 });

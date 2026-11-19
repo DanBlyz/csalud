@@ -5,6 +5,7 @@ namespace App\Livewire\Proformas;
 use App\Models\Caja;
 use App\Models\Cirugia;
 use App\Models\ConsumoExtra;
+use App\Models\DespachoFarmacia;
 use App\Models\Epicrisis;
 use App\Models\Evolucion;
 use App\Models\HistoriaClinica;
@@ -509,6 +510,8 @@ class ProformaDetalle extends Component
             'recetas.doctor',
             'consumosExtras.producto',
             'consumosExtras.user',
+            'despachosFarmacia.producto',
+            'despachosFarmacia.user',
             'pagos',
             'pagosMedicos.medico.especialidad',
             'pagosMedicos.user',
@@ -1158,7 +1161,7 @@ class ProformaDetalle extends Component
             ->sortBy('fecha_vencimiento')
             ->first();
 
-        $precio = (float) ($loteConStock?->precio_venta ?? $producto->ultimo_precio_venta ?? 0);
+        $precio = (float) ($producto->ultimo_precio_venta ?? 0);
         $this->cir_medicamento_costo_unitario = number_format($precio, 2, '.', '');
     }
 
@@ -1205,13 +1208,7 @@ class ProformaDetalle extends Component
 
         $precioUnitario = (float) $this->cir_medicamento_costo_unitario;
         if ($precioUnitario <= 0) {
-            $sucursalId = $this->proforma->sucursal_id ?? Auth::user()?->sucursal_id;
-            $loteConStock = $producto->lotes
-                ->where('cantidad_actual', '>', 0)
-                ->when($sucursalId, fn ($lotes) => $lotes->where('sucursal_id', $sucursalId))
-                ->sortBy('fecha_vencimiento')
-                ->first();
-            $precioUnitario = (float) ($loteConStock?->precio_venta ?? $producto->ultimo_precio_venta ?? 0);
+            $precioUnitario = (float) ($producto->ultimo_precio_venta ?? 0);
         }
 
         $this->cola_medicamentos_cirugia[] = [
@@ -3264,6 +3261,7 @@ class ProformaDetalle extends Component
                 }
 
                 $stockEnSeccion = ($loteSugerido && $seccionElegida) ? $loteSugerido->stockEnSeccion($seccionElegida) : 0;
+                $precioUnitario = (float) ($det->producto?->ultimo_precio_venta ?? 0);
 
                 $this->despachosItems[$det->id] = [
                     'detalle_id' => $det->id,
@@ -3277,6 +3275,7 @@ class ProformaDetalle extends Component
                     'seccion_id' => $seccionElegida,
                     'lote_id' => $loteSugerido?->id ?? null,
                     'cantidad_despachar' => $saldoPendiente > 0 && $loteSugerido && $stockEnSeccion > 0 ? 1 : 0,
+                    'precio_unitario' => $precioUnitario,
                 ];
             }
         }
@@ -3356,6 +3355,9 @@ class ProformaDetalle extends Component
         }
 
         $this->despachosItems[$detId]['lote_id'] = $lote?->id ?? null;
+        if ($lote) {
+            $this->despachosItems[$detId]['precio_unitario'] = (float) ($lote->producto?->ultimo_precio_venta ?? 0);
+        }
         $stockDisp = $lote ? $lote->stockEnSeccion($seccionId) : 0;
         $saldo = $this->despachosItems[$detId]['saldo_pendiente'];
 
@@ -3606,9 +3608,11 @@ class ProformaDetalle extends Component
                     continue;
                 }
 
-                $lote = Lote::findOrFail($item['lote_id']);
+                $lote = Lote::with('producto')->findOrFail($item['lote_id']);
+                $detalle = RecetaDetalle::find($detId);
+                $precioUnitario = (float) ($lote->producto?->ultimo_precio_venta ?? 0);
 
-                $lote->descontarDeSeccion(
+                $mov = $lote->descontarDeSeccion(
                     $item['seccion_id'],
                     $cant,
                     'Salida Receta',
@@ -3617,7 +3621,22 @@ class ProformaDetalle extends Component
                     $userId
                 );
 
-                $detalle = RecetaDetalle::find($detId);
+                DespachoFarmacia::updateOrCreate(
+                    ['movimiento_inventario_id' => $mov->id],
+                    [
+                        'proforma_id' => $this->proforma->id,
+                        'receta_id' => $receta?->id,
+                        'receta_detalle_id' => $detalle?->id,
+                        'producto_id' => $lote->producto_id,
+                        'lote_id' => $lote->id,
+                        'seccion_id' => $item['seccion_id'],
+                        'cantidad' => $cant,
+                        'precio_unitario' => $precioUnitario,
+                        'user_id' => $userId,
+                        'observaciones' => $receta ? "Despacho de Receta #{$receta->id}" : 'Despacho en proforma',
+                    ]
+                );
+
                 if ($detalle && $receta) {
                     $totalSalidas = (int) MovimientoInventario::where('receta_id', $receta->id)
                         ->where('producto_id', $detalle->producto_id)
@@ -3999,6 +4018,8 @@ class ProformaDetalle extends Component
             'recetas' => fn ($q) => $q->with(['detalles.producto', 'doctor'])->latest(),
             'consumosExtras.producto',
             'consumosExtras.user',
+            'despachosFarmacia.producto',
+            'despachosFarmacia.user',
             'pagosMedicos.medico.especialidad',
             'pagosMedicos.user',
             'movimientosInventario.producto.marca',
@@ -4187,7 +4208,7 @@ class ProformaDetalle extends Component
 
         // 5. Historial de Despachos de esta Proforma
         $movimientosDespacho = $this->proforma->movimientosInventario()
-            ->with(['producto.marca', 'lote', 'usuario', 'receta', 'seccionOrigen', 'seccionDestino'])
+            ->with(['producto.marca', 'lote', 'usuario', 'receta', 'seccionOrigen', 'seccionDestino', 'despachoFarmacia', 'movimientoOrigen.despachoFarmacia'])
             ->latest('id')
             ->get();
 

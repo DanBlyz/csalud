@@ -288,7 +288,7 @@
                 @foreach($movimientosFarmacia as $mov)
                     @php
                         $esDevolucion = in_array($mov->tipo_movimiento, ['Devolución', 'Devolucion', 'Devolución Farmacia', 'Devolucion Farmacia']);
-                        $precioVenta = (float) ($mov->producto->ultimo_precio_venta ?? 0);
+                        $precioVenta = $mov->precioUnitarioAplicado();
                         $sub = $mov->cantidad * $precioVenta;
                         if ($esDevolucion) {
                             $subtotalFarmacia -= $sub;

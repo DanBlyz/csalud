@@ -120,6 +120,7 @@ class ReporteFlujoCajaService
             ->with([
                 'pagos.proforma.servicios.servicio',
                 'pagos.proforma.consumosExtras',
+                'pagos.proforma.despachosFarmacia',
                 'pagos.proforma.movimientosInventario.producto',
             ]);
 
@@ -657,6 +658,7 @@ class ReporteFlujoCajaService
             ->with([
                 'pagos.proforma.servicios.servicio',
                 'pagos.proforma.consumosExtras',
+                'pagos.proforma.despachosFarmacia',
                 'pagos.proforma.movimientosInventario.producto',
             ]);
 

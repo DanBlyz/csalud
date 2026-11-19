@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,5 +48,15 @@ class ConsumoExtra extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Subtotal calculado con el precio unitario registrado en el consumo.
+     */
+    protected function precioTotal(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): float => round((int) $this->cantidad * (float) $this->precio_unitario, 2)
+        );
     }
 }

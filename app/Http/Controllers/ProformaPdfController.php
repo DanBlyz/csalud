@@ -22,10 +22,11 @@ class ProformaPdfController extends Controller
             'medicos',
             'servicios.servicio.categoria',
             'consumosExtras.producto',
+            'despachosFarmacia.producto',
             'recetaActiva.detalles.producto',
             'movimientosInventario' => function ($query) {
                 $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia', 'Devolución', 'Devolucion'])
-                    ->with(['producto', 'lote'])
+                    ->with(['producto', 'lote', 'despachoFarmacia', 'movimientoOrigen.despachoFarmacia'])
                     ->orderBy('created_at', 'asc');
             },
             'pagos.user',
@@ -50,9 +51,10 @@ class ProformaPdfController extends Controller
             'medicos',
             'servicios.servicio.categoria',
             'consumosExtras',
+            'despachosFarmacia',
             'movimientosInventario' => function ($query) {
                 $query->whereIn('tipo_movimiento', ['Salida Receta', 'Salida Farmacia', 'Devolución', 'Devolucion'])
-                    ->with(['producto'])
+                    ->with(['producto', 'despachoFarmacia', 'movimientoOrigen.despachoFarmacia'])
                     ->orderBy('created_at', 'asc');
             },
             'pagos.user',
@@ -573,6 +575,8 @@ class ProformaPdfController extends Controller
             'cirugias',
             'medicos',
             'historiaClinica',
+            'despachosFarmacia.producto',
+            'despachosFarmacia.user',
             'consumosExtras.producto',
             'consumosExtras.user',
             'servicios.servicio',

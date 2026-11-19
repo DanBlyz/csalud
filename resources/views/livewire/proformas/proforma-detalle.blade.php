@@ -2597,7 +2597,7 @@
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                                 @forelse ($movimientosDespacho as $idx => $mov)
                                     @php
-                                        $precioUnit = (float) ($mov->producto?->ultimo_precio_venta ?? 0);
+                                        $precioUnit = $mov->precioUnitarioAplicado();
                                         $subtotalMov = $mov->cantidad * $precioUnit;
                                     @endphp
                                     <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">

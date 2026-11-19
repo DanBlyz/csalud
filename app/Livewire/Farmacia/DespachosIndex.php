@@ -3,6 +3,7 @@
 namespace App\Livewire\Farmacia;
 
 use App\Models\ConsumoExtra;
+use App\Models\DespachoFarmacia;
 use App\Models\Lote;
 use App\Models\LoteSeccion;
 use App\Models\MovimientoInventario;
@@ -496,7 +497,7 @@ class DespachosIndex extends Component
             }
 
             $stockEnSeccion = ($loteSugerido && $seccionElegida) ? $loteSugerido->stockEnSeccion($seccionElegida) : 0;
-            $precioUnitario = (float) ($det->costo_unitario ?: ($loteSugerido?->precio_venta ?: ($det->producto->ultimo_precio_venta ?? 0)));
+            $precioUnitario = (float) ($det->producto->ultimo_precio_venta ?? 0);
 
             $this->despachosItems[$det->id] = [
                 'detalle_id' => $det->id,
@@ -622,10 +623,12 @@ class DespachosIndex extends Component
                     continue;
                 }
 
-                $lote = Lote::findOrFail($item['lote_id']);
+                $lote = Lote::with('producto')->findOrFail($item['lote_id']);
+                $detalle = RecetaDetalle::find($detId);
+                $precioUnitario = (float) ($lote->producto?->ultimo_precio_venta ?? 0);
 
                 // Descontar tanto del lote consolidado como de la sección correspondiente
-                $lote->descontarDeSeccion(
+                $mov = $lote->descontarDeSeccion(
                     $item['seccion_id'],
                     $cant,
                     'Salida Receta',
@@ -634,8 +637,24 @@ class DespachosIndex extends Component
                     Auth::id()
                 );
 
+                // Registrar el DespachoFarmacia con el precio unitario congelado a la fecha
+                DespachoFarmacia::updateOrCreate(
+                    ['movimiento_inventario_id' => $mov->id],
+                    [
+                        'proforma_id' => $receta->proforma_id,
+                        'receta_id' => $receta->id,
+                        'receta_detalle_id' => $detalle?->id,
+                        'producto_id' => $lote->producto_id,
+                        'lote_id' => $lote->id,
+                        'seccion_id' => $item['seccion_id'],
+                        'cantidad' => $cant,
+                        'precio_unitario' => $precioUnitario,
+                        'user_id' => Auth::id(),
+                        'observaciones' => "Despacho de Receta #{$receta->id}",
+                    ]
+                );
+
                 // Verificar si se completó la totalidad de la prescripción para este detalle (neto de devoluciones)
-                $detalle = RecetaDetalle::find($detId);
                 if ($detalle) {
                     $totalSalidas = (int) MovimientoInventario::where('receta_id', $receta->id)
                         ->where('producto_id', $detalle->producto_id)
